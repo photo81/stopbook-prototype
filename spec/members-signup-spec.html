@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>회원 관리·회원가입 명세</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  /* Figma 가져오기(html.to.design)용 명세 보드
+     - 카드 하나 = Figma 프레임 하나. 캡처한 화면 옆에 카드를 붙여 쓰는 것을 전제로 함
+     - 카드 폭 고정(600px), 그림자·그라데이션 없이 단색·선만 사용 (레이어가 깔끔하게 들어오도록) */
+  :root {
+    --text: #18181b; --text-2: #52525b; --text-3: #a1a1aa;
+    --line: #e4e4e7; --bg: #f4f4f5; --card: #ffffff;
+    --admin: #4f46e5; --admin-soft: #eef2ff;
+    --user: #63302b; --user-soft: #f6eeed;
+    --common: #0d9488; --common-soft: #ecfdf5;
+    --warn: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: Pretendard, -apple-system, "Malgun Gothic", sans-serif; font-size: 13px; line-height: 1.55; }
+  .board { width: 1272px; margin: 0 auto; padding: 48px 24px 80px; }
+  header.top { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 28px 32px; margin-bottom: 40px; }
+  header.top h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -.02em; }
+  header.top p { margin: 0; color: var(--text-2); }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 16px; font-size: 12px; color: var(--text-2); }
+  .meta b { color: var(--text); font-weight: 600; }
+  .legend { display: flex; gap: 16px; margin-top: 16px; font-size: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  h2.part { display: flex; align-items: center; gap: 10px; margin: 48px 0 16px; font-size: 20px; letter-spacing: -.01em; }
+  h2.part .tag { font-size: 12px; font-weight: 700; color: #fff; padding: 3px 10px; border-radius: 999px; }
+  h2.part small { font-size: 13px; font-weight: 400; color: var(--text-2); }
+  .grid { display: grid; grid-template-columns: 600px 600px; gap: 24px; align-items: start; }
+
+  .card { width: 600px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .card-head { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .card-head .id { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+  .card-head h3 { margin: 0; font-size: 16px; letter-spacing: -.01em; }
+  .admin .id { background: var(--admin-soft); color: var(--admin); }
+  .user .id { background: var(--user-soft); color: var(--user); }
+  .common .id { background: var(--common-soft); color: var(--common); }
+  .card-body { padding: 16px 20px 20px; }
+  .capture { margin: 0 0 12px; padding: 8px 12px; background: var(--bg); border-radius: 8px; font-size: 12px; color: var(--text-2); }
+  .capture b { color: var(--text); }
+  .lead { margin: 0 0 12px; }
+  h4 { margin: 16px 0 6px; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { text-align: left; vertical-align: top; padding: 7px 8px; border-top: 1px solid var(--line); }
+  thead th { background: var(--bg); color: var(--text-2); font-weight: 600; border-top: 0; }
+  td:first-child { white-space: nowrap; font-weight: 600; }
+  td.wrap { white-space: normal; }
+  ul, ol { margin: 0; padding-left: 18px; }
+  li { margin: 2px 0; }
+  code { font-family: Consolas, monospace; font-size: 11.5px; background: var(--bg); padding: 1px 4px; border-radius: 4px; }
+  .msg { color: var(--warn); }
+  .note { margin: 12px 0 0; font-size: 12px; color: var(--text-2); }
+</style>
+</head>
+<body>
+<div class="board">
+
+<header class="top">
+  <h1>스탑북 회원 관리·회원가입 기능 명세</h1>
+  <p>개발 전달용 명세 보드입니다. 카드 하나가 화면(상태) 하나에 대응하며, Figma에서 캡처한 화면 옆에 놓아 사용합니다.</p>
+  <div class="meta">
+    <span><b>기준</b> 2026-10-14 프로토타입 코드</span>
+    <span><b>대상</b> admin/members.html · user/signup.html</span>
+    <span><b>데이터</b> 서버 없음, 브라우저 localStorage로 동작</span>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--admin)"></i>A. 관리자 · 통합 회원 관리</span>
+    <span><i style="background:var(--user)"></i>B. 쇼핑몰 · 회원가입/로그인</span>
+    <span><i style="background:var(--common)"></i>C. 공통 · 연동·API</span>
+  </div>
+</header>
+
+<!-- ===================== 0. 캡처 목록 ===================== -->
+<h2 class="part"><span class="tag" style="background:var(--text)">0</span>캡처 목록 <small>html.to.design으로 가져올 화면 상태</small></h2>
+<div class="card common" style="width:1224px">
+  <div class="card-head"><span class="id">0</span><h3>화면 상태별 가져오기 방법</h3></div>
+  <div class="card-body">
+    <p class="lead">모달이 열린 상태는 주소만으로 재현되지 않으므로, 브라우저에서 해당 상태를 연 뒤 <b>html.to.design 크롬 확장 프로그램</b>으로 현재 화면을 가져옵니다.</p>
+    <table>
+      <thead><tr><th>카드</th><th>화면 상태</th><th>여는 방법</th><th>가져오기</th></tr></thead>
+      <tbody>
+        <tr><td>A1</td><td class="wrap">통합 회원 관리 · 리스트</td><td class="wrap"><code>admin/members.html</code></td><td class="wrap">플러그인에 URL 입력</td></tr>
+        <tr><td>A2</td><td class="wrap">회원 상세 창</td><td class="wrap"><code>admin/members.html?member=1001</code></td><td class="wrap">플러그인에 URL 입력</td></tr>
+        <tr><td>A3·A4·A5</td><td class="wrap">패스워드 / 혜택 / 알림톡 창</td><td class="wrap">회원 상세에서 [변경]·[지급/차감]·[알림톡] 클릭</td><td class="wrap">크롬 확장</td></tr>
+        <tr><td>A6</td><td class="wrap">분석 탭</td><td class="wrap"><code>admin/members.html?tab=analysis</code></td><td class="wrap">플러그인에 URL 입력</td></tr>
+        <tr><td>B1</td><td class="wrap">회원가입/로그인 첫 화면</td><td class="wrap"><code>user/signup.html#join</code></td><td class="wrap">크롬 확장 (모달이 열린 뒤)</td></tr>
+        <tr><td>B2~B8</td><td class="wrap">로그인 · 비밀번호 변경 · SNS · 정보 입력 · 약관 · 가입 완료 · 찾기</td><td class="wrap">첫 화면에서 각 버튼을 눌러 진행. 테스트 인증번호는 화면에 표시됨</td><td class="wrap">크롬 확장</td></tr>
+      </tbody>
+    </table>
+    <p class="note">샘플 로그인: user001 또는 user1@example.com / stopbook1! · 관리자 화면과 회원가입 화면은 같은 주소(둘 다 GitHub Pages)에서 열어야 데이터가 연동됩니다.</p>
+  </div>
+</div>
+
+<!-- ===================== A. 관리자 ===================== -->
+<h2 class="part"><span class="tag" style="background:var(--admin)">A</span>통합 회원 관리 <small>admin/members.html · 회원관리 &gt; 통합 회원 관리</small></h2>
+<div class="grid">
+
+  <section class="card admin">
+    <div class="card-head"><span class="id">A1</span><h3>리스트 · 검색</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> admin/members.html (리스트 탭)</p>
+      <h4>검색 조건</h4>
+      <table>
+        <thead><tr><th>항목</th><th>선택지 / 규칙</th></tr></thead>
+        <tbody>
+          <tr><td>검색어 기준</td><td>전체 / 이름 / 아이디 / 이메일 / 휴대폰. 부분 일치, 대소문자 무시</td></tr>
+          <tr><td>기간 기준</td><td>가입일 / 최근접속일</td></tr>
+          <tr><td>기간</td><td>시작일~종료일(둘 다 포함). 빠른 선택 오늘·7일·1개월·3개월·전체. 기본 최근 1개월</td></tr>
+          <tr><td>회원구분</td><td>회원 유형 관리의 구분 전체. 숨긴 구분은 "(숨김)"</td></tr>
+          <tr><td>가입유형</td><td>스탑북회원 / 카카오회원 / 네이버회원 / 구글회원</td></tr>
+          <tr><td>회원등급</td><td>일반 / 스타터 / 홀리커 / 마스터 / 마스터 VIP</td></tr>
+          <tr><td>SMS·메일 수신</td><td>전체 / 동의 / 거부</td></tr>
+        </tbody>
+      </table>
+      <h4>목록</h4>
+      <table>
+        <tbody>
+          <tr><td>열 (11)</td><td>번호 · 이름(클릭 시 상세) · 이메일 · 휴대폰 · 아이디 · 회원구분 · 가입유형 · 회원등급 · 마케팅 · 가입일 · 최근접속일</td></tr>
+          <tr><td>정렬</td><td>이메일·휴대폰·마케팅 제외 8개 열. 기본 번호 내림차순</td></tr>
+          <tr><td>페이지</td><td>10 / 20 / 50건, 10페이지 단위 이동</td></tr>
+          <tr><td>가입유형 배지</td><td>스탑북: 검은 점 · 카카오/네이버/구글: 서비스 로고</td></tr>
+          <tr><td>엑셀 다운로드</td><td>검색 결과 전체를 CSV(30열)로. 파일명 <code>회원목록_YYYYMMDD.csv</code></td></tr>
+        </tbody>
+      </table>
+      <h4>메시지</h4>
+      <ul>
+        <li class="msg">기간 시작일이 종료일보다 늦습니다.</li>
+        <li class="msg">검색 결과가 없습니다. / 다운로드할 데이터가 없습니다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card admin">
+    <div class="card-head"><span class="id">A2</span><h3>회원 상세 창</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> admin/members.html?member=1001</p>
+      <table>
+        <thead><tr><th>섹션</th><th>항목</th><th>수정</th></tr></thead>
+        <tbody>
+          <tr><td>기본 정보</td><td>이름, 아이디, 이메일, 휴대폰([알림톡]), 닉네임, 생일, 나이</td><td>조회</td></tr>
+          <tr><td></td><td>성별</td><td>수정</td></tr>
+          <tr><td>사업자 정보</td><td>상호, 사업자번호, 대표자, 업태/종목, 주소, 담당자, 적용 기간 (단체 승인 회원만)</td><td>조회</td></tr>
+          <tr><td>가입 정보</td><td>가입일·최근접속일(PC/MO), 가입유형 배지</td><td>조회</td></tr>
+          <tr><td></td><td>회원구분, 종류, SMS 수신, 메일 수신</td><td>수정</td></tr>
+          <tr><td>혜택 정보</td><td>회원등급, 후불 결제(적용 여부·기간)</td><td>수정</td></tr>
+          <tr><td></td><td>마일리지·상품권·쿠폰 보유량 → A4</td><td>즉시</td></tr>
+          <tr><td>이용 정보</td><td>주문·문의·장바구니 요약 + [상세보기]</td><td>조회</td></tr>
+          <tr><td>회원 관리</td><td>관리자 메모 목록 + 새 메모 [저장]</td><td>즉시</td></tr>
+          <tr><td>히스토리</td><td>변경일시 / 변경 내용 / 담당자</td><td>조회</td></tr>
+        </tbody>
+      </table>
+      <h4>저장 규칙</h4>
+      <ol>
+        <li>후불 결제 적용 시 시작일·종료일 필수, 종료일 ≥ 시작일</li>
+        <li>기본 구분(일반)은 후불 결제 적용 불가</li>
+        <li>종류가 있는 구분은 종류 필수</li>
+        <li>사업자 정보가 있는 회원을 일반으로 바꾸면 삭제 확인 후 단체 신청 '해제'</li>
+        <li>바뀐 항목마다 히스토리 "{항목} 변경: A → B"</li>
+      </ol>
+      <h4>메시지</h4>
+      <ul>
+        <li class="msg">'{구분}'의 종류를 선택하세요. / 변경된 내용이 없습니다.</li>
+        <li>회원 정보가 저장되었습니다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card admin">
+    <div class="card-head"><span class="id">A3</span><h3>패스워드 (즉시 처리)</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> 회원 상세 &gt; 기본 정보 &gt; 패스워드 [변경] 클릭 상태</p>
+      <p class="lead">SNS 가입 회원은 버튼 없이 "{SNS} 간편 로그인 회원은 패스워드가 없습니다."만 표시합니다.</p>
+      <table>
+        <thead><tr><th>기능</th><th>동작</th></tr></thead>
+        <tbody>
+          <tr><td>상태 표시</td><td>최근 변경일 + 임시 발급됨 / 90일 이상 미변경 / 로그인 제한 중 / 미설정</td></tr>
+          <tr><td>초기화</td><td>확인 후 임시 패스워드 10자 발급(대·소문자·숫자·특수문자 포함, 헷갈리는 문자 제외) + [복사]. 회원은 다음 로그인 때 변경해야 함</td></tr>
+          <tr><td>변경</td><td>새 패스워드·확인. 8~20자 영문·숫자·특수문자 모두 포함, 공백·아이디 포함 금지</td></tr>
+          <tr><td>로그인 제한 해제</td><td>5회 연속 실패로 잠긴(10분) 회원에게만 표시</td></tr>
+        </tbody>
+      </table>
+      <p class="note">세 기능 모두 확인 창을 거치고 히스토리에 기록합니다.</p>
+    </div>
+  </section>
+
+  <section class="card admin">
+    <div class="card-head"><span class="id">A4</span><h3>혜택 지급/차감 (즉시 처리)</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> 회원 상세 &gt; 혜택 정보 &gt; [지급/차감] 클릭 상태</p>
+      <table>
+        <thead><tr><th>혜택</th><th>단위</th><th>처리</th></tr></thead>
+        <tbody>
+          <tr><td>마일리지</td><td>P</td><td>지급 / 차감</td></tr>
+          <tr><td>상품권</td><td>원</td><td>지급 / 차감</td></tr>
+          <tr><td>쿠폰</td><td>장</td><td>지급 / 회수</td></tr>
+        </tbody>
+      </table>
+      <h4>입력·규칙</h4>
+      <ul>
+        <li>처리 구분, 쿠폰 선택(쿠폰만), 금액 또는 수량(1 이상), 사유(필수, 100자)</li>
+        <li>지급 쿠폰 5종: 신규가입 10% 할인 / 3,000원 할인 / 무료배송 / 생일축하 5,000원 / 도서 2권 이상 15% 할인</li>
+        <li>보유량보다 많이 차감·회수 불가</li>
+        <li>내역 표: 일시 / 구분 / 내용 / 변동 / 잔여 / 처리자</li>
+      </ul>
+      <p class="note">마일리지는 저장되어 혜택내역에도 표시. 상품권·쿠폰은 프로토타입에서 새로고침 시 사라짐.</p>
+    </div>
+  </section>
+
+  <section class="card admin">
+    <div class="card-head"><span class="id">A5</span><h3>알림톡 발송 (즉시 처리)</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> 회원 상세 &gt; 휴대폰 옆 [알림톡] 클릭 상태</p>
+      <table>
+        <tbody>
+          <tr><td>템플릿</td><td>비즈엠 승인 템플릿 7종, 검색 가능. 본문 수정 불가, 변수만 입력</td></tr>
+          <tr><td>목록</td><td>회원 등급 · 마일리지 지급 · 쿠폰 지급 · 단체 회원 승인 · 주문 접수 · 배송 시작 · 고객 문의 답변 안내</td></tr>
+          <tr><td>미리보기</td><td>말풍선 형태, 최대 1,300자</td></tr>
+          <tr><td>발송 시점</td><td>즉시 / 예약(현재부터 10분 이후)</td></tr>
+          <tr><td>대체 문자</td><td>실패 시 문자 발송(기본 체크). 90byte 이하 SMS, 초과 LMS</td></tr>
+          <tr><td>결과</td><td>예약 완료 / 발송 성공 / 실패 → 발송 내역·히스토리 기록 (현재는 모의 발송)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card admin">
+    <div class="card-head"><span class="id">A6</span><h3>분석 탭 · 플로팅 버튼 · 자동 처리</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> admin/members.html?tab=analysis</p>
+      <h4>분석 (검색 결과 기준, 기준일 2026-10-08 고정)</h4>
+      <ul>
+        <li>지표 7개: 회원 수 · 30일 신규 가입 · 구매 회원 비율 · 누적 주문금액 · 마케팅 수신 동의 · 30일 접속 · 장바구니 보유</li>
+        <li>차트: 월별 신규 가입(12개월) · 회원등급 · 최근 접속 · 가입유형 · 회원구분</li>
+        <li>가입유형·회원구분 막대 클릭 → 그 조건으로 리스트 검색</li>
+      </ul>
+      <h4>플로팅 버튼 (화면 왼쪽 아래)</h4>
+      <table>
+        <tbody>
+          <tr><td>회원가입/로그인보기</td><td>빨간색(#dc2626), 피드백 버튼 위. 같은 창에서 user/signup.html로 이동. 이 화면에만 있음</td></tr>
+          <tr><td>피드백 입력</td><td>구분(오류/개선/기타)·내용(1,000자)·확인자명 → 구글 시트 전송, 실패 시 보관 후 재전송</td></tr>
+        </tbody>
+      </table>
+      <h4>화면을 열 때 자동 처리</h4>
+      <ul>
+        <li>등급 자동 산정: 매월 1일, 최근 1개월 주문 횟수(스타터 1 / 홀리커 5 / 마스터 10 / 마스터 VIP 20회)</li>
+        <li>단체 적용 기간이 끝난 회원은 지정 구분으로 자동 전환</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<!-- ===================== B. 쇼핑몰 ===================== -->
+<h2 class="part"><span class="tag" style="background:var(--user)">B</span>회원가입/로그인 <small>user/signup.html · 상단 [로그인/회원가입] 모달</small></h2>
+<div class="grid">
+
+  <section class="card user">
+    <div class="card-head"><span class="id">B1</span><h3>첫 화면 · 화면 이동</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> user/signup.html#join (모달 자동 열림)</p>
+      <ul>
+        <li>로고, [스탑북 회원 로그인], [스탑북 회원 가입]</li>
+        <li>SNS 아이콘: 카카오(노랑) · 네이버(초록) · 구글(흰 바탕 4색 G)</li>
+        <li>하단 "내 로그인 정보 찾기" (비밀번호 찾기는 로그인 화면에만)</li>
+      </ul>
+      <h4>화면 이동</h4>
+      <table>
+        <thead><tr><th>화면</th><th>다음</th><th>[이전]</th></tr></thead>
+        <tbody>
+          <tr><td>첫 화면</td><td class="wrap">로그인 / 정보 입력 / SNS / 찾기</td><td>없음</td></tr>
+          <tr><td>로그인</td><td class="wrap">완료 / 비밀번호 변경</td><td>첫 화면</td></tr>
+          <tr><td>SNS(가상)</td><td class="wrap">기존 회원: 완료 / 신규: 정보 입력</td><td>들어온 화면</td></tr>
+          <tr><td>① 정보 입력</td><td>② 약관 동의</td><td>들어온 화면</td></tr>
+          <tr><td>② 약관 동의</td><td>③ 가입 완료</td><td>① 정보 입력</td></tr>
+          <tr><td>③ 가입 완료</td><td>모달 닫기</td><td>없음</td></tr>
+        </tbody>
+      </table>
+      <p class="note">①~③ 단계에서만 상단 단계 표시. 헤더 제목: 스탑북 회원 가입 / 카카오로 가입 / 네이버로 가입 / 구글로 가입.</p>
+    </div>
+  </section>
+
+  <section class="card user">
+    <div class="card-head"><span class="id">B2</span><h3>스탑북 회원 로그인 · 비밀번호 변경</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> 첫 화면 &gt; [스탑북 회원 로그인]</p>
+      <p class="lead">입력: 이메일 또는 아이디, 비밀번호([보기]), "이메일(아이디) 저장". 샘플 user001 / stopbook1!</p>
+      <table>
+        <thead><tr><th>결과</th><th>처리</th></tr></thead>
+        <tbody>
+          <tr><td>불일치</td><td class="wrap"><span class="msg">이메일(아이디) 또는 비밀번호가 맞지 않습니다.</span> 2회부터 (n/5회). 없는 계정·SNS 계정·비밀번호 틀림을 구분하지 않음</td></tr>
+          <tr><td>5회 연속 실패</td><td class="wrap">10분 잠금. <span class="msg">…HH:mm까지 로그인이 제한됩니다.</span></td></tr>
+          <tr><td>임시 비밀번호</td><td class="wrap">비밀번호 변경 화면, 반드시 변경</td></tr>
+          <tr><td>변경 90일 경과</td><td class="wrap">비밀번호 변경 화면, [다음에 변경하기] 시 30일 뒤 재안내</td></tr>
+          <tr><td>성공</td><td class="wrap">모달 닫기, "{이름}님, 반갑습니다." 상단 "{이름}님 [로그아웃]"</td></tr>
+        </tbody>
+      </table>
+      <h4>비밀번호 규칙 (가입·변경 공통)</h4>
+      <ul>
+        <li>8~20자, 영문·숫자·특수문자 모두 포함, 공백 금지</li>
+        <li>이메일 앞부분(4자 이상) 포함 금지, 변경 시 현재 비밀번호와 같으면 불가</li>
+      </ul>
+      <p class="note">로그인 상태는 탭을 닫으면 해제(새로고침은 유지).</p>
+    </div>
+  </section>
+
+  <section class="card user">
+    <div class="card-head"><span class="id">B3</span><h3>SNS 간편 로그인 (가상 화면)</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> 첫 화면 &gt; 카카오·네이버·구글 아이콘</p>
+      <p class="lead">실제 OAuth 대신 각 서비스 로그인 화면을 흉내 냅니다. 아이디·비밀번호를 아무 값이나 입력하면 됩니다.</p>
+      <table>
+        <thead><tr><th>서비스</th><th>이메일 도메인</th><th>넘겨받는 이름</th></tr></thead>
+        <tbody>
+          <tr><td>카카오</td><td>kakao.com</td><td>없음 (못 받는 경우 가정)</td></tr>
+          <tr><td>네이버</td><td>naver.com</td><td>홍길동</td></tr>
+          <tr><td>구글</td><td>gmail.com</td><td>Gildong Hong</td></tr>
+        </tbody>
+      </table>
+      <ul style="margin-top:12px">
+        <li>같은 이메일·같은 가입유형 회원이 있으면 바로 로그인</li>
+        <li>없으면 "처음 오셨네요! 스탑북 가입을 진행합니다." → ① 정보 입력</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card user">
+    <div class="card-head"><span class="id">B4</span><h3>① 정보 입력</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> 첫 화면 &gt; [스탑북 회원 가입]</p>
+      <table>
+        <thead><tr><th>항목</th><th>필수</th><th>규칙</th></tr></thead>
+        <tbody>
+          <tr><td>이름</td><td>필수</td><td class="wrap">한글 또는 영문 2~20자</td></tr>
+          <tr><td>생년월일</td><td class="wrap">스탑북 필수<br>SNS 선택</td><td class="wrap">8자리 → YYYY-MM-DD 자동. 미래·1900년 이전 불가, 만 14세 미만 가입 불가</td></tr>
+          <tr><td>휴대폰</td><td>필수</td><td class="wrap">하이픈 자동, 01X 10~11자리, 본인 인증 필수</td></tr>
+          <tr><td>이메일</td><td>필수</td><td class="wrap">형식 검사 + [중복 확인] 필수</td></tr>
+          <tr><td>비밀번호·확인</td><td>스탑북만</td><td class="wrap">B2 규칙. SNS 가입은 입력란 숨김</td></tr>
+          <tr><td>닉네임</td><td>선택</td><td class="wrap">한글·영문·숫자 2~12자</td></tr>
+          <tr><td>성별</td><td>선택</td><td class="wrap">여성 / 남성 / 선택 안 함</td></tr>
+        </tbody>
+      </table>
+      <h4>휴대폰 인증</h4>
+      <ol>
+        <li>6자리 코드, 3분 타이머 (프로토타입은 테스트 인증번호 화면 표시)</li>
+        <li>시간 초과·5회 틀림 시 코드 무효 → 다시 받기</li>
+        <li>인증 성공 뒤에만 가입 여부 확인: <span class="msg">이미 가입된 휴대폰 번호입니다.</span> + [로그인] [로그인 정보 찾기]</li>
+        <li>인증 후 번호를 바꾸면 재인증</li>
+      </ol>
+      <p class="note">휴대폰·이메일이 기존 회원과 같으면 가입 불가. 기존 계정 정보는 노출하지 않음.</p>
+    </div>
+  </section>
+
+  <section class="card user">
+    <div class="card-head"><span class="id">B5</span><h3>② 약관 동의 · 가입 처리</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> ① 정보 입력 &gt; [다음]</p>
+      <table>
+        <thead><tr><th>항목</th><th>구분</th></tr></thead>
+        <tbody>
+          <tr><td>서비스 이용약관 동의</td><td>필수 · 보기</td></tr>
+          <tr><td>개인정보 수집·이용 동의</td><td>필수 · 보기</td></tr>
+          <tr><td>만 14세 이상입니다</td><td>필수</td></tr>
+          <tr><td>마케팅 목적 개인정보 수집·이용 동의</td><td>선택 · 보기</td></tr>
+          <tr><td>광고성 정보 수신 동의 (SMS / 이메일)</td><td>선택 · 보기</td></tr>
+        </tbody>
+      </table>
+      <ul style="margin-top:12px">
+        <li>[전체 동의]는 선택 항목 포함. 수신 동의 체크 시 마케팅 목적 동의 자동 체크, 마케팅 해제 시 수신 동의 해제</li>
+        <li>[가입하기]는 필수 3개 체크 시 활성</li>
+      </ul>
+      <h4>[가입하기] 처리 순서</h4>
+      <ol>
+        <li>휴대폰·이메일 중복 재확인</li>
+        <li>회원 생성: 번호 = 최대+1, 등급 '일반', 구분 기본, 아이디 = 이메일</li>
+        <li>가입 마일리지 지급 (기본 "회원가입 적립" 2,000P)</li>
+        <li>"신규가입 10% 할인" 쿠폰 1장 발급</li>
+        <li>약관 동의 내역·혜택 지급을 히스토리에 기록</li>
+        <li>가입 환영 메일 발송 기록 → ③ 가입 완료 (로그인 상태)</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="card user">
+    <div class="card-head"><span class="id">B6</span><h3>③ 가입 완료</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> ② 약관 동의 &gt; [가입하기]</p>
+      <p class="lead">제목 "{이름}님, 가입을 환영합니다"</p>
+      <table>
+        <thead><tr><th>요약 항목</th><th>표시</th></tr></thead>
+        <tbody>
+          <tr><td>로그인</td><td class="wrap">스탑북: "{이메일} (이메일 로그인)" / SNS: "{SNS} 간편 로그인"</td></tr>
+          <tr><td>가입유형</td><td class="wrap"><b>배지 + 유형 이름.</b> 스탑북: 브랜드 색 원 안에 "S" / SNS: 서비스 원형 로고 (B7 결과의 배지와 동일)</td></tr>
+          <tr><td>휴대폰</td><td>휴대폰 번호</td></tr>
+          <tr><td>가입일</td><td>가입일</td></tr>
+        </tbody>
+      </table>
+      <ul style="margin-top:12px">
+        <li>가입 혜택: 마일리지(P)·쿠폰(%). 지급된 혜택이 없으면 숨김</li>
+        <li>광고성 정보 수신 동의 결과(정보통신망법): 처리 일시 · 전송자 · 마케팅 동의 · SMS/이메일 수신 여부</li>
+        <li>[스탑북 시작하기] 모달 닫기 · "관리자 화면에서 가입 회원 확인하기" → admin/members.html</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card user">
+    <div class="card-head"><span class="id">B7</span><h3>내 로그인 정보 찾기 / 비밀번호 찾기</h3></div>
+    <div class="card-body">
+      <p class="capture"><b>캡처</b> 첫 화면 또는 로그인 화면 하단 링크</p>
+      <p class="lead">이름·이메일·휴대폰 입력 + 휴대폰 인증(B4와 같은 규칙). 세 항목이 모두 맞는 계정만 찾고, 어느 항목이 틀렸는지는 알리지 않습니다.</p>
+      <table>
+        <thead><tr><th>상황</th><th>결과</th></tr></thead>
+        <tbody>
+          <tr><td>계정 없음</td><td class="wrap">고객센터 080-860-1119 (평일 10:00~17:00) + [다시 입력] [1:1 문의하기]</td></tr>
+          <tr><td>로그인 정보</td><td class="wrap">배지 + 로그인 방법, 이메일, 가입일. SNS는 [{SNS}로 로그인], 스탑북은 [비밀번호 찾기] [로그인하기]</td></tr>
+          <tr><td>비번 찾기 · SNS</td><td class="wrap">"간편 로그인 계정은 비밀번호가 없습니다" + [{SNS}로 로그인]</td></tr>
+          <tr><td>비번 찾기 · 스탑북</td><td class="wrap">임시 비밀번호 10자 발급, 문자 발송 기록. "010-****-1234(으)로 … 보냈습니다." 로그인 시 반드시 변경</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<!-- ===================== C. 공통 ===================== -->
+<h2 class="part"><span class="tag" style="background:var(--common)">C</span>데이터 연동 · 서버 API <small>두 화면 공통</small></h2>
+<div class="grid">
+
+  <section class="card common">
+    <div class="card-head"><span class="id">C1</span><h3>두 화면 간 데이터 연동</h3></div>
+    <div class="card-body">
+      <p class="lead">signup.html이 <code>../admin/</code>의 member-type-store.js · mileage-types.js · message-store.js · member-data.js를 불러와 같은 저장소를 씁니다.</p>
+      <table>
+        <thead><tr><th>쇼핑몰에서</th><th>관리자 화면 결과</th></tr></thead>
+        <tbody>
+          <tr><td>회원가입</td><td class="wrap">목록에 회원 추가, 히스토리에 가입·약관·혜택 기록</td></tr>
+          <tr><td>로그인</td><td class="wrap">최근접속일·접속 기기 갱신</td></tr>
+          <tr><td>5회 실패</td><td class="wrap">"로그인 제한 중" + [로그인 제한 해제]</td></tr>
+          <tr><td>메일·문자</td><td class="wrap">메시지전송관리 발송 내역 기록</td></tr>
+        </tbody>
+      </table>
+      <table style="margin-top:12px">
+        <thead><tr><th>관리자 화면에서</th><th>쇼핑몰 결과</th></tr></thead>
+        <tbody>
+          <tr><td>패스워드 초기화</td><td class="wrap">임시 패스워드 로그인 시 변경 화면</td></tr>
+          <tr><td>마일리지 지급</td><td class="wrap">회원 잔액에 합산</td></tr>
+          <tr><td>가입유형 이름 변경</td><td class="wrap">신규 가입 회원에 새 이름 사용</td></tr>
+          <tr><td>가입 마일리지 유형</td><td class="wrap">가입 시 지급 금액·여부 반영</td></tr>
+        </tbody>
+      </table>
+      <h4>저장소 키 (localStorage)</h4>
+      <p style="margin:0"><code>stopbook.signupMembers.v1</code> <code>stopbook.memberAuth.v1</code> <code>stopbook.memberLogins.v1</code> <code>stopbook.mileageAdjust.v1</code> <code>stopbook.memberTypes.v5</code> <code>stopbook.mileageTypes.v1</code> <code>stopbook.messageLogs.v1</code> <code>stopbook.emailTemplates.v1</code> <code>stopbook.groupApplications.v4</code> <code>stopbook.gradeRuns.v1</code> <code>stopbook.savedLoginId</code> · sessionStorage <code>stopbook.session</code></p>
+    </div>
+  </section>
+
+  <section class="card common">
+    <div class="card-head"><span class="id">C2</span><h3>실서비스 전환 · 서버 API (TODO 기준 제안)</h3></div>
+    <div class="card-body">
+      <table>
+        <thead><tr><th>기능</th><th>API</th></tr></thead>
+        <tbody>
+          <tr><td>가입 / 중복 확인</td><td class="wrap">POST /api/members · GET /api/members/exists?email=&amp;phone=</td></tr>
+          <tr><td>로그인</td><td class="wrap">POST /api/auth/login (비밀번호는 서버에서만 bcrypt 등으로 저장)</td></tr>
+          <tr><td>회원 수정 / 메모</td><td class="wrap">PUT /api/admin/members/{no} · POST …/{no}/memos</td></tr>
+          <tr><td>패스워드</td><td class="wrap">POST …/{no}/password/reset · PUT …/{no}/password</td></tr>
+          <tr><td>혜택</td><td class="wrap">POST /api/admin/members/{no}/benefits/{kind}</td></tr>
+          <tr><td>이용 정보</td><td class="wrap">GET …/{no}/orders · inquiries · cart · order-stats</td></tr>
+          <tr><td>알림톡</td><td class="wrap">POST …/{no}/alimtalk (서버가 비즈엠 /v2/sender/send) · GET /api/admin/alimtalk/templates?q=</td></tr>
+          <tr><td>유형 / 등급</td><td class="wrap">GET·PUT /api/admin/member-types · …/member-grades/policy · GET …/member-grades/runs</td></tr>
+          <tr><td>마일리지 유형</td><td class="wrap">GET·POST·PUT·DELETE /api/admin/benefits/mileage-types</td></tr>
+          <tr><td>메시지</td><td class="wrap">/api/admin/message-templates?channel= · GET /api/admin/message-logs?channel=</td></tr>
+        </tbody>
+      </table>
+      <h4>경로 미정 전환 항목</h4>
+      <ul>
+        <li>휴대폰 본인 인증·문자 발송 API (테스트 인증번호 표시 제거)</li>
+        <li>카카오·네이버·구글 OAuth (가상 화면 대체), 서버 세션·토큰</li>
+        <li>법무 검토 약관 조회 + 동의 시 약관 버전 저장, 환영 메일 실제 발송</li>
+        <li>등급 산정·단체 기간 만료를 서버 배치(매일 00:00)로</li>
+      </ul>
+      <h4>결정 필요</h4>
+      <ul>
+        <li>임시 비밀번호 발송 수단: SMS / 알림톡</li>
+        <li>배송비 정책(2,500원, 15,000원 이상 무료)을 쇼핑몰 설정값으로 이전</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+</div>
+</body>
+</html>
