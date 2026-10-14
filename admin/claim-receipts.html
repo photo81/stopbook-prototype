@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스탑북 관리자 - 계산서 영수증 발급 관리</title>
+<link rel="stylesheet" href="admin.css?v=20261231">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="logo" href="dashboard.html" title="대시보드">STOPBOOK Admin</a>
+    <ul>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">회원관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="members.html">통합 회원 관리</a></li>
+          <li><a href="group-applications.html">단체 회원 신청 관리</a></li>
+          <li><a href="withdrawn.html">탈퇴 회원 관리</a></li>
+          <li><a href="member-types.html">회원 유형 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">메시지전송관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="message-send.html">메시지 전송</a></li>
+          <li><a href="message-sms.html">SMS 발송 관리</a></li>
+          <li><a href="message-alimtalk.html">알림톡 발송 관리</a></li>
+          <li><a href="message-email.html">이메일 발송 관리</a></li>
+        </ul>
+      </li>      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">주문관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="orders.html">통합 주문 관리</a></li>
+          <li><a href="paid-orders.html">결제 완료 주문</a></li>
+          <li><a href="unpaid-orders.html">미입금 주문</a></li>
+          <li><a href="postpay-orders.html">후결제 주문</a></li>
+          <li><a href="prepaid-orders.html">선결제 주문</a></li>
+          <li><a href="canceled-orders.html">취소 주문</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">관리자계정관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="admin-accounts.html">계정 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">제작/배송관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="production-orders.html">통합 제작 관리</a></li>
+          <li><a href="ordered-orders.html">주문 완료</a></li>
+          <li><a href="making-orders.html">제작 중</a></li>
+          <li><a href="shipping-orders.html">배송 중</a></li>
+          <li><a href="delivered-orders.html">배송 완료</a></li>
+          <li><a href="outsource-orders.html">외주 제작</a></li>
+        </ul>
+      </li>
+      <li class="has-sub open">
+        <a href="#" class="menu-parent" aria-expanded="true">클레임관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="claim-cancel.html">취소 요청 관리</a></li>
+          <li><a href="claim-exchange.html">교환 반품 관리</a></li>
+          <li><a href="claim-documents.html">서류 발급 관리</a></li>
+          <li><a href="claim-receipts.html" class="active" aria-current="page">계산서 영수증 발급 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">게시판관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="board-all.html">게시판 통합 관리</a></li>
+          <li><a href="board-admin-notice.html">관리자 공지</a></li>
+          <li><a href="board-inquiry-settings.html">1:1 문의 설정</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">게시글관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="board-notice.html">공지사항</a></li>
+          <li><a href="board-inquiry.html">1:1 문의</a></li>
+          <li><a href="board-faq.html">FAQ</a></li>
+          <li><a href="board-review.html">이용후기</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">혜택관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="mileage-types.html">마일리지 유형 관리</a></li>
+        </ul>
+      </li>
+<li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">혜택내역<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="mileage.html">마일리지 내역</a></li>
+        </ul>
+      </li>    </ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="breadcrumb">홈 &gt; 클레임관리 &gt; <b>계산서 영수증 발급 관리</b></div>
+      <div><span class="proto-ver" data-proto-version>프로토타입 v2.75 (2026-10-13)</span> 관리자님 | <a href="#">로그아웃</a></div>
+    </header>
+
+    <main class="content">
+      <h1>계산서 영수증 발급 관리 <span class="page-desc">서류 발급 관리에 접수된 신청 중 현금영수증·세금계산서 발급 요청이 있는 건을 모아 확인합니다.</span></h1>
+
+      <!-- 발급 상태 탭: 발급대기 / 발급완료 / 취소·반려 / 전체 -->
+      <div class="tabs" role="tablist" id="statusTabs"></div>
+
+      <form class="panel" id="searchForm" novalidate>
+        <div class="search-row">
+          <div class="search-grid order-search">
+            <div class="field f-keyword">
+              <label for="sType">검색어</label>
+              <select id="sType" style="flex:0 0 110px">
+                <option value="all">전체</option><option value="orderNo">주문번호</option><option value="name">주문자명</option><option value="email">이메일</option><option value="org">기관/회사명</option>
+              </select>
+              <input type="text" id="sKeyword" placeholder="검색어 입력">
+            </div>
+            <div class="field f-period">
+              <label for="sDateType">기간</label>
+              <select id="sDateType" style="flex:0 0 100px"><option value="at">신청일</option><option value="wantAt">요청일</option></select>
+              <div class="range"><input type="date" id="sFrom" aria-label="기간 시작"> ~ <input type="date" id="sTo" aria-label="기간 종료"></div>
+              <div class="quick-range" role="group" aria-label="기간 빠른 선택">
+                <button type="button" class="btn btn-xs" data-days="0">오늘</button>
+                <button type="button" class="btn btn-xs" data-days="7">7일</button>
+                <button type="button" class="btn btn-xs" data-days="30">1개월</button>
+                <button type="button" class="btn btn-xs" data-days="90">3개월</button>
+                <button type="button" class="btn btn-xs" data-days="all">전체</button>
+              </div>
+            </div>
+            <div class="field f-status">
+              <label for="sDoc">서류종류</label>
+              <select id="sDoc"><option value="">전체</option><option>현금영수증</option><option>세금계산서</option></select>
+            </div>
+            <div class="field f-status">
+              <label for="sPay">결제수단</label>
+              <select id="sPay"><option value="">전체</option></select>
+            </div>
+          </div>
+          <div class="search-actions">
+            <button type="submit" class="btn btn-primary">검색</button>
+            <button type="button" class="btn" id="btnReset">초기화</button>
+          </div>
+        </div>
+      </form>
+
+      <section class="panel">
+        <div class="list-head">
+          <div class="count" id="listGuide"></div>
+        </div>
+        <div class="table-wrap">
+          <table class="rc-table">
+            <colgroup><col style="width:136px"><col style="width:210px"><col style="width:130px"><col style="width:90px"><col style="width:120px"><col><col style="width:100px"><col style="width:100px"><col style="width:110px"><col style="width:100px"><col style="width:96px"></colgroup>
+            <thead><tr><th>신청일시</th><th>서류종류</th><th>주문번호</th><th>주문자명</th><th>이메일</th><th>기관/회사명</th><th>결제수단</th><th>결제상태</th><th>요청일</th><th>처리상태</th><th>관리</th></tr></thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+        <p class="readonly" style="margin:10px 0 0">서류 발급 관리에 접수된 신청 가운데 세금계산서·현금영수증이 들어 있는 건만 보여 줍니다. 발급 처리(발급 완료·반려)는 발급 정보 &gt; 서류 발급 관리에서 처리를 눌러 진행합니다. 요청일은 고객이 정한 발급 희망일입니다. 서류종류의 +N종은 함께 신청한 다른 서류 수입니다.</p>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- 발급 정보 -->
+<div class="modal-bg" id="rcModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rcTitle">
+    <div class="modal-header">
+      <h2 id="rcTitle">발급 정보</h2>
+      <button type="button" class="close" data-close aria-label="닫기">&times;</button>
+    </div>
+    <div class="modal-body">
+      <table class="form-table multi-col" id="rcBasic"></table>
+      <div class="section-title">발급 정보 <span class="section-note" id="rcNote"></span></div>
+      <table class="form-table multi-col" id="rcInfo"></table>
+    </div>
+    <div class="modal-footer">
+      <a class="btn" id="rcGo" href="#">처리 화면으로</a>
+      <button type="button" class="btn" data-close>닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="board-store.js?v=20261231"></script>
+<script src="member-type-store.js?v=20261231"></script>
+<script src="member-data.js?v=20261231"></script>
+<script src="order-data.js?v=20261231"></script>
+<script src="document-data.js?v=20261231"></script>
+<script src="list-tools.js?v=20261231"></script>
+<script src="feedback.js?v=20261231"></script>
+<script>
+(function () {
+  'use strict';
+  // 계산서 영수증 발급 관리 (클레임관리)
+  //   서류 발급 관리(document-data.js)에 접수된 신청 가운데 현금영수증·세금계산서 발급 요청이 들어 있는 건만 걸러서 보여 줌 (신청 1건 = 1행)
+  //   발급 처리(발급 완료·반려)는 서류 발급 관리에서 함 → 발급 정보 창의 '서류 발급 관리에서 처리'로 그 신청을 바로 엶
+  //   목록: 신청일시 · 서류종류 · 주문번호 · 주문자명 · 이메일(@ 앞만) · 기관/회사명 · 결제수단 · 결제상태 · 요청일(발급 희망일) · 처리상태 · 발급 정보
+  // TODO: 실서비스에서는 GET /api/admin/documents/requests?types=세금계산서,현금영수증
+  const { esc, toast, initSidebar, setDefaultRange, listToday } = AdminUtil;
+  const $ = id => document.getElementById(id);
+  const fmtDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const localPart = e => String(e || '').split('@')[0];
+  initSidebar();
+
+  // ===== 데이터: 서류 발급 신청 중 세금계산서·현금영수증이 있는 건 =====
+  const RECEIPT_TYPES = ['세금계산서', '현금영수증'];
+  const ALL = DocData.requests.filter(q => DocData.typesOf(q).some(t => RECEIPT_TYPES.includes(t))).map(q => {
+    const o = DocData.orderOf(q), a = DocData.applicantOf(q), types = DocData.typesOf(q);
+    const receipts = RECEIPT_TYPES.filter(t => types.includes(t)), others = types.filter(t => !RECEIPT_TYPES.includes(t));
+    const c = q.contact || {};
+    return {
+      key: q.reqNo, reqNo: q.reqNo, at: q.at, receipts, others, purpose: q.cashReceipt ? q.cashReceipt.purpose : '',
+      channel: q.manual ? `관리자 등록 (${q.channel})` : '고객 신청',
+      orderNo: q.orderNo || '', name: a.name, email: a.email, org: c.org || a.company || '',
+      payMethod: o ? o.payMethod : '', payStatus: o ? o.payStatus : '',
+      wantAt: q.wantBy || '', status: q.status, issuedAt: q.processedAt || '', processedBy: q.processedBy || '', file: q.file || '', rejectReason: q.rejectReason || '',
+      info: [...(q.cashReceipt ? [['현금영수증 구분', q.cashReceipt.purpose], [q.cashReceipt.idType, q.cashReceipt.idValue]] : []), ...(receipts.includes('세금계산서') ? [['사업자등록증', q.bizCert || '-']] : []),
+        ['담당자', [c.name, c.phone, c.email].filter(Boolean).join(' · ') || '-'], ['수령 방법', `${q.receiveBy}${q.receiveTo ? ` (${q.receiveTo})` : ''}`],
+        ['함께 신청한 서류', others.join(', ') || '-'], ['요청 사항', q.requirement || '-']]
+    };
+  }).sort((x, y) => y.at.localeCompare(x.at));
+
+  $('sPay').innerHTML += [...new Set(ALL.map(x => x.payMethod).filter(Boolean))].map(p => `<option>${esc(p)}</option>`).join('');
+
+  // ===== 검색 =====
+  const quick = () => $('searchForm').querySelectorAll('[data-days]');
+  $('searchForm').addEventListener('click', e => {
+    const b = e.target.closest('[data-days]');
+    if (!b) return;
+    if (b.dataset.days === 'all') { $('sFrom').value = ''; $('sTo').value = ''; }
+    else { const t = listToday(); $('sFrom').value = fmtDate(new Date(t.getFullYear(), t.getMonth(), t.getDate() - Number(b.dataset.days))); $('sTo').value = fmtDate(t); }
+    quick().forEach(x => x.classList.toggle('btn-adjust', x === b));
+  });
+  ['sFrom', 'sTo'].forEach(id => $(id).addEventListener('input', () => quick().forEach(x => x.classList.remove('btn-adjust'))));
+  setDefaultRange();
+  const TABS = ['대기', '완료', '반려', '전체'];   // 서류 발급 관리와 같은 처리 상태 (처리 대기 / 발급 완료 / 반려)
+  const tabLabel = s => (s === '전체' ? '전체' : DocData.STATUS_TEXT[s]);
+  let tab = '대기', search = null, rows = [];
+  function readSearch() {
+    const s = { type: $('sType').value, kw: $('sKeyword').value.trim().toLowerCase(), dateType: $('sDateType').value, from: $('sFrom').value, to: $('sTo').value, doc: $('sDoc').value, pay: $('sPay').value };
+    if (s.from && s.to && s.from > s.to) { toast('기간 시작일이 종료일보다 늦습니다.'); return null; }
+    return s;
+  }
+  function matches(x) {
+    const s = search, day = (x[s.dateType] || '').slice(0, 10);
+    const fields = { orderNo: x.orderNo, name: x.name, email: x.email, org: x.org };
+    return (!s.from && !s.to || (day && (!s.from || day >= s.from) && (!s.to || day <= s.to))) && (!s.doc || x.receipts.includes(s.doc)) && (!s.pay || x.payMethod === s.pay) &&
+      (!s.kw || (s.type === 'all' ? Object.values(fields) : [fields[s.type]]).some(v => String(v || '').toLowerCase().includes(s.kw)));
+  }
+  const tools = ListTools.create({ section: $('listBody').closest('.panel'), onChange: () => render(),
+    units: [{ label: '신청 단위', desc: '서류 발급 신청 1건 = 1행 (발급 정보 포함)', file: '계산서영수증발급',
+      rows: () => [['신청번호', '신청일시', '접수', '서류종류', '현금영수증 구분', '함께 신청한 서류', '주문번호', '주문자명', '이메일', '기관/회사명', '결제수단', '결제상태', '요청일', '처리상태', '처리일시', '처리자', '발급 정보'],
+        ...rows.map(x => [x.reqNo, x.at, x.channel, x.receipts.join(', '), x.purpose, x.others.join(', '), x.orderNo, x.name, x.email, x.org, x.payMethod, x.payStatus, x.wantAt, DocData.STATUS_TEXT[x.status], x.issuedAt, x.processedBy, x.info.map(([k, v]) => `${k}: ${v}`).join(' / ')])] }] });
+  let lastKey = '';
+  const statusBadge = s => `<span class="badge ${s === '완료' ? 'iq-st-완료' : s === '대기' ? 'iq-st-대기' : 'nt-st-end'}">${esc(DocData.STATUS_TEXT[s] || s)}</span>`;
+  function render() {
+    const base = ALL.filter(matches);
+    $('statusTabs').innerHTML = TABS.map(t => `<button type="button" role="tab" class="tab ${t === tab ? 'active' : ''}" aria-selected="${t === tab}" data-tab="${t}">${tabLabel(t)} <span class="tab-count">${(t === '전체' ? base.length : base.filter(x => x.status === t).length).toLocaleString()}</span></button>`).join('');
+    rows = base.filter(x => tab === '전체' || x.status === tab);
+    const key = tab + JSON.stringify(search); if (key !== lastKey) { tools.first(); lastKey = key; }
+    $('listGuide').innerHTML = `${tabLabel(tab)} <b>${rows.length.toLocaleString()}</b>건 <span class="muted">· 세금계산서 ${rows.filter(x => x.receipts.includes('세금계산서')).length.toLocaleString()} · 현금영수증 ${rows.filter(x => x.receipts.includes('현금영수증')).length.toLocaleString()} (서류 발급 관리 신청 중 증빙 요청 건)</span>`;
+    $('listBody').innerHTML = tools.page(rows).map(x => `<tr>
+        <td>${esc(x.at)}</td>
+        <td title="${esc(x.receipts.concat(x.others).join(', '))}">${x.receipts.map(r => `<span class="badge dc-${esc(r)}">${esc(r)}</span>`).join(' ')}${x.purpose ? ` <span class="muted">${esc(x.purpose)}</span>` : ''}${x.others.length ? ` <span class="muted">+${x.others.length}종</span>` : ''}</td>
+        <td>${x.orderNo ? `<a class="name-link mono" href="order-detail.html?orderNo=${encodeURIComponent(x.orderNo)}" target="_blank">${esc(x.orderNo)}</a>` : '<span class="muted">주문 전</span>'}</td>
+        <td><b>${esc(x.name || '-')}</b></td>
+        <td title="${esc(x.email)}">${esc(localPart(x.email) || '-')}</td>
+        <td title="${esc(x.org)}">${x.org ? esc(x.org) : '<span class="muted">-</span>'}</td>
+        <td>${esc(x.payMethod || '-')}</td>
+        <td>${esc(x.payStatus || '-')}</td>
+        <td>${esc(x.wantAt || '-')}</td>
+        <td>${statusBadge(x.status)}</td>
+        <td><button type="button" class="btn btn-xs" data-info="${esc(x.key)}">발급 정보</button></td>
+      </tr>`).join('') || '<tr><td colspan="11" class="empty">조건에 맞는 신청이 없습니다.</td></tr>';
+  }
+  $('statusTabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } });
+  $('searchForm').addEventListener('submit', e => { e.preventDefault(); const s = readSearch(); if (s) { search = s; render(); } });
+  $('btnReset').addEventListener('click', () => { $('searchForm').reset(); setDefaultRange(); search = readSearch(); render(); });
+
+  // ===== 발급 정보 =====
+  $('listBody').addEventListener('click', e => {
+    const b = e.target.closest('[data-info]');
+    if (!b) return;
+    const x = ALL.find(y => y.key === b.dataset.info);
+    $('rcTitle').textContent = `${x.receipts.join('·')} 발급 정보 · ${x.reqNo}`;
+    const row = (a, b2, c, d) => `<tr><th>${a}</th><td>${b2}</td><th>${c}</th><td>${d}</td></tr>`;
+    $('rcBasic').innerHTML = `<colgroup><col class="c-th"><col><col class="c-th"><col></colgroup>` +
+      row('신청번호', `<span class="mono">${esc(x.reqNo)}</span> <span class="muted">${esc(x.channel)}</span>`, '신청일시', esc(x.at)) +
+      row('주문자', `${esc(x.name || '-')} <span class="muted">${esc(x.email || '')}</span>`, '기관/회사명', esc(x.org || '-')) +
+      row('주문번호', esc(x.orderNo || '주문 전'), '서류종류', `${esc(x.receipts.join(', '))}${x.purpose ? ` (${esc(x.purpose)})` : ''}`) +
+      row('결제', `${esc(x.payMethod || '-')} · ${esc(x.payStatus || '-')}`, '요청일', esc(x.wantAt || '-')) +
+      row('처리상태', statusBadge(x.status) + (x.rejectReason ? ` <span class="muted">${esc(x.rejectReason)}</span>` : ''), '처리일시', `${esc(x.issuedAt || '-')}${x.processedBy ? ` · ${esc(x.processedBy)}` : ''}`);
+    $('rcNote').textContent = '서류 발급 관리 신청 내용';
+    const info = x.info || [];
+    $('rcInfo').innerHTML = info.length ? `<colgroup><col class="c-th"><col><col class="c-th"><col></colgroup>` + info.reduce((acc, kv, i) => (i % 2 ? acc : acc.concat([[kv, info[i + 1]]])), [])
+      .map(([a, b2]) => row(esc(a[0]), esc(a[1]), b2 ? esc(b2[0]) : '', b2 ? esc(b2[1]) : '')).join('') : '<tr><td class="empty">등록된 발급 정보가 없습니다.</td></tr>';
+    $('rcGo').href = `claim-documents.html?req=${encodeURIComponent(x.reqNo)}`;
+    $('rcGo').textContent = x.status === '대기' ? '서류 발급 관리에서 처리' : '서류 발급 관리에서 보기';
+    $('rcModal').classList.add('open');
+  });
+  $('rcModal').addEventListener('click', e => { if (e.target.id === 'rcModal' || e.target.closest('[data-close]')) $('rcModal').classList.remove('open'); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') $('rcModal').classList.remove('open'); });
+
+  search = readSearch();
+  render();
+})();
+</script>
+</body>
+</html>

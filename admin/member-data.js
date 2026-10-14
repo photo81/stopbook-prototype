@@ -1,0 +1,846 @@
+// 회원 샘플 데이터 (통합 회원 관리 / 단체회원 신청 화면 공유)
+// TODO: 실서비스에서는 회원 API 응답으로 대체
+(function () {
+  'use strict';
+
+  // ===== 샘플 데이터 (실서비스에서는 API 응답으로 대체) =====
+  const LAST = ['김','이','박','최','정','강','조','윤','장','임','한','오','서','신','권'];
+  const FIRST = ['민준','서연','도윤','지우','하준','서윤','예준','하은','시우','지민','주원','수아','지호','채원','현우'];
+  const GRADE_ORDER = ['일반', '스타터', '홀리커', '마스터', '마스터 VIP'];   // 낮은 등급 → 높은 등급
+  const GRADES = ['일반','일반','일반','스타터','스타터','홀리커','홀리커','마스터','마스터 VIP'];  // 샘플 분포
+
+  let seed = 42;
+  const rand = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const pick = arr => arr[Math.floor(rand() * arr.length)];
+  const pad = n => String(n).padStart(2, '0');
+  const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+  const members = [];
+  const base = new Date(2026, 9, 8).getTime();   // 샘플 데이터 기준일 (주문·가입·문의 등은 이 날짜까지 생성). order-data.js TODAY, members.html·withdrawn.html의 기준일과 같게 유지
+  // 1~137번: 최근 900일 안에 가입 / 138~149번: 최근 일주일(기준일 포함)에 가입한 신규 회원 (대시보드 '오늘·7일' 회원 집계용)
+  //   신규 회원은 기존 회원 뒤에 이어서 만들어 기존 샘플 값(난수 순서)이 바뀌지 않음. 가입일은 기준일부터 하루씩 거슬러 두 바퀴
+  const TOTAL = 149, RECENT_FROM = 138;
+  for (let i = 1; i <= TOTAL; i++) {
+    const recent = i >= RECENT_FROM;
+    const join = new Date(base - (recent ? (i - RECENT_FROM) % 7 : Math.floor(rand() * 900)) * 86400000);
+    const last = recent ? new Date(Math.min(base, join.getTime() + Math.floor(rand() * 3) * 86400000))
+      : new Date(Math.min(base, join.getTime() + Math.floor(rand() * 400) * 86400000));
+    members.push({
+      no: 1000 + i,
+      category: rand() > 0.2 ? '일반' : '단체',
+      memberType: (v => v > 0.35 ? '스탑북회원' : v > 0.2 ? '카카오회원' : v > 0.08 ? '네이버회원' : '구글회원')(rand()),
+      userId: 'user' + String(i).padStart(3, '0'),
+      name: pick(LAST) + pick(FIRST),
+      email: `user${i}@example.com`,
+      phone: `010-${String(1000 + Math.floor(rand() * 9000))}-${String(1000 + Math.floor(rand() * 9000))}`,
+      grade: pick(GRADES),
+      ...(mk => ({ marketingSms: mk > 0.4 ? 'Y' : 'N', marketingEmail: mk > 0.25 && mk < 0.85 ? 'Y' : 'N' }))(rand()),
+      joinDate: fmtDate(join),
+      lastLogin: fmtDate(last),
+      memos: [],     // { text, at, by }
+      history: [{ at: fmtDate(join) + ' 00:00', content: '회원 가입', by: '시스템' }]   // { at, content, by }
+    });
+  }
+
+  // ===== 프로필 샘플 (닉네임·성별·생일) =====
+  // 가입 시 선택 입력 항목이라 비어 있는 회원도 있음. 위 회원 데이터에 영향 없도록 회원별 별도 난수로 생성
+  // gender: '남' | '여' | '' (미입력), birth: 'YYYY-MM-DD' | ''
+  const NICK_A = ['행복한', '여행하는', '반짝이는', '느긋한', '추억담는', '사진찍는', '하늘빛', '봄날의'];
+  const NICK_B = ['고양이', '여행자', '포토그래퍼', '곰돌이', '다람쥐', '기록가', '토끼', '펭귄'];
+  members.forEach(m => {
+    let s = (m.no * 3571 + 7) % 233280;
+    const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    m.nickname = r() < 0.8 ? NICK_A[Math.floor(r() * NICK_A.length)] + NICK_B[Math.floor(r() * NICK_B.length)] : '';
+    m.gender = (v => (v < 0.45 ? '여' : v < 0.85 ? '남' : ''))(r());
+    m.birth = r() < 0.85 ? fmtDate(new Date(1962 + Math.floor(r() * 45), Math.floor(r() * 12), 1 + Math.floor(r() * 28))) : '';
+  });
+
+  // 가입 기기 / 최근 접속 기기: PC / MO(모바일). 회원 번호로 정함 (다른 샘플 값에 영향 없음)
+  // TODO: 실서비스에서는 가입·로그인 시 기록한 접속 환경(User-Agent 기준)
+  members.forEach(m => {
+    const h = k => (m.no * k + 7) % 100;
+    m.joinEnv = h(37) < 60 ? 'MO' : 'PC';
+    m.loginEnv = h(53) < 65 ? 'MO' : 'PC';
+  });
+
+  // 만 나이 (생일이 지나지 않았으면 1 빼기). 생일 미입력이면 null
+  function ageOf(birth, now = new Date()) {
+    if (!birth) return null;
+    const [y, mo, d] = birth.split('-').map(Number);
+    return now.getFullYear() - y - ((now.getMonth() + 1 < mo || (now.getMonth() + 1 === mo && now.getDate() < d)) ? 1 : 0);
+  }
+
+  // ===== 혜택 샘플 내역 =====
+  // 내역(ledger)이 원장이고 보유량은 마지막 잔여값. 회원별 별도 난수로 생성해 위 회원 데이터에 영향 없음
+  const BENEFITS = {
+    mileage:  { label: '마일리지', unit: 'P',  plus: '지급', minus: '차감' },
+    giftCard: { label: '상품권',   unit: '원', plus: '지급', minus: '차감' },
+    coupon:   { label: '쿠폰',     unit: '장', plus: '지급', minus: '회수' }
+  };
+  const COUPONS = ['신규가입 10% 할인', '3,000원 할인', '무료배송', '생일축하 5,000원', '도서 2권 이상 15% 할인'];
+
+  const fmtDateTime = d => `${fmtDate(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+  function pushEntry(list, e) {
+    e.balance = (list.length ? list[list.length - 1].balance : 0) + e.delta;
+    list.push(e);
+  }
+
+  function heldCoupons(list) {
+    const held = new Map();
+    list.forEach(e => held.set(e.item, (held.get(e.item) || 0) + e.delta));
+    return [...held].filter(([, n]) => n > 0);
+  }
+
+  function makeLedger(m) {
+    let s = (m.no * 7919) % 233280;
+    const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    const from = new Date(m.joinDate).getTime();
+    const dates = n => Array.from({ length: n }, () => new Date(from + r() * (base - from))).sort((a, b) => a - b);
+
+    const mileage = [];
+    dates(Math.floor(r() * 10)).forEach(d => {
+      const bal = mileage.length ? mileage[mileage.length - 1].balance : 0;
+      if (bal >= 1000 && r() < 0.35) {
+        pushEntry(mileage, { at: fmtDateTime(d), type: '사용', item: '', reason: '주문 결제 시 사용', by: '시스템', delta: -Math.ceil(r() * bal / 100) * 100 });
+      } else {
+        pushEntry(mileage, { at: fmtDateTime(d), type: '적립', item: '', reason: r() < 0.7 ? '구매 확정 적립' : '리뷰 작성 적립', by: '시스템', delta: (1 + Math.floor(r() * 30)) * 100 });
+      }
+    });
+
+    // 관리자 수동 지급·차감 샘플 (회원 약 15%). 별도 난수라 다른 샘플 값은 그대로. 지급 뒤 일부는 오지급 회수(차감)
+    let s2 = (m.no * 104729 + 7) % 233280;
+    const r2 = () => (s2 = (s2 * 9301 + 49297) % 233280) / 233280;
+    if (r2() < 0.15) {
+      const MANUAL = ['이벤트 당첨 보상', 'CS 보상 (배송 지연)', '불량 접수 보상', '오프라인 행사 참여 적립', '단체 주문 감사 적립'];
+      const ADMINS = ['김지영', '김태복', '창경훈', '최의담', '이고은'];
+      const t = new Date(from + (0.3 + r2() * 0.7) * (base - from)), amt = (1 + Math.floor(r2() * 5)) * 1000, by = ADMINS[Math.floor(r2() * ADMINS.length)];
+      const extra = [{ at: fmtDateTime(t), type: '지급', item: '', reason: MANUAL[Math.floor(r2() * MANUAL.length)], by, delta: amt, source: 'manual' }];
+      if (r2() < 0.3) extra.push({ at: fmtDateTime(new Date(Math.min(base, t.getTime() + (1 + Math.floor(r2() * 48)) * 3600000))), type: '차감', item: '', reason: '오지급 회수', by: ADMINS[Math.floor(r2() * ADMINS.length)], delta: -amt, source: 'manual' });
+      const all = mileage.concat(extra).sort((a, b) => a.at.localeCompare(b.at));
+      mileage.length = 0;
+      all.forEach(e => { delete e.balance; pushEntry(mileage, e); });
+    }
+
+    const giftCard = [];
+    dates(Math.floor(r() * 4)).forEach(d => {
+      const bal = giftCard.length ? giftCard[giftCard.length - 1].balance : 0;
+      if (bal > 0 && r() < 0.5) {
+        pushEntry(giftCard, { at: fmtDateTime(d), type: '사용', item: '', reason: '도서 주문 시 사용', by: '시스템', delta: -Math.min(bal, (1 + Math.floor(r() * 3)) * 5000) });
+      } else {
+        pushEntry(giftCard, { at: fmtDateTime(d), type: '등록', item: '', reason: '상품권 번호 등록', by: '회원', delta: [10000, 30000, 50000][Math.floor(r() * 3)] });
+      }
+    });
+
+    const coupon = [];
+    dates(Math.floor(r() * 7)).forEach(d => {
+      const held = heldCoupons(coupon);
+      if (held.length && r() < 0.4) {
+        pushEntry(coupon, { at: fmtDateTime(d), type: r() < 0.7 ? '사용' : '만료', item: held[Math.floor(r() * held.length)][0], reason: '', by: '시스템', delta: -1 });
+      } else {
+        pushEntry(coupon, { at: fmtDateTime(d), type: '발급', item: COUPONS[Math.floor(r() * COUPONS.length)], reason: '이벤트 자동 발급', by: '시스템', delta: 1 });
+      }
+    });
+
+    m.ledger = { mileage, giftCard, coupon };
+    Object.keys(m.ledger).forEach(k => {
+      const list = m.ledger[k];
+      m[k] = list.length ? list[list.length - 1].balance : 0;
+    });
+  }
+  members.forEach(makeLedger);
+
+  // ===== 관리자 마일리지 지급·차감 기록 =====
+  // 취소 요청·반품을 마일리지로 환불하면 그 금액만큼 회원 마일리지가 자동 지급됨 (claim-data.js). 샘플 원장은 화면을 열 때마다 새로 만들므로 localStorage에 보관해 뒤에 덧붙임
+  // { [회원 no]: [{ at, type, item, reason, by, delta }] }
+  // TODO: 실서비스에서는 POST /api/admin/members/{no}/benefits/mileage
+  const MILEAGE_KEY = 'stopbook.mileageAdjust.v1';
+  let MILEAGE = {};
+  try { MILEAGE = JSON.parse(localStorage.getItem(MILEAGE_KEY)) || {}; } catch (e) { /* 저장소 사용 불가 시 기록 없음 */ }
+  const applyMileage = (m, e) => { pushEntry(m.ledger.mileage, e); m.mileage = m.ledger.mileage[m.ledger.mileage.length - 1].balance; };
+  members.forEach(m => (MILEAGE[m.no] || []).forEach(e => applyMileage(m, Object.assign({}, e))));
+  // 마일리지 지급(delta > 0)·차감(delta < 0). opts = { delta, reason, by, item?, type?, source?, history?, orderNo? }. 회원 마일리지 내역·보유량·회원 히스토리에 반영. 반환: 저장 성공 여부
+  //   source: 'manual'(관리자 직접 지급·차감, 회원 상세) / 'refund'(취소·반품 마일리지 환불 자동 지급). history: false면 회원 히스토리는 부르는 쪽에서 남김
+  function addMileage(no, opts) {
+    const m = members.find(x => x.no === no);
+    if (!m || !opts.delta) return false;
+    const e = { at: fmtDateTime(new Date()), type: opts.type || (opts.delta > 0 ? '적립' : '사용'), item: opts.item || '', reason: opts.reason || '', by: opts.by || '관리자', delta: opts.delta, source: opts.source || (opts.item ? 'refund' : 'manual') };
+    if (opts.orderNo) e.orderNo = opts.orderNo;   // 관련 주문 (마일리지 내역 > 지급/차감에서 고른 주문)
+    applyMileage(m, e);
+    if (opts.history !== false) m.history.push({ at: e.at, content: `마일리지 ${opts.delta > 0 ? '지급' : '차감'}: ${Math.abs(opts.delta).toLocaleString()}P (사유: ${e.reason})`, by: e.by });
+    (MILEAGE[no] || (MILEAGE[no] = [])).push(e);
+    try { localStorage.setItem(MILEAGE_KEY, JSON.stringify(MILEAGE)); return true; } catch (err) { return false; }
+  }
+  // 전체 회원 마일리지 지급·차감 이력 (혜택 > 마일리지 내역). 최근 순
+  //   구분: 자동 = 시스템(구매 확정·리뷰 적립, 주문 사용) · 환불 자동 지급(취소·반품 마일리지 환불) / 수동 = 관리자 직접 지급·차감
+  const sourceOf = e => e.source || (e.by === '시스템' ? 'system' : e.item ? 'refund' : 'manual');
+  // 관련 주문번호: 환불 = 취소·반품 신청번호(C/X + 주문번호)의 주문, 구매 확정·리뷰 적립·주문 사용·주문 관련 보상 = 그날 이전 가장 최근 주문
+  //   같은 주문은 종류(구매 확정·리뷰·주문 사용·보상)마다 한 번만 연결 (오래된 기록부터 아직 연결되지 않은 가장 최근 이전 주문). 주문 데이터(최근 1년)보다 오래된 기록은 연결할 주문이 없어 비어 있음
+  const ORDER_KIND = [[/구매 확정/, 'confirm'], [/리뷰/, 'review'], [/주문/, 'use'], [/배송|불량/, 'care']];
+  function orderLinks(m) {
+    const used = {}, links = new Map();
+    const orders = (m.orders || []).filter(x => x.orderNo).sort((a, b) => b.at.localeCompare(a.at));
+    (m.ledger ? m.ledger.mileage : []).slice().sort((a, b) => a.at.localeCompare(b.at)).forEach(e => {
+      if (e.orderNo) { links.set(e, e.orderNo); return; }
+      if (e.item && /^[CX]\d{13}$/.test(e.item)) { links.set(e, `${e.item.slice(1, 9)}-${e.item.slice(9)}`); return; }
+      const kind = (ORDER_KIND.find(([re]) => re.test(e.reason || '')) || [])[1];
+      if (!kind) return;
+      const set = used[kind] || (used[kind] = new Set()), day = e.at.slice(0, 10);
+      const o = orders.find(x => x.at <= day && !set.has(x.orderNo));
+      if (o) { set.add(o.orderNo); links.set(e, o.orderNo); }
+    });
+    return links;
+  }
+  const mileageHistory = () => members.flatMap(m => {
+    const links = orderLinks(m);
+    return (m.ledger ? m.ledger.mileage : []).map((e, seq) => Object.assign({ m, mode: sourceOf(e) === 'manual' ? '수동' : '자동', source: sourceOf(e), seq }, e, { orderNo: links.get(e) || '' }));
+  }).sort((a, b) => b.at.localeCompare(a.at) || (a.m === b.m ? b.seq - a.seq : 0));   // 같은 분이면 나중 기록이 위로
+
+  // ===== 주문 실적 샘플 (등급 자동 산정용) =====
+  // 주문 리스트 화면은 아직 없음. 등급 산정에 필요한 최소 정보(주문일·결제금액)만 회원별로 생성
+  // TODO: 주문 리스트 구현 후 실제 주문 데이터(또는 GET /api/admin/members/{no}/order-stats)로 대체
+  function makeOrders(m) {
+    let s = (m.no * 104729) % 233280;
+    const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    const from = Math.max(new Date(m.joinDate).getTime(), base - 365 * 86400000);
+    // 최근 일주일 안에 가입한 신규 회원은 주문 0~2건 (가입 직후라 많을 수 없음)
+    const n0 = r() < 0.25 ? 0 : Math.floor(r() * 25);
+    const n = m.joinDate >= fmtDate(new Date(base - 7 * 86400000)) ? Math.min(n0, 2) : n0;
+    m.orders = Array.from({ length: n }, () => ({
+      at: fmtDate(new Date(from + r() * (base - from))),
+      amount: (80 + Math.floor(r() * 520)) * 100   // 8,000 ~ 60,000원
+    })).sort((a, b) => a.at.localeCompare(b.at));
+    // 기준일(오늘) 주문: 주문이 있는 회원 중 일부는 기준일에도 주문 (대시보드 '오늘' 집계용. 난수는 위 주문 다음에 써서 기존 값이 바뀌지 않게 함)
+    if (n && m.no % 9 === 0) m.orders.push({ at: fmtDate(new Date(base)), amount: (80 + Math.floor(r() * 520)) * 100 });
+  }
+  members.forEach(makeOrders);
+
+  // ===== 이용 정보 샘플 (회원 상세 > 이용 정보: 주문 내역·문의 이력·장바구니) =====
+  // 위 주문 실적(일자·금액)은 등급 산정에 쓰이므로 그대로 두고, 표시용 상세 정보만 별도 난수로 덧붙임
+  // TODO: 실서비스에서는 GET /api/admin/members/{no}/orders | inquiries | cart 로 대체
+  // 스탑북(www.stopbook.com) 판매 상품 기준 [상품명, 카테고리, 판매가(기본 옵션 시작가)] (2026-10-01 확인)
+  // TODO: 실서비스에서는 상품 마스터에서 조회
+  const PRODUCTS = [
+    ['마이트립북', '포토북', 28900], ['조이풀트립', '포토북', 17500], ['시티북 A5', '포토북', 21000],
+    ['트래블북 A5', '포토북', 21000], ['팔레트', '포토북', 17500], ['메모리북', '포토북', 28900],
+    ['포토로그북', '포토북', 21200], ['레코드북', '포토북', 32800], ['러블리커플', '포토북', 17500],
+    ['타임레코드', '포토북', 17500],
+    ['비트윈캘린더', '캘린더', 16000], ['스탠다드 캘린더', '캘린더', 14000], ['우드월캘린더', '캘린더', 26000],
+    ['우드스탠드 캘린더', '캘린더', 22000],
+    ['원목액자', '액자', 17360], ['심플액자', '액자', 9660], ['프리미엄 아크릴액자', '액자', 50800], ['감성액자', '액자', 11830],
+    ['엽서', '팬시·굿즈', 2100], ['포토노트', '팬시·굿즈', 4800], ['포토엽서', '팬시·굿즈', 18000], ['미니배너', '팬시·굿즈', 3700]
+  ];
+  // 카테고리별 옵션 예시 (장바구니 미리보기에 표시)
+  const OPTIONS = {
+    '포토북': ['하드커버 · 24페이지', '소프트커버 · 30페이지', '레이플랫 · 40페이지'],
+    '캘린더': ['2027년 · 1월 시작', '2027년 · 3월 시작'],
+    '액자': ['5x7 · 화이트', '8x10 · 내추럴', 'A4 · 블랙'],
+    '팬시·굿즈': ['무광 코팅', '유광 코팅', '기본']
+  };
+  const PROJECT_NAMES = ['제주 여름 여행', '우리 아이 첫돌', '가족 사진 모음', '2026 졸업 기념', '커플 100일', '반려견 일기', '부모님 선물', '동아리 추억'];
+  // 장바구니 작업물 미리보기(스탑북 뷰어). 샘플은 모든 상품에 같은 예시 작업물을 연결
+  // TODO: 실서비스에서는 장바구니 항목의 작업 키(mskey)와 고객 아이디(user_id)로 주소를 만듦
+  const VIEWER_SAMPLE = { mskey: '612574', userId: 'jy811228' };
+  const viewerUrl = (mskey, userId) =>
+    `https://www.stopbook.com/viewer/viewer_mobile.asp?mskey=${encodeURIComponent(mskey)}&user_id=${encodeURIComponent(userId)}`;
+  // 결제수단 샘플 (신용카드는 두 번 넣어 비중을 높임). TODO: 실서비스에서는 결제 설정값 사용
+  const PAY_METHODS = ['신용카드', '신용카드', '무통장입금', '계좌이체', '휴대폰결제', '네이버페이', '토스페이', '카카오페이'];
+  const INQ_TYPES = ['주문/결제', '배송', '상품', '교환/반품', '회원정보', '기타'];
+  const INQ_SAMPLES = {
+    '주문/결제': ['결제 수단을 변경하고 싶어요', '주문 후 영수증 발급 문의', '카드 결제가 두 번 된 것 같아요'],
+    '배송': ['언제 도착하나요?', '배송지를 변경할 수 있나요?', '택배가 분실된 것 같아요'],
+    '상품': ['포토북 페이지를 추가할 수 있나요?', '캘린더 시작 월을 바꾸고 싶어요', '액자 사이즈 문의'],
+    '교환/반품': ['인쇄 불량으로 재제작 요청합니다', '사진 색감이 화면과 달라요'],
+    '회원정보': ['등급 산정 기준이 궁금해요', '휴대폰 번호 변경 방법'],
+    '기타': ['단체 대량 제작 견적 요청', '졸업앨범 제작 문의']
+  };
+  // 문의 본문 (제목별). 난수를 쓰지 않으므로 다른 샘플 값에 영향 없음
+  const INQ_CONTENT = {
+    '결제 수단을 변경하고 싶어요': '무통장입금으로 주문했는데 카드 결제로 바꾸고 싶습니다. 아직 입금 전인데 결제 수단만 변경할 수 있을까요?',
+    '주문 후 영수증 발급 문의': '회사 경비 처리를 하려고 합니다. 주문한 건의 카드 영수증이나 거래내역서를 받을 수 있는 방법을 알려 주세요.',
+    '카드 결제가 두 번 된 것 같아요': '결제 버튼을 누른 뒤 화면이 멈춰서 다시 눌렀더니 카드 승인 문자가 두 번 왔습니다. 주문 내역에는 한 건만 보이는데 확인 부탁드립니다.',
+    '언제 도착하나요?': '주문한 상품이 아직 제작 중으로 나옵니다. 이번 주 안에 받을 수 있을지 궁금합니다. 선물용이라 날짜가 중요해요.',
+    '배송지를 변경할 수 있나요?': '이사를 하게 되어서 배송지를 바꾸고 싶습니다. 아직 출고 전이라면 새 주소로 변경 부탁드립니다.',
+    '택배가 분실된 것 같아요': '배송 완료로 나오는데 상품을 받지 못했습니다. 경비실과 문 앞 모두 확인했는데 없습니다. 확인 부탁드립니다.',
+    '포토북 페이지를 추가할 수 있나요?': '편집 중인 포토북에 사진이 많아서 페이지를 더 넣고 싶습니다. 최대 몇 페이지까지 추가할 수 있고, 추가 금액은 얼마인가요?',
+    '캘린더 시작 월을 바꾸고 싶어요': '캘린더를 1월 시작으로 주문했는데 3월 시작으로 바꾸고 싶습니다. 제작 전이면 변경할 수 있을까요?',
+    '액자 사이즈 문의': '8x10 액자에 세로 사진을 넣으면 잘리는 부분이 있나요? 실제 인쇄 영역이 궁금합니다.',
+    '인쇄 불량으로 재제작 요청합니다': '받은 포토북의 몇 페이지에 줄무늬가 생겼습니다. 사진을 첨부합니다. 재제작이 가능한지 확인 부탁드립니다.',
+    '사진 색감이 화면과 달라요': '모니터에서 본 것보다 사진이 많이 어둡게 인쇄되었습니다. 교환이나 재제작이 가능한지 궁금합니다.',
+    '등급 산정 기준이 궁금해요': '이번 달 등급이 내려갔는데 산정 기준이 어떻게 되는지 알고 싶습니다. 취소한 주문도 실적에 포함되나요?',
+    '휴대폰 번호 변경 방법': '휴대폰 번호가 바뀌었는데 본인 인증이 안 돼서 회원정보 수정을 못 하고 있습니다. 어떻게 변경하면 될까요?',
+    '단체 대량 제작 견적 요청': '회사 창립 기념으로 포토북 120부를 제작하려고 합니다. 대량 주문 할인과 제작 기간을 알려 주세요.',
+    '졸업앨범 제작 문의': '유치원 졸업앨범 35부를 제작하려고 합니다. 단체 회원 신청이 필요한지, 디자인 지원이 되는지 궁금합니다.'
+  };
+  // 답변 본문 (유형별). 답변자는 관리자 실명 (notice-store.js 관리자 공지 작성자와 같은 명단)
+  const INQ_ANSWERS = {
+    '주문/결제': '결제 내역을 확인했습니다. 요청하신 내용으로 처리해 드렸으며, 처리 결과는 마이페이지 > 주문 내역에서 확인하실 수 있습니다.',
+    '배송': '주문하신 상품의 제작·출고 일정을 확인했습니다. 출고되면 알림톡으로 송장번호를 안내해 드리겠습니다.',
+    '상품': '문의하신 옵션을 확인했습니다. 편집기에서 바로 변경하실 수 있도록 안내해 드리며, 제작 전이라면 추가 비용 없이 변경됩니다.',
+    '교환/반품': '보내주신 사진으로 상태를 확인했습니다. 불편을 드려 죄송합니다. 재제작으로 접수해 두었으며, 제작이 끝나면 다시 배송해 드리겠습니다.',
+    '회원정보': '회원정보를 확인했습니다. 안내드린 방법으로 진행해 보시고, 계속 어려우시면 고객센터(02-0000-0000)로 연락 주세요.',
+    '기타': '문의하신 내용을 담당 부서에 전달했습니다. 담당자가 확인 후 남겨주신 연락처로 상세 견적과 일정을 안내해 드리겠습니다.'
+  };
+  const INQ_ADMINS = ['김지영', '김태복', '창경훈', '최의담', '이고은'];
+
+  function makeUsage(m) {
+    let s = (m.no * 7907 + 13) % 233280;
+    const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    const pickR = arr => arr[Math.floor(r() * arr.length)];
+    const daysAgo = d => Math.floor((base - new Date(d).getTime()) / 86400000);
+
+    // 주문 상세: 일자·금액은 기존 값 유지(등급 산정용), 상품명·수량·상태·결제수단만 채움
+    // 제작상태(주문 제작 흐름): 주문완료 → 제작중 → 배송중(전체) (주문대기·배송중(부분)·배송완료는 아래에서 지정)
+    //   2일 이내 주문완료·제작중 / 3~6일 제작중·배송중 / 7일 이상 배송중
+    (m.orders || []).forEach((o, i) => {
+      const p = pickR(PRODUCTS);
+      const qty = 1 + Math.floor(r() * 3);
+      const kinds = 1 + Math.floor(r() * 3);
+      const d = daysAgo(o.at);
+      Object.assign(o, {
+        orderNo: `${o.at.replace(/-/g, '')}-${String(m.no).slice(-3)}${String(i + 1).padStart(2, '0')}`,
+        title: kinds > 1 ? `${p[0]} 외 ${kinds - 1}종` : p[0],
+        productCategory: p[1],
+        qty: qty + kinds - 1,
+        status: d <= 2 ? pickR(['주문완료', '제작중']) : d <= 6 ? pickR(['제작중', '배송중(전체)']) : '배송중(전체)',
+        payMethod: pickR(PAY_METHODS)
+      });
+    });
+
+    // 문의 이력: 0~5건, 최근 문의 일부는 답변 대기
+    const from = new Date(m.joinDate).getTime();
+    m.inquiries = Array.from({ length: Math.floor(r() * r() * 6) }, (_, i) => {
+      const type = pickR(INQ_TYPES);
+      const at = new Date(from + r() * (base - from));
+      const waiting = (base - at.getTime()) < 5 * 86400000 || r() < 0.08;
+      const ans = new Date(at.getTime() + (2 + Math.floor(r() * 40)) * 3600000);
+      return {
+        no: m.no * 10 + i, type, title: pickR(INQ_SAMPLES[type]),
+        at: fmtDateTime(at),
+        content: '',   // 제목이 정해진 뒤 아래에서 채움
+        status: waiting ? '답변대기' : '답변완료',
+        answeredAt: waiting ? '' : fmtDateTime(ans),
+        answer: '',
+        answeredBy: waiting ? '' : INQ_ADMINS[(m.no + i) % INQ_ADMINS.length]
+      };
+    }).sort((a, b) => b.at.localeCompare(a.at));
+    m.inquiries.forEach(q => {
+      q.content = INQ_CONTENT[q.title] || '안녕하세요. 문의드립니다. 확인 부탁드립니다.';
+      if (q.status === '답변완료') q.answer = `안녕하세요, ${m.name} 고객님. 스탑북입니다.\n${INQ_ANSWERS[q.type] || INQ_ANSWERS['기타']}\n감사합니다.`;
+    });
+
+    // 장바구니: 0~5개 상품. 주문 제작 상품이라 고객이 편집해 둔 작업물(프로젝트) 단위로 담김
+    // price = 판매가(기본 옵션), savedAt = 장바구니에 보관한 날
+    const used = new Set();
+    m.cart = Array.from({ length: Math.floor(r() * 6) }, () => {
+      let p; do { p = pickR(PRODUCTS); } while (used.has(p[0]) && used.size < PRODUCTS.length);
+      used.add(p[0]);
+      return {
+        title: p[0], productCategory: p[1], price: p[2],
+        option: pickR(OPTIONS[p[1]]),
+        project: pickR(PROJECT_NAMES),
+        qty: 1 + Math.floor(r() * r() * 3),
+        savedAt: fmtDate(new Date(base - Math.floor(r() * 30) * 86400000)),
+        previewUrl: viewerUrl(VIEWER_SAMPLE.mskey, VIEWER_SAMPLE.userId)
+      };
+    });
+  }
+  members.forEach(makeUsage);
+
+  // 답변 대기 문의는 오늘 접수분 7~10건만 (1:1 문의는 대부분 당일 답변). 남긴 문의는 접수 시각을 오늘로, 나머지 답변 대기 샘플은 문의 이력에서 뺌
+  //   (member-type-store.js keepTodayPending. 답변 완료 문의 = 지난 이력은 그대로)
+  if (window.AdminUtil && AdminUtil.keepTodayPending) {
+    const all = members.flatMap(m => m.inquiries || []);
+    const kept = new Set(AdminUtil.keepTodayPending(all, q => q.status === '답변대기', 'inquiry'));
+    members.forEach(m => {
+      if (!m.inquiries) return;
+      m.inquiries = m.inquiries.filter(q => q.status !== '답변대기' || kept.has(q)).sort((a, b) => b.at.localeCompare(a.at));
+    });
+  }
+  // 1:1 문의(board-inquiry.html)에서 관리자가 처리한 내용(유형 변경·답변 완료·답변 수정)을 회원 문의 이력에도 반영
+  //   저장 형식은 inquiry-data.js 참고 ({ [문의 no]: { type, status, answer, answeredAt, answeredBy, ... } })
+  // TODO: 실서비스에서는 문의 API 한 곳에서 조회
+  try {
+    const inqEdits = JSON.parse(localStorage.getItem('stopbook.inquiries.v1')) || {};
+    members.forEach(m => (m.inquiries || []).forEach(q => {
+      const ov = inqEdits[q.no];
+      if (!ov) return;
+      q.sample = { type: q.type, status: q.status, answer: q.answer, answeredAt: q.answeredAt, answeredBy: q.answeredBy };   // 원래 샘플 값 (inquiry-data.js가 샘플 처리 이력을 만들 때 사용)
+      if (ov.type) q.type = ov.type;
+      if (ov.status === '완료' && ov.answer) Object.assign(q, { status: '답변완료', answer: ov.answer, answeredAt: ov.answeredAt, answeredBy: ov.answeredBy });
+    }));
+  } catch (e) { /* 저장값이 없거나 깨졌으면 샘플 그대로 */ }
+
+  // ===== 결제상태·제작상태 샘플 =====
+  // 결제상태(payStatus): 입금대기(무통장입금 접수 후 미입금) / 결제완료 / 전체취소 (부분취소는 주문 상품별로 order-data.js에서 정함)
+  // 제작상태(status, 주문 단위):
+  //   주문대기      입금 전
+  //   주문완료      입금 완료 후 제작 시작 전
+  //   제작중        제작 진행 중
+  //   배송중(부분)  주문 상품 중 일부만 출고 (상품이 2종 이상인 주문만)
+  //   배송중(전체)  전체 상품 출고
+  //   배송완료      전체 상품 배송 완료
+  //   전체취소 주문은 제작상태 없음('')
+  // 주문번호별 별도 난수로 정하므로 다른 샘플 값에는 영향 없음
+  //   약 5% → 전체취소 / 출고 후 10일 이상 지난 주문 대부분 → 배송완료 / 2종 이상 출고 주문 일부 → 배송중(부분)
+  // 취소 주문은 주문 실적(회원등급 산정·주문 합계)에서 제외 → validOrders 사용
+  // TODO: 실서비스에서는 상품별 제작·출고 상태 사용
+  members.forEach(m => (m.orders || []).forEach(o => {
+    let s = [...o.orderNo].reduce((h, c) => (h * 37 + c.charCodeAt(0)) % 233280, 11);
+    const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    const days = Math.floor((base - new Date(o.at).getTime()) / 86400000);
+    if (r() < 0.05) o.payStatus = '전체취소';
+    else {
+      // 미입금: 무통장입금으로 주문한 지 7일 이내이고 제작 전(주문완료·제작중으로 뽑힌 건)이면 아직 입금 전인 것으로 → 미입금 주문 샘플
+      o.payStatus = o.payMethod === '무통장입금' && days <= 7 && ['주문완료', '제작중'].includes(o.status) ? '입금대기' : '결제완료';
+      if (o.status === '배송중(전체)' && days >= 10 && r() < 0.85) o.status = '배송완료';
+    }
+    if (o.payStatus === '입금대기') o.status = '주문대기';
+    else if (o.payStatus === '전체취소') o.status = '';
+    else if (o.status === '배송중(전체)' && /외 \d+종/.test(o.title) && r() < 0.4) o.status = '배송중(부분)';
+  }));
+  // 제작상태·결제상태 → 배지 색 클래스 (값에 괄호가 있어 CSS 클래스명으로 직접 쓰지 않음)
+  const STATUS_CLASS = { '주문대기': 'st-wait', '주문완료': 'st-recv', '제작중': 'st-make', '배송중(부분)': 'st-part', '배송중(전체)': 'st-ship', '배송완료': 'st-done', '전체취소': 'st-cancel',
+    '배송중': 'st-ship', '취소': 'st-cancel' };   // 아래 두 개는 주문 상세 > 주문 상품의 상품별 진행상태
+  const statusClass = s => STATUS_CLASS[s] || '';
+  const validOrders = m => (m.orders || []).filter(o => o.payStatus !== '전체취소');
+
+  // 기간(YYYY-MM-DD, 양끝 포함) 내 주문횟수·주문금액 합계 (취소 주문 제외)
+  function orderStats(m, from, to) {
+    return validOrders(m).filter(o => o.at >= from && o.at <= to)
+      .reduce((acc, o) => ({ count: acc.count + 1, amount: acc.amount + o.amount }), { count: 0, amount: 0 });
+  }
+
+  // ===== 회원 구분 샘플 =====
+  // 회원 유형 관리 > 구분에 지금 등록된 항목(숨김 제외)을 기준으로 배정 (member-type-store.js를 먼저 로드해야 함)
+  //   기본 구분(normal) 약 80%, 나머지 20%는 그 외 구분에 회원 번호 순으로 번갈아 배정. 종류가 있는 구분은 종류도 번갈아 지정
+  //   저장소를 못 읽으면 기본값(일반/단체)으로 생성. 승인된 단체 신청 회원은 아래 applyApproval에서 관리자가 지정한 구분·종류로 덮어씀
+  // 회원 구분 참조: categoryCode(기준, 회원 유형 관리의 구분 code) + category(표시명)
+  // 기본값은 member-type-store.js DEFAULTS와 같게 유지 (일반 + 기관·학교·유치원·어린이집·회사·단체)
+  const DEFAULT_TREE = [
+    { code: 'normal', name: '일반', subs: [] },
+    { code: 'institution', name: '기관', subs: [] },
+    { code: 'school', name: '학교', subs: [] },
+    { code: 'kindergarten', name: '유치원', subs: [] },
+    { code: 'daycare', name: '어린이집', subs: [] },
+    { code: 'company', name: '회사', subs: [] },
+    { code: 'group', name: '단체', subs: ['동호회', '협회', '기타'] }
+  ];
+  const liveTree = window.MemberTypeStore ? MemberTypeStore.categoryTree().filter(c => !c.hidden) : [];
+  const catTree = liveTree.length ? liveTree : DEFAULT_TREE;
+  const mainCat = catTree.find(c => c.code === 'normal') || catTree[0];              // 개인 회원 기본 구분
+  const otherCats = catTree.filter(c => c !== mainCat);
+  const groupCat = catTree.find(c => c.code === 'group') || otherCats[0] || mainCat;  // 단체 신청 승인 시 지정하는 구분
+  const subOf = (cat, n) => cat.subs.length ? cat.subs[n % cat.subs.length] : '';
+  members.forEach(m => {
+    // 생성 시 뽑은 '단체' 역할 표시(약 20%)를 현재 구분으로 교체
+    const cat = m.category === '단체' && otherCats.length ? otherCats[m.no % otherCats.length] : mainCat;
+    m.categoryCode = cat.code;
+    m.category = cat.name;
+    m.subCategory = subOf(cat, Math.floor(m.no / 7));   // 구분 배정(no % 구분 수)과 겹치지 않게 종류는 다른 간격으로 번갈아
+  });
+
+  // 후불 결제 샘플: 단체 회원(기본 구분 외 모든 구분) 일부에 올해 적용 (후불 결제는 단체 회원만 설정 가능 — 회원 상세에서 기본 구분이면 선택 불가)
+  members.forEach(m => {
+    const on = m.categoryCode !== mainCat.code && m.no % 2 === 0;
+    Object.assign(m, { postpay: on ? 'Y' : 'N', postpayFrom: on ? '2026-01-01' : '', postpayTo: on ? '2026-12-31' : '' });
+  });
+
+  // 후결제 주문 샘플: 후불 결제가 적용된 회원이 적용 기간 안에 한 주문의 절반가량은 선결제 없이 주문 → 상품 수령 후 결제
+  //   결제수단 '후결제', 결제상태 '후결제대기' (제작·배송은 결제와 상관없이 진행). 배송완료 후 열흘이 지난 주문은 결제가 끝난 것으로(결제완료)
+  //   주문번호로 정하므로 다른 샘플 값에는 영향 없음. 관리자가 입금처리하면 order-data.js에서 결제완료로 바뀜
+  // TODO: 실서비스에서는 주문 시 고객이 고른 결제수단(후결제) 사용
+  const postpayOrder = (o, status) => {
+    o.payMethod = '후결제';
+    o.payStatus = status;
+    if (o.status === '주문대기') o.status = '주문완료';   // 후결제는 입금을 기다리지 않고 바로 접수
+  };
+  const skipped = [];   // 절반 규칙에서 빠진 후불 회원 주문 (아래에서 입금대기 샘플을 보충할 때 사용)
+  members.filter(m => m.postpay === 'Y').forEach(m => (m.orders || []).forEach(o => {
+    if (o.at < m.postpayFrom || o.at > m.postpayTo || o.payStatus === '전체취소') return;
+    if ([...o.orderNo].reduce((h, c) => (h * 29 + c.charCodeAt(0)) % 9973, 5) % 2) { skipped.push(o); return; }
+    const days = Math.floor((base - new Date(o.at).getTime()) / 86400000);
+    postpayOrder(o, o.status === '배송완료' && days >= 20 ? '결제완료' : '후결제대기');
+  }));
+  // 입금대기(후결제대기) 샘플 보충: 절반 규칙에서 빠진 주문 중 최근 5건을 입금 전 후결제 주문으로 추가
+  skipped.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 5).forEach(o => postpayOrder(o, '후결제대기'));
+
+  // ===== 마일리지 주문 사용 = 실제 주문 (혜택내역 > 마일리지 내역에서 차감한 주문번호가 보이게) =====
+  //   샘플 '주문 결제 시 사용'을 지우고, 회원의 주문(최근 1년, 전체취소 제외) 가운데 일부에서 그때 잔여 마일리지 안에서 사용한 것으로 다시 만듦
+  //   주문의 결제 정보(order-data.js 할인금액 > 마일리지)는 이 사용 금액과 같게 맞춤 → 마일리지 내역과 주문 결제 내역이 일치
+  //   잔여는 처음부터 다시 계산 (관리자 지급·차감 등 다른 기록은 그대로). 별도 난수라 다른 샘플 값은 그대로
+  members.forEach(m => {
+    if (!m.ledger) return;
+    let s = (m.no * 15485863 + 11) % 233280;
+    const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    const keep = m.ledger.mileage.filter(e => !(e.by === '시스템' && e.reason === '주문 결제 시 사용'));
+    const slots = (m.orders || []).filter(o => o.orderNo && o.payStatus !== '전체취소').map(o => ({ slot: true, o, at: `${o.at} ${pad(9 + Math.floor(r() * 12))}:${pad(Math.floor(r() * 60))}`, pick: r() }));
+    const seq = keep.map(e => Object.assign({}, e)).concat(slots).sort((a, b) => a.at.localeCompare(b.at));
+    const list = [];
+    seq.forEach(x => {
+      const bal = list.length ? list[list.length - 1].balance : 0;
+      if (!x.slot) { delete x.balance; pushEntry(list, x); return; }
+      if (bal < 1000 || x.pick >= 0.45) return;   // 잔여 1,000P 이상인 주문의 절반가량에서 사용
+      const use = Math.min(bal, Math.max(1000, Math.ceil(x.pick * 2 * Math.min(bal, x.o.amount * 0.3) / 100) * 100));
+      pushEntry(list, { at: x.at, type: '사용', item: '', reason: '주문 결제 시 사용', by: '시스템', delta: -use, orderNo: x.o.orderNo });
+    });
+    m.ledger.mileage = list;
+    m.mileage = list.length ? list[list.length - 1].balance : 0;
+  });
+
+  // ===== 단체회원 신청 =====
+  // 기본 신청 데이터는 고정 생성, 관리자 처리 결과(승인/반려/히스토리)만 localStorage에 저장해 덮어씀
+  // TODO: 실서비스에서는 GET /api/admin/group-applications, POST .../{no}/approve|reject 로 대체
+  const APP_KEY = 'stopbook.groupApplications.v4';   // v3: 승인 시 회원 구분·종류 지정(assign*) 저장 / v4: 고객이 단체 유형 대신 회원구분(req*)을 신청, 이전 처리 결과는 초기화
+  // 신청 건의 구분 참조
+  //   reqCategoryCode / reqCategory / groupType: 고객이 신청한 회원구분(code·표시명)과 그 구분의 종류 (승인 대기·반려 목록에 표시)
+  //   assignCategoryCode / assignCategory / assignKind: 관리자가 승인하며 지정한 회원구분·종류 (승인·해제·만료 목록에 표시)
+  // 구분(또는 종류) 이름별 샘플 사업자 정보. 아래에 없는 이름은 이름으로 사업자 정보를 만듦
+  const GROUP_TYPES = {
+    '기관':     { names: ['가람시 평생학습관', '나래구 청소년수련관', '책마루도서관'], bizType: '공공행정', bizItem: '평생교육' },
+    '회사':     { names: ['(주)새벽북스', '(주)온누리교육', '누리소프트(주)'], bizType: '도소매업', bizItem: '서적' },
+    '학교':     { names: ['한빛초등학교', '새솔중학교', '다온고등학교'], bizType: '교육 서비스업', bizItem: '초중등 교육' },
+    '유치원':   { names: ['햇살유치원', '꿈나무유치원'], bizType: '교육 서비스업', bizItem: '유아 교육' },
+    '어린이집': { names: ['푸른숲어린이집', '새싹어린이집'], bizType: '보건업 및 사회복지 서비스업', bizItem: '보육시설 운영' },
+    '단체':     { names: ['초록동아리협회', '한울 사진동호회'], bizType: '비영리', bizItem: '단체' },
+    '동호회':   { names: ['책읽는엄마들 독서모임', '시냇가 북클럽'], bizType: '비영리', bizItem: '독서모임' },
+    '협회':     { names: ['한국포토북협회', '전국독서문화협회'], bizType: '비영리', bizItem: '협회' },
+    '기타':     { names: ['지혜샘학원', '글빛논술학원'], bizType: '교육 서비스업', bizItem: '교습학원' }
+  };
+  const ADDRESSES = ['서울특별시 마포구 월드컵북로 12', '경기도 성남시 분당구 판교로 45', '부산광역시 해운대구 센텀로 8', '대전광역시 유성구 대학로 99', '인천광역시 연수구 송도과학로 31'];
+  // 고객이 신청할 수 있는 회원구분 = 기본 구분을 뺀 현재 구분 (없으면 '단체' 구분)
+  const applyCats = otherCats.length ? otherCats : [groupCat];
+  const groupKinds = groupCat.subs.length ? groupCat.subs : Object.keys(GROUP_TYPES);
+  const bizOf = kind => GROUP_TYPES[kind] || { names: ['가람', '나래', '다온'].map(p => p + kind), bizType: '서비스업', bizItem: kind };
+
+  function loadAppOverlay() {
+    try { return JSON.parse(localStorage.getItem(APP_KEY)) || {}; } catch (e) { return {}; }
+  }
+  const appOverlay = loadAppOverlay();
+
+  // 기본 구분 회원 중 일부가 신청한 것으로 생성 (최근 신청이 위)
+  const applications = members.filter(m => m.categoryCode === mainCat.code).filter((_, i) => i % 8 === 3).map((m, k) => {
+    // 고객이 신청한 회원구분·종류: 신청 가능한 구분을 번갈아, 종류가 있는 구분은 종류도 번갈아
+    const reqCat = applyCats[k % applyCats.length];
+    const groupType = subOf(reqCat, k);
+    const t = bizOf(groupType || reqCat.name);
+    const reqText = `${reqCat.name}${groupType ? ` > ${groupType}` : ''}`;
+    const appliedAt = new Date(base - k * 2 * 86400000 - (k * 37 % 600) * 60000);
+    const app = {
+      appNo: 501 + k,
+      userId: m.userId,
+      reqCategoryCode: reqCat.code,
+      reqCategory: reqCat.name,
+      groupType,
+      appliedAt: fmtDateTime(appliedAt),
+      business: {
+        companyName: t.names[k % t.names.length],
+        bizNo: `${String(105 + (k * 37) % 800)}-${String(10 + (k * 7) % 89)}-${String(10000 + (k * 4567) % 89999)}`,
+        ceo: k % 2 ? m.name : LAST[(k + 3) % LAST.length] + FIRST[(k * 5) % FIRST.length],
+        openDate: `20${String(10 + (k * 3) % 15)}-${pad(1 + k % 12)}-${pad(1 + (k * 5) % 28)}`,
+        bizType: t.bizType,
+        bizItem: t.bizItem,
+        address: `${ADDRESSES[k % ADDRESSES.length]} ${k % 4 + 1}층`,
+        managerName: m.name,
+        managerPhone: m.phone,
+        managerEmail: m.email,
+        certFile: `사업자등록증_${m.userId}.${k % 3 ? 'jpg' : 'pdf'}`
+      },
+      // 예시: 일부는 이미 처리된 상태
+      status: k % 5 === 4 ? '승인' : k % 7 === 6 ? '반려' : '대기',
+      processedAt: '', processedBy: '', rejectReason: '', periodFrom: '', periodTo: '', expireTo: '',
+      history: [{ at: fmtDateTime(appliedAt), content: `단체회원 신청 (회원구분: ${reqText})`, by: '고객' }]
+    };
+    if (app.status !== '대기') {
+      const at = fmtDateTime(new Date(appliedAt.getTime() + 86400000));
+      Object.assign(app, { processedAt: at, processedBy: '관리자' });
+      if (app.status === '반려') app.rejectReason = '사업자등록증 이미지가 흐려 등록번호를 확인할 수 없습니다. 선명한 이미지로 다시 신청해 주세요.';
+      if (app.status === '승인') {
+        const d = new Date(appliedAt.getTime() + 86400000);
+        app.periodFrom = fmtDate(d);
+        // 예시: 한 건은 기간이 이미 끝나 자동 전환되는 경우를 보여주도록 어제 만료
+        app.periodTo = k === 9 ? fmtDate(new Date(Date.now() - 86400000))
+          : fmtDate(new Date(d.getFullYear() + 1, d.getMonth(), d.getDate() - 1));
+        app.expireTo = mainCat.name;
+        app.expireToCode = mainCat.code;
+        // 승인 시 관리자가 지정한 회원 구분·종류 (샘플은 고객이 신청한 그대로 승인)
+        Object.assign(app, { assignCategoryCode: reqCat.code, assignCategory: reqCat.name, assignKind: groupType });
+      }
+      app.history.push({ at, content: app.status === '승인' ? `승인 처리 (적용 기간 ${app.periodFrom} ~ ${app.periodTo}, 만료 후 '${app.expireTo}' 전환) → 회원 구분 '${reqText}' 지정` : `반려 처리 (사유: ${app.rejectReason})`, by: '관리자' });
+    }
+    return Object.assign(app, appOverlay[app.appNo] || {});
+  });
+
+  // 고객이 입력한 단체 유형(groupType)은 바꾸지 않으므로 저장 대상이 아님
+  function saveApplication(app) {
+    const keys = ['status', 'processedAt', 'processedBy', 'rejectReason', 'rejectDraft', 'periodFrom', 'periodTo', 'expireTo', 'expireToCode',
+      'assignCategoryCode', 'assignCategory', 'assignKind', 'revokedAt', 'revokedBy', 'expiredAt', 'history'];
+    appOverlay[app.appNo] = Object.fromEntries(keys.map(k => [k, app[k]]));
+    try { localStorage.setItem(APP_KEY, JSON.stringify(appOverlay)); return true; } catch (e) { return false; }
+  }
+
+  // 승인된 신청 → 관리자가 지정한 구분·종류로 회원 구분을 바꾸고 기본 정보 하단에 사업자 정보 추가
+  function applyApproval(app) {
+    const m = members.find(x => x.userId === app.userId);
+    if (!m) return;
+    m.categoryCode = app.assignCategoryCode || groupCat.code;
+    m.category = app.assignCategory || groupCat.name;   // 표시명은 화면에서 code 기준으로 다시 맞춤
+    m.subCategory = app.assignKind !== undefined ? app.assignKind : app.groupType;
+    m.business = Object.assign({ reqCategory: app.reqCategory, groupType: app.groupType, approvedAt: app.processedAt, appNo: app.appNo,
+      periodFrom: app.periodFrom, periodTo: app.periodTo, expireTo: app.expireTo || mainCat.name }, app.business);
+    m.history.push({ at: app.processedAt, content: `단체 회원 승인: ${app.business.companyName} (${app.business.bizNo}), 적용 기간 ${app.periodFrom} ~ ${app.periodTo}`, by: app.processedBy });
+  }
+  // 회원 정보에서 구분을 단체 → 일반으로 바꾼 경우: 사업자 정보 삭제 + 신청 건을 '해제'로 기록
+  function revokeBusiness(m, by) {
+    const app = m.business && applications.find(a => a.appNo === m.business.appNo);
+    delete m.business;
+    if (!app) return;
+    const at = fmtDateTime(new Date());
+    Object.assign(app, { status: '해제', revokedAt: at, revokedBy: by });
+    app.history.push({ at, content: '단체 회원 해제 (회원 정보에서 구분 일반으로 변경, 사업자 정보 삭제)', by });
+    saveApplication(app);
+  }
+
+  // 적용 기간 만료: 종료일이 지난 승인 건은 '만료'로 바꾸고 지정한 구분으로 자동 전환
+  // TODO: 실서비스에서는 매일 00:00 서버 배치로 처리 (여기서는 화면을 열 때 처리)
+  const todayStr = fmtDate(new Date());
+  applications.forEach(a => {
+    if (a.status !== '승인' || !a.periodTo || a.periodTo >= todayStr) return;
+    const end = new Date(a.periodTo);
+    a.expiredAt = `${fmtDate(new Date(end.getFullYear(), end.getMonth(), end.getDate() + 1))} 00:00`;
+    a.status = '만료';
+    a.history.push({ at: a.expiredAt, content: `적용 기간 만료 → 구분 '${a.expireTo || mainCat.name}' 자동 전환, 사업자 정보 삭제`, by: '시스템' });
+    saveApplication(a);
+  });
+
+  // 페이지 로드 시 처리 결과 반영: 승인 → 사업자 정보 등록 / 해제·만료 → 승인 후 삭제된 이력만 남김
+  applications.forEach(a => {
+    if (!['승인', '해제', '만료'].includes(a.status)) return;
+    applyApproval(a);
+    const m = members.find(x => x.userId === a.userId);
+    if (!m || a.status === '승인') return;
+    const biz = `${a.business.companyName} (${a.business.bizNo})`;
+    m.subCategory = '';
+    if (a.status === '해제') {
+      m.category = mainCat.name;
+      m.categoryCode = mainCat.code;
+      m.history.push({ at: a.revokedAt, content: `사업자 정보 삭제: ${biz} - 구분 ${mainCat.name} 변경`, by: a.revokedBy });
+    } else {
+      const to = a.expireTo || mainCat.name;
+      m.history.push({ at: a.expiredAt, content: `단체 회원 기간 만료: 구분 ${m.category} → ${to} 자동 전환, 사업자 정보 삭제 (${biz})`, by: '시스템' });
+      m.category = to;
+      m.categoryCode = a.expireToCode || '';   // 없으면 화면에서 이름으로 찾아 채움
+    }
+    delete m.business;
+  });
+
+  // 후불 결제 회원 사업자 정보 샘플: 단체회원 신청 승인 내역이 없는 후불 결제 회원에게 사업자 정보를 채움
+  // (후결제 입금관리 모달·회원 상세의 사업자 정보에 표시. 항목은 단체회원 신청 시 입력하는 정보와 같음)
+  // TODO: 실서비스에서는 단체회원 승인 시 등록된 사업자 정보 사용
+  members.filter(m => m.postpay === 'Y' && !m.business).forEach(m => {
+    const kind = m.subCategory || m.category;
+    const t = bizOf(kind), k = m.no;
+    m.business = {
+      reqCategory: m.category, groupType: m.subCategory, approvedAt: `${m.postpayFrom} 10:00`, appNo: '-',
+      periodFrom: m.postpayFrom, periodTo: m.postpayTo, expireTo: mainCat.name,
+      companyName: t.names[k % t.names.length],
+      bizNo: `${String(105 + (k * 37) % 800)}-${String(10 + (k * 7) % 89)}-${String(10000 + (k * 4567) % 89999)}`,
+      ceo: m.name,
+      openDate: `20${String(10 + (k * 3) % 15)}-${pad(1 + k % 12)}-${pad(1 + (k * 5) % 28)}`,
+      bizType: t.bizType, bizItem: t.bizItem,
+      address: `${ADDRESSES[k % ADDRESSES.length]} ${k % 4 + 1}층`,
+      managerName: m.name, managerPhone: m.phone, managerEmail: m.email,
+      certFile: `사업자등록증_${m.userId}.pdf`
+    };
+  });
+
+  // ===== 쇼핑몰 회원가입 (stopbook-user/signup.html) =====
+  // 회원가입 화면에서 가입한 회원을 localStorage에 보관하고, 샘플 회원 뒤에 이어 붙여 관리자 화면(회원 목록·대시보드·마일리지 내역)에 함께 보이게 함
+  //   신규 가입은 이메일로 로그인하므로 아이디(userId) = 이메일. 구분은 기본 구분(일반), 등급은 '일반', 주문·문의·장바구니는 없음
+  //   가입 혜택(회원가입 적립 마일리지·신규가입 쿠폰)은 가입 기록의 ledger에 담아 두고 여기서 원장으로 만듦
+  //   저장 형식: [{ no, memberType, userId, name, email, phone, birth, nickname, gender, grade, marketingUse, marketingSms, marketingEmail,
+  //               consents: { at, items: [{ key, label, required, agreed }] }, joinDate, lastLogin, joinEnv, loginEnv, ledger: { mileage: [], coupon: [] }, history: [] }]
+  // TODO: 실서비스에서는 POST /api/members (가입), GET /api/members/exists?email=&phone= (중복 확인)
+  const SIGNUP_KEY = 'stopbook.signupMembers.v1';
+  const loadSignups = () => { try { const v = JSON.parse(localStorage.getItem(SIGNUP_KEY)); return Array.isArray(v) ? v : []; } catch (e) { return []; } };
+  const digits = s => String(s || '').replace(/\D/g, '');
+  function attachSignup(rec) {
+    const m = JSON.parse(JSON.stringify(rec));
+    Object.assign(m, { fromSignup: true, categoryCode: mainCat.code, category: mainCat.name, subCategory: '', postpay: 'N', postpayFrom: '', postpayTo: '',
+      memos: m.memos || [], orders: [], inquiries: [], cart: [] });
+    const src = m.ledger || {};
+    m.ledger = { mileage: [], giftCard: [], coupon: [] };
+    ['mileage', 'coupon'].forEach(k => (src[k] || []).forEach(e => { delete e.balance; pushEntry(m.ledger[k], e); }));
+    (MILEAGE[m.no] || []).forEach(e => pushEntry(m.ledger.mileage, Object.assign({}, e)));   // 관리자 지급·차감 기록
+    Object.keys(m.ledger).forEach(k => { const list = m.ledger[k]; m[k] = list.length ? list[list.length - 1].balance : 0; });
+    members.push(m);
+    return m;
+  }
+  loadSignups().forEach(attachSignup);
+
+  // ===== 회원 로그인 (stopbook-user 로그인 화면 ↔ 관리자 회원 상세의 패스워드 초기화·변경) =====
+  // 비밀번호 정보와 최근 접속 기록을 localStorage에 보관해 쇼핑몰 로그인과 관리자 화면이 같은 정보를 봄
+  //   AUTH_KEY:  { [회원 no]: { hash, changedAt, temp, fail, lockedUntil, snoozeUntil, log: [{ at, content, by }] } }
+  //     hash = 해시(회원 no + 비밀번호) · changedAt = 비밀번호 변경 일시(YYYY-MM-DD HH:mm, 예전 기록은 YYYY-MM-DD)
+  //     temp = 관리자가 발급한 임시 비밀번호 (다음 로그인 때 변경 필수) · fail/lockedUntil = 연속 실패 횟수/잠금 해제 시각
+  //     snoozeUntil = 90일 변경 안내에서 '다음에 변경'을 고른 경우 다시 안내할 날짜 · log = 회원 히스토리에 붙는 기록
+  //   LOGIN_KEY: { [회원 no]: { lastLogin, loginEnv } } — 회원 목록·상세의 최근접속일·접속 기기
+  //   샘플 회원(스탑북회원)은 저장된 비밀번호가 없으면 SAMPLE_PASSWORD로 로그인 (변경일 = 가입일)
+  //   간편 로그인(카카오·네이버·구글) 회원은 비밀번호가 없음
+  // TODO: 실서비스에서는 POST /api/auth/login 등 서버에서 검증 (비밀번호는 서버에만 bcrypt 등으로 저장)
+  const AUTH_KEY = 'stopbook.memberAuth.v1', LOGIN_KEY = 'stopbook.memberLogins.v1';
+  const SAMPLE_PASSWORD = 'stopbook1!';
+  const PW_EXPIRE_DAYS = 90, PW_SNOOZE_DAYS = 30, LOCK_FAILS = 5, LOCK_MINUTES = 10;   // 요구사항 PRD_MEM_006: 90일 미변경 시 변경 유도
+  const readJson = key => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { return {}; } };
+  const writeJson = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); return true; } catch (e) { return false; } };
+  const AUTH = readJson(AUTH_KEY), LOGINS = readJson(LOGIN_KEY);
+  const cyrb53 = (str, seed = 0) => {
+    let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+    for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+  };
+  const pwHash = (no, pw) => cyrb53(`${no}:${pw}`).toString(36);
+  const STOPBOOK_TYPE = (() => {
+    try { const g = MemberTypeStore.load().find(x => x.key === 'memberType'); const it = g && g.items.find(x => x.code === 'stopbook'); return it ? it.name : '스탑북회원'; }
+    catch (e) { return '스탑북회원'; }
+  })();
+  const hasPassword = m => m.memberType === '스탑북회원' || m.memberType === STOPBOOK_TYPE;
+  // 저장된 접속 기록·인증 기록을 회원 데이터에 반영
+  members.forEach(m => {
+    if (LOGINS[m.no]) Object.assign(m, LOGINS[m.no]);
+    ((AUTH[m.no] || {}).log || []).forEach(h => m.history.push(Object.assign({}, h)));
+  });
+  // 저장된 비밀번호가 없을 때: 샘플 회원만 SAMPLE_PASSWORD 사용
+  //   쇼핑몰에서 가입한 회원(fromSignup)은 샘플 비밀번호를 쓰지 않음 → '패스워드 미설정' (로그인 기능 추가 전에 가입해 비밀번호가 저장되지 않은 경우)
+  //   관리자 회원 상세에서 패스워드 초기화(임시 패스워드 발급)로 복구
+  const authOf = m => AUTH[m.no] || (hasPassword(m) && !m.fromSignup ? { hash: pwHash(m.no, SAMPLE_PASSWORD), changedAt: (m.history[0] && m.history[0].at) || ` 00:00`, temp: false, fail: 0, lockedUntil: '', snoozeUntil: '', sample: true } : null);
+  const saveAuth = (m, a) => { delete a.sample; AUTH[m.no] = a; return writeJson(AUTH_KEY, AUTH); };
+  const authLog = (m, a, content, by) => { const h = { at: fmtDateTime(new Date()), content, by }; (a.log || (a.log = [])).push(h); m.history.push(h); };
+  const daysBetween = (from, to) => Math.floor((new Date(to) - new Date(from)) / 86400000);
+  const parseAt = s => new Date(String(s).replace(' ', 'T'));
+
+  // 아이디(기존 회원) 또는 이메일로 회원 찾기 (대소문자 무시)
+  function findLoginMember(id) {
+    const v = String(id || '').trim().toLowerCase();
+    if (!v) return null;
+    return members.find(m => String(m.userId).toLowerCase() === v) || members.find(m => String(m.email).toLowerCase() === v) || null;
+  }
+
+  // 로그인. 반환: { member, change: 'temp'|'expired'|'' } 또는 { error: 'mismatch'|'locked', fails, until }
+  //   없는 계정·간편 로그인 계정·비밀번호 틀림은 모두 'mismatch' (가입 여부가 드러나지 않게)
+  //   비밀번호 5회 연속 실패 시 10분 잠금 (관리자 회원 상세에서 잠금 해제 가능)
+  function login(id, pw, env) {
+    const m = findLoginMember(id), a = m && authOf(m);
+    if (!m || !a) return { error: 'mismatch' };
+    const now = new Date();
+    if (a.lockedUntil) {
+      if (parseAt(a.lockedUntil) > now) return { error: 'locked', until: a.lockedUntil };
+      a.lockedUntil = ''; a.fail = 0;
+    }
+    if (a.hash !== pwHash(m.no, pw)) {
+      a.fail = (a.fail || 0) + 1;
+      if (a.fail >= LOCK_FAILS) {
+        a.lockedUntil = fmtDateTime(new Date(now.getTime() + LOCK_MINUTES * 60000));
+        a.fail = 0;
+        authLog(m, a, `로그인 ${LOCK_FAILS}회 연속 실패로 ${LOCK_MINUTES}분간 로그인 제한`, '시스템');
+        saveAuth(m, a);
+        return { error: 'locked', until: a.lockedUntil };
+      }
+      saveAuth(m, a);
+      return { error: 'mismatch', fails: a.fail, remain: LOCK_FAILS - a.fail };
+    }
+    a.fail = 0;
+    const today = fmtDate(now);
+    const expired = daysBetween(String(a.changedAt).slice(0, 10), today) >= PW_EXPIRE_DAYS && !(a.snoozeUntil && a.snoozeUntil > today);
+    if (!a.sample) saveAuth(m, a);
+    recordLogin(m.no, env);
+    return { member: m, change: a.temp ? 'temp' : expired ? 'expired' : '', changedAt: a.changedAt };
+  }
+
+  // 최근 접속일·접속 기기 기록 (간편 로그인도 사용)
+  function recordLogin(no, env) {
+    const m = members.find(x => x.no === no);
+    if (!m) return false;
+    m.lastLogin = fmtDate(new Date());
+    if (env) m.loginEnv = env;
+    LOGINS[no] = { lastLogin: m.lastLogin, loginEnv: m.loginEnv };
+    return writeJson(LOGIN_KEY, LOGINS);
+  }
+
+  // 비밀번호 설정. opts = { temp, by, log(기본 true), content }
+  //   회원가입(log: false) · 회원 비밀번호 변경 · 관리자 패스워드 변경/초기화(temp: true)에서 사용
+  function setPassword(no, pw, opts = {}) {
+    const m = members.find(x => x.no === no);
+    if (!m || !hasPassword(m)) return false;
+    const a = Object.assign({}, authOf(m) || {}, { hash: pwHash(no, pw), changedAt: fmtDateTime(new Date()), temp: !!opts.temp, fail: 0, lockedUntil: '', snoozeUntil: '' });
+    if (opts.log !== false) authLog(m, a, opts.content || (opts.temp ? '패스워드 초기화 (임시 패스워드 발급)' : '패스워드 변경'), opts.by || '관리자');
+    return saveAuth(m, a);
+  }
+  const isSamePassword = (no, pw) => { const m = members.find(x => x.no === no), a = m && authOf(m); return !!a && a.hash === pwHash(no, pw); };
+  // 90일 변경 안내에서 '다음에 변경': 30일 뒤 다시 안내
+  function snoozePassword(no) {
+    const m = members.find(x => x.no === no), a = m && authOf(m);
+    if (!a) return false;
+    const d = new Date(); d.setDate(d.getDate() + PW_SNOOZE_DAYS);
+    a.snoozeUntil = fmtDate(d);
+    authLog(m, a, `패스워드 변경 안내: 다음에 변경 (${a.snoozeUntil}에 다시 안내)`, '회원');
+    return saveAuth(m, a);
+  }
+  // 관리자: 로그인 제한 해제
+  function unlockLogin(no, by) {
+    const m = members.find(x => x.no === no), a = m && authOf(m);
+    if (!a) return false;
+    a.fail = 0; a.lockedUntil = '';
+    authLog(m, a, '로그인 제한 해제', by || '관리자');
+    return saveAuth(m, a);
+  }
+  // 관리자 회원 상세 표시용
+  function authInfo(no) {
+    const m = members.find(x => x.no === no), a = m && authOf(m);
+    if (!a) return m && hasPassword(m) ? { unset: true } : null;
+    const locked = !!a.lockedUntil && parseAt(a.lockedUntil) > new Date();
+    // 변경 일시: 예전 기록(날짜만)은 같은 날 패스워드 변경 기록의 시각으로 보완
+    let changedAt = String(a.changedAt || '');
+    if (changedAt.length === 10) {
+      const h = (a.log || []).filter(x => /패스워드/.test(x.content) && x.at.startsWith(changedAt)).pop();
+      changedAt = h ? h.at : `${changedAt} 00:00`;
+    }
+    return { changedAt, temp: !!a.temp, locked, lockedUntil: locked ? a.lockedUntil : '', fail: a.fail || 0, sample: !!a.sample,
+      expired: daysBetween(String(a.changedAt).slice(0, 10), fmtDate(new Date())) >= PW_EXPIRE_DAYS };
+  }
+  const Auth = { SAMPLE_PASSWORD, PW_EXPIRE_DAYS, PW_SNOOZE_DAYS, LOCK_FAILS, LOCK_MINUTES, hasPassword, findLoginMember, login, recordLogin, setPassword, isSamePassword, snoozePassword, unlockLogin, authInfo };
+
+  // 가입 중복 확인: 이메일(대소문자 무시) 또는 휴대폰 번호(숫자만 비교)가 같은 회원. 반환: { field: 'email'|'phone', member } 또는 null
+  //   기존 다계정 보유자도 휴대폰 번호가 같으면 추가 가입 불가 (요구사항 PRD_MEM_001)
+  function findDuplicate({ email, phone }) {
+    const e = String(email || '').trim().toLowerCase(), p = digits(phone);
+    const byPhone = p && members.find(m => digits(m.phone) === p);
+    if (byPhone) return { field: 'phone', member: byPhone };
+    const byEmail = e && members.find(m => String(m.email).toLowerCase() === e);
+    return byEmail ? { field: 'email', member: byEmail } : null;
+  }
+
+  // 가입 저장. rec = 위 저장 형식에서 no·grade·joinDate 등을 뺀 입력값. 반환: { member } 또는 { error }
+  function registerMember(rec) {
+    const dup = findDuplicate(rec);
+    if (dup) return { error: dup.field === 'phone' ? '이미 가입된 휴대폰 번호입니다.' : '이미 사용 중인 이메일입니다.' };
+    const now = new Date(), at = fmtDateTime(now);
+    const saved = Object.assign({}, rec, {
+      no: members.reduce((n, m) => Math.max(n, m.no), 1000) + 1,
+      grade: GRADE_ORDER[0], joinDate: fmtDate(now), lastLogin: fmtDate(now), loginEnv: rec.joinEnv,
+      memos: [], history: [{ at, content: `회원 가입 (${rec.memberType})`, by: '회원' }].concat(rec.history || [])
+    });
+    const list = loadSignups();
+    list.push(saved);
+    try { localStorage.setItem(SIGNUP_KEY, JSON.stringify(list)); } catch (e) { return { error: '가입 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.' }; }
+    return { member: attachSignup(saved) };
+  }
+
+  window.MemberData = {
+    members, GRADE_ORDER, BENEFITS, COUPONS, PRODUCTS, PROJECT_NAMES, VIEWER_SAMPLE, viewerUrl, pad, fmtDate, fmtDateTime, pushEntry, heldCoupons, orderStats, validOrders, statusClass, ageOf, addMileage, mileageHistory,
+    applications, saveApplication, applyApproval, revokeBusiness, GROUP_TYPES: groupKinds,
+    findDuplicate, registerMember, SIGNUP_KEY, Auth
+  };
+})();

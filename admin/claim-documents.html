@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스탑북 관리자 - 서류 발급 관리</title>
+<link rel="stylesheet" href="admin.css?v=20261231">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="logo" href="dashboard.html" title="대시보드">STOPBOOK Admin</a>
+    <ul>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">회원관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="members.html">통합 회원 관리</a></li>
+          <li><a href="group-applications.html">단체 회원 신청 관리</a></li>
+          <li><a href="withdrawn.html">탈퇴 회원 관리</a></li>
+          <li><a href="member-types.html">회원 유형 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">메시지전송관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="message-send.html">메시지 전송</a></li>
+          <li><a href="message-sms.html">SMS 발송 관리</a></li>
+          <li><a href="message-alimtalk.html">알림톡 발송 관리</a></li>
+          <li><a href="message-email.html">이메일 발송 관리</a></li>
+        </ul>
+      </li>      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">주문관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="orders.html">통합 주문 관리</a></li>
+          <li><a href="paid-orders.html">결제 완료 주문</a></li>
+          <li><a href="unpaid-orders.html">미입금 주문</a></li>
+          <li><a href="postpay-orders.html">후결제 주문</a></li>
+          <li><a href="prepaid-orders.html">선결제 주문</a></li>
+          <li><a href="canceled-orders.html">취소 주문</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">관리자계정관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="admin-accounts.html">계정 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">제작/배송관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="production-orders.html">통합 제작 관리</a></li>
+          <li><a href="ordered-orders.html">주문 완료</a></li>
+          <li><a href="making-orders.html">제작 중</a></li>
+          <li><a href="shipping-orders.html">배송 중</a></li>
+          <li><a href="delivered-orders.html">배송 완료</a></li>
+          <li><a href="outsource-orders.html">외주 제작</a></li>
+        </ul>
+      </li>
+      <li class="has-sub open">
+        <a href="#" class="menu-parent" aria-expanded="true">클레임관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="claim-cancel.html">취소 요청 관리</a></li>
+          <li><a href="claim-exchange.html">교환 반품 관리</a></li>
+          <li><a href="claim-documents.html" class="active" aria-current="page">서류 발급 관리</a></li>
+          <li><a href="claim-receipts.html">계산서 영수증 발급 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">게시판관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="board-all.html">게시판 통합 관리</a></li>
+          <li><a href="board-admin-notice.html">관리자 공지</a></li>
+          <li><a href="board-inquiry-settings.html">1:1 문의 설정</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">게시글관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="board-notice.html">공지사항</a></li>
+          <li><a href="board-inquiry.html">1:1 문의</a></li>
+          <li><a href="board-faq.html">FAQ</a></li>
+          <li><a href="board-review.html">이용후기</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">혜택관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="mileage-types.html">마일리지 유형 관리</a></li>
+        </ul>
+      </li>
+<li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">혜택내역<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="mileage.html">마일리지 내역</a></li>
+        </ul>
+      </li>    </ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="breadcrumb">홈 &gt; 클레임관리 &gt; <b>서류 발급 관리</b></div>
+      <div><span class="proto-ver" data-proto-version>프로토타입 v2.75 (2026-10-13)</span> 관리자님 | <a href="#">로그아웃</a></div>
+    </header>
+
+    <main class="content">
+      <h1>서류 발급 관리 <span class="page-desc">고객이 요청한 사업자등록증·통장사본·견적서·거래내역서 등의 자동 발급 이력을 확인하고, 자동 발급으로 안 되는 별도 발급 신청을 처리합니다.</span></h1>
+
+      <!-- 화면 탭: 별도 발급 신청 처리 / 자동 발급 이력 -->
+      <div class="tabs" role="tablist" id="mainTabs">
+        <button type="button" role="tab" class="tab active" aria-selected="true" data-tab="req" aria-controls="panelReq">발급 신청 처리 <span class="tab-count" id="reqCount"></span></button>
+        <button type="button" role="tab" class="tab" aria-selected="false" data-tab="log" aria-controls="panelLog">자동 발급 이력 <span class="tab-count" id="logCount"></span></button>
+      </div>
+
+      <!-- ===== 발급 신청 처리: 고객이 별도로 신청한 서류를 관리자가 만들어 전달(발급 완료)하거나 반려 ===== -->
+      <div role="tabpanel" id="panelReq">
+        <!-- 상태 탭 + 오른쪽 '서류 발급 등록' (유선 등으로 받은 신청을 관리자가 직접 입력 → 처리 대기에 추가) -->
+        <div class="tabs-row">
+          <div class="tabs" role="tablist" id="statusTabs"></div>
+          <button type="button" class="btn btn-primary" id="btnRegister">서류 발급 등록</button>
+        </div>
+        <form class="panel" id="searchForm" novalidate>
+          <div class="search-row">
+            <div class="search-grid order-search">
+              <div class="field f-keyword">
+                <label for="sType">검색어</label>
+                <select id="sType" style="flex:0 0 96px">
+                  <option value="all">전체</option>
+                  <option value="orderNo">주문번호</option>
+                  <option value="name">주문자</option>
+                  <option value="userId">아이디</option>
+                  <option value="email">이메일</option>
+                  <option value="company">사업자명</option>
+                </select>
+                <input type="text" id="sKeyword" placeholder="검색어 입력">
+              </div>
+              <div class="field f-period">
+                <label for="sDateType">기간</label>
+                <select id="sDateType" style="flex:0 0 100px">
+                  <option value="at">신청일</option>
+                  <option value="processedAt">처리일</option>
+                  <option value="wantBy">희망일</option>
+                </select>
+                <div class="range">
+                  <input type="date" id="sFrom" aria-label="기간 시작"> ~ <input type="date" id="sTo" aria-label="기간 종료">
+                </div>
+                <div class="quick-range" role="group" aria-label="기간 빠른 선택">
+                  <button type="button" class="btn btn-xs" data-days="0">오늘</button>
+                  <button type="button" class="btn btn-xs" data-days="7">7일</button>
+                  <button type="button" class="btn btn-xs" data-days="30">1개월</button>
+                  <button type="button" class="btn btn-xs" data-days="90">3개월</button>
+                  <button type="button" class="btn btn-xs" data-days="all">전체</button>
+                </div>
+              </div>
+              <div class="field f-status">
+                <label for="sDoc">서류 종류</label>
+                <select id="sDoc"><option value="">전체</option></select>
+              </div>
+              <div class="field f-status">
+                <label for="sReceive">수령 방법</label>
+                <select id="sReceive"><option value="">전체</option></select>
+              </div>
+            </div>
+            <div class="search-actions">
+              <button type="submit" class="btn btn-primary">검색</button>
+              <button type="button" class="btn" id="btnReset">초기화</button>
+            </div>
+          </div>
+        </form>
+
+        <section class="panel">
+          <div class="list-head">
+            <div class="count" id="listGuide"></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr id="headRow"></tr></thead>
+              <tbody id="listBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===== 자동 발급 이력: 고객 요청으로 시스템이 자동 발급한 서류 (+ 관리자 재발급) ===== -->
+      <div role="tabpanel" id="panelLog" hidden>
+        <form class="panel" id="logForm" novalidate>
+          <div class="search-row">
+            <div class="search-grid order-search">
+              <div class="field f-keyword">
+                <label for="hType">검색어</label>
+                <select id="hType" style="flex:0 0 96px">
+                  <option value="all">전체</option>
+                  <option value="orderNo">주문번호</option>
+                  <option value="name">주문자</option>
+                  <option value="userId">아이디</option>
+                  <option value="email">이메일</option>
+                  <option value="company">사업자명</option>
+                </select>
+                <input type="text" id="hKeyword" placeholder="검색어 입력">
+              </div>
+              <div class="field f-period">
+                <label>발급일</label>
+                <div class="range">
+                  <input type="date" id="hFrom" aria-label="발급일 시작"> ~ <input type="date" id="hTo" aria-label="발급일 종료">
+                </div>
+                <div class="quick-range" role="group" aria-label="기간 빠른 선택">
+                  <button type="button" class="btn btn-xs" data-days="0">오늘</button>
+                  <button type="button" class="btn btn-xs" data-days="7">7일</button>
+                  <button type="button" class="btn btn-xs" data-days="30">1개월</button>
+                  <button type="button" class="btn btn-xs" data-days="90">3개월</button>
+                  <button type="button" class="btn btn-xs" data-days="all">전체</button>
+                </div>
+              </div>
+              <div class="field f-status">
+                <label for="hDoc">서류 종류</label>
+                <select id="hDoc"><option value="">전체</option></select>
+              </div>
+              <div class="field f-status">
+                <label for="hBy">발급 구분</label>
+                <select id="hBy"><option value="">전체</option><option value="시스템">자동 발급 (시스템)</option><option value="관리자">관리자 발급·재발급</option></select>
+              </div>
+            </div>
+            <div class="search-actions">
+              <button type="submit" class="btn btn-primary">검색</button>
+              <button type="button" class="btn" id="btnLogReset">초기화</button>
+            </div>
+          </div>
+        </form>
+
+        <section class="panel">
+          <div class="list-head">
+            <div class="count" id="logGuide"></div>
+            <div class="right"><span class="readonly" id="logSummary"></span></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th style="width:128px">발급일시</th><th style="width:110px">서류 종류</th><th style="width:120px">주문번호</th><th style="width:72px">주문자명</th><th style="width:110px">이메일</th><th style="width:70px">회원구분</th>
+                <th>사업자명</th><th style="width:96px;text-align:right">금액</th><th style="width:96px">발급 경로</th><th style="width:88px">발급 구분</th><th style="width:150px">관리</th>
+              </tr></thead>
+              <tbody id="logBody"></tbody>
+            </table>
+          </div>
+          <div class="list-foot" id="logMore" hidden><button type="button" class="btn" id="btnLogMore">더 보기</button></div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- 서류 발급 등록 모달: 유선·이메일 등으로 받은 별도 발급 신청을 관리자가 직접 입력 → 처리 대기에 추가 -->
+<div class="modal-bg" id="regModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="regTitle">
+    <div class="modal-header">
+      <h2 id="regTitle">서류 발급 등록</h2>
+      <button type="button" class="close" data-regclose aria-label="닫기">&times;</button>
+    </div>
+    <form class="modal-body" id="regForm" novalidate>
+      <table class="form-table">
+        <tr><th>접수 경로 *</th><td><select id="gChannel" class="w-auto" aria-label="접수 경로"></select></td></tr>
+        <tr><th>주문번호</th><td>
+          <div class="inline-row"><input type="text" id="gOrderNo" maxlength="20" placeholder="예: 20261005-09004" style="width:200px"> <button type="button" class="btn btn-sm" id="gFind">주문 확인</button></div>
+          <div class="readonly" id="gOrderInfo" style="margin-top:4px">주문 전 요청(견적서 등)은 비워 두세요. 주문번호를 넣고 주문 확인을 누르면 아래 담당자 정보가 주문자·사업자 정보로 채워집니다.</div>
+        </td></tr>
+        <!-- 담당자: 서류를 받을 담당자 정보 (담당자명 + 연락처 또는 이메일 필수). 주문 확인을 하면 주문자·사업자 정보로 채워지고 수정 가능 -->
+        <tr id="gApplicantRow"><th>담당자 *</th><td>
+          <div class="inline-row">
+            <input type="text" id="gName" maxlength="20" placeholder="담당자명 *" style="width:110px">
+            <input type="text" id="gPhone" maxlength="20" placeholder="연락처" style="width:140px">
+            <input type="email" id="gEmail" maxlength="60" placeholder="이메일" style="flex:1">
+          </div>
+        </td></tr>
+        <tr><th>기관/회사명</th><td><input type="text" id="gCompany" maxlength="40" placeholder="기관명 또는 회사명 (선택)"></td></tr>
+        <tr><th>서류 종류 *</th><td><div class="check-chips" id="gTypes"></div><div class="readonly" style="margin-top:4px">여러 개를 함께 신청한 경우 모두 체크하세요.</div></td></tr>
+        <!-- 세금계산서를 체크하면: 사업자등록증 첨부 필수 -->
+        <tr id="gBizRow" hidden><th>사업자등록증 *</th><td>
+          <div class="inline-row"><input type="text" id="gBizCert" maxlength="120" placeholder="사업자등록증 파일 (세금계산서 발급용)" style="flex:1"> <label class="btn btn-sm" for="gBizPick">파일 선택</label><input type="file" id="gBizPick" accept=".pdf,.jpg,.jpeg,.png" hidden></div>
+        </td></tr>
+        <!-- 현금영수증을 체크하면: 발급 정보 (소득공제 = 휴대폰/주민번호, 지출증빙 = 사업자등록번호) -->
+        <tr id="gCashRow" hidden><th>현금영수증 발급정보 *</th><td>
+          <div class="inline-row">
+            <select id="gCashPurpose" class="w-auto" aria-label="현금영수증 구분"><option>소득공제</option><option>지출증빙</option></select>
+            <select id="gCashIdType" class="w-auto" aria-label="발급 번호 종류"></select>
+            <input type="text" id="gCashId" maxlength="20" placeholder="번호" style="flex:1">
+          </div>
+        </td></tr>
+        <tr><th>요청 사항 *</th><td><textarea id="gRequirement" maxlength="300" placeholder="고객이 요청한 내용 (양식·직인 날인·수신처 등)" style="height:72px"></textarea></td></tr>
+        <tr><th>수령 방법 *</th><td>
+          <div class="inline-row"><select id="gReceiveBy" class="w-auto" aria-label="수령 방법"></select>
+            <input type="text" id="gReceiveTo" maxlength="200" placeholder="이메일 주소 · 팩스 번호 · 우편 주소" style="flex:1"></div>
+        </td></tr>
+        <tr><th>발급 희망일</th><td><input type="date" id="gWantBy" style="width:170px"></td></tr>
+        <tr><th>첨부 파일</th><td><div class="inline-row"><input type="text" id="gAttachment" maxlength="120" placeholder="고객이 보낸 양식 파일명 (선택)" style="flex:1"> <label class="btn btn-sm" for="gAttachPick">파일 선택</label><input type="file" id="gAttachPick" hidden></div></td></tr>
+        <tr><th>관리자 메모</th><td><input type="text" id="gMemo" maxlength="200" placeholder="통화 내용, 담당자 등 (처리 히스토리에 남음)"></td></tr>
+      </table>
+      <div class="err" id="gErr"></div>
+    </form>
+    <div class="modal-footer">
+      <button type="button" class="btn" data-regclose>닫기</button>
+      <button type="submit" form="regForm" class="btn btn-primary">등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- 신청 상세 / 처리 모달 -->
+<div class="modal-bg" id="modal">
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <h2 id="modalTitle"></h2>
+      <button type="button" class="close" data-close aria-label="닫기">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="status-banner" id="statusBanner"></div>
+
+      <div class="section-title">주문 정보 <a class="btn btn-xs" id="dOrderLink" href="#" target="_blank" style="margin-left:8px">주문 상세 열기</a></div>
+      <table class="form-table multi-col">
+        <colgroup><col class="c-th"><col><col class="c-th"><col></colgroup>
+        <tr><th>주문번호</th><td class="mono" id="dOrderNo"></td><th>주문일시</th><td id="dOrderedAt"></td></tr>
+        <tr><th>주문자</th><td id="dBuyer"></td><th>결제</th><td id="dPay"></td></tr>
+        <tr><th>회원구분</th><td id="dCategory"></td><th>결제금액</th><td id="dTotal"></td></tr>
+        <tr id="rowBiz"><th>사업자 정보</th><td colspan="3" id="dBiz"></td></tr>
+      </table>
+
+      <div class="section-title">신청 정보 <span class="section-note" id="dReqSource">고객 입력</span></div>
+      <table class="form-table multi-col">
+        <colgroup><col class="c-th"><col><col class="c-th"><col></colgroup>
+        <tr><th>신청번호</th><td class="mono" id="dReqNo"></td><th>신청일시</th><td id="dAt"></td></tr>
+        <tr><th>담당자</th><td id="dContact"></td><th>기관/회사명</th><td id="dOrg"></td></tr>
+        <tr><th>서류 종류</th><td id="dDoc"></td><th>발급 희망일</th><td id="dWantBy"></td></tr>
+        <tr><th>수령 방법</th><td id="dReceive"></td><th>첨부 파일</th><td id="dAttachment"></td></tr>
+        <tr><th>요청 사항</th><td colspan="3" id="dRequirement"></td></tr>
+        <tr id="rowBizCert" hidden><th>사업자등록증</th><td colspan="3" id="dBizCert"></td></tr>
+        <tr id="rowCash" hidden><th>현금영수증</th><td colspan="3" id="dCash"></td></tr>
+      </table>
+
+      <!-- 발급 완료 건: 처리 내용 확인 -->
+      <div id="doneBox" hidden>
+        <div class="section-title">발급 내용</div>
+        <table class="form-table multi-col">
+          <colgroup><col class="c-th"><col><col class="c-th"><col></colgroup>
+          <tr><th>발급 파일</th><td id="doneFile"></td><th>전달 방법</th><td id="doneSent"></td></tr>
+          <tr><th>관리자 메모</th><td colspan="3" id="doneMemo"></td></tr>
+        </table>
+      </div>
+
+      <!-- 대기 상태에서만: 발급 파일·전달 방법·관리자 메모·반려 사유 -->
+      <div id="reviewBox">
+        <div class="section-title">처리</div>
+        <table class="form-table">
+          <tr><th>발급 파일 *</th><td>
+            <div class="inline-row">
+              <input type="text" id="rFile" maxlength="120" placeholder="만든 서류 파일명 (PDF)" style="flex:1">
+              <label class="btn btn-sm" for="rFilePick">파일 선택</label>
+              <input type="file" id="rFilePick" accept=".pdf,.jpg,.png" hidden>
+            </div>
+            <div class="readonly" id="rFileHint" style="margin-top:4px"></div>
+          </td></tr>
+          <tr><th>전달 방법 *</th><td>
+            <div class="inline-row">
+              <select id="rSentBy" aria-label="전달 방법"></select>
+              <input type="text" id="rSentTo" maxlength="200" placeholder="이메일 주소 · 팩스 번호 · 우편 주소" style="flex:1">
+            </div>
+            <div class="readonly" id="rSentHint" style="margin-top:4px"></div>
+          </td></tr>
+          <tr><th>관리자 메모</th><td><input type="text" id="rMemo" maxlength="200" placeholder="직인 날인 여부, 수정 내용 등 (주문 히스토리에 남음)"></td></tr>
+          <tr><th>반려 사유</th><td>
+            <textarea id="rReject" maxlength="300" placeholder="반려할 때만 입력합니다. 고객에게 안내되는 문구입니다."></textarea>
+            <div class="err" id="eReview"></div>
+          </td></tr>
+        </table>
+      </div>
+
+      <div class="section-title">처리 히스토리</div>
+      <div class="table-wrap history-wrap">
+        <table class="history-table change-table">
+          <thead><tr><th style="width:130px">일시</th><th>내용</th><th style="width:90px">담당자</th></tr></thead>
+          <tbody id="dHistory"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn" data-close>닫기</button>
+      <button type="button" class="btn btn-danger" id="btnReject">반려</button>
+      <button type="button" class="btn btn-primary" id="btnComplete">발급 완료</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="board-store.js?v=20261231"></script>
+<script src="member-type-store.js?v=20261231"></script>
+<script src="member-data.js?v=20261231"></script>
+<script src="order-data.js?v=20261231"></script>
+<script src="inquiry-settings.js?v=20261231"></script>
+<script src="inquiry-data.js?v=20261231"></script>
+<script src="claim-data.js?v=20261231"></script>
+<script src="document-data.js?v=20261231"></script>
+<script src="list-tools.js?v=20261231"></script>
+<script src="feedback.js?v=20261231"></script>
+<script>
+(function () {
+  'use strict';
+  // 서류 발급 관리
+  //   발급 신청 처리: 고객이 별도로 신청한 서류(기관 양식·직인 날인·수신처 변경 등) → 확인 모달에서 주문·신청 내용을 보고 발급 완료(파일·전달 방법) 또는 반려
+  //   자동 발급 이력: 고객 요청으로 시스템이 바로 발급한 서류 기록 (관리자 재발급도 같이 표시) → 재발급·다운로드
+  //   처리 후에는 화면을 다시 불러 반영 (주소의 done 값으로 완료 안내)
+  const { esc, toast, initSidebar, setDefaultRange, listToday, ADMIN_NAME } = AdminUtil;
+  const { STATUS_TEXT, orderOf, requests, issues } = DocData;
+  const $ = id => document.getElementById(id);
+  const won = n => `${Number(n).toLocaleString()}원`;
+  const fmtDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const STATUSES = ['대기', '완료', '반려', '전체'];
+  const statusBadge = s => `<span class="badge st-${s === '완료' ? '승인' : s}">${STATUS_TEXT[s] || s}</span>`;
+  const docBadge = t => `<span class="badge dc-${esc(t)}">${esc(t)}</span>`;
+  // 서류 종류 칸: 하나면 배지, 여럿이면 첫 서류 배지 + '외 N종' (예: 견적서 외 2종)
+  const docCell = q => { const t = DocData.typesOf(q); return `${docBadge(t[0])}${t.length > 1 ? ` <span class="muted">외 ${t.length - 1}종</span>` : ''}`; };
+  const fileLink = f => (f ? `<a href="#" class="name-link mono" data-file="${esc(f)}" title="내려받기">${esc(f)}</a>` : '<span class="muted">-</span>');
+  const localPart = e => String(e || '').split('@')[0];
+
+  $('sDoc').innerHTML += DocData.REQUEST_TYPES.map(t => `<option>${esc(t)}</option>`).join('');
+  $('sReceive').innerHTML += DocData.RECEIVE_METHODS.map(t => `<option>${esc(t)}</option>`).join('');
+  $('hDoc').innerHTML += DocData.AUTO_TYPES.map(t => `<option>${esc(t)}</option>`).join('');
+  $('rSentBy').innerHTML = DocData.RECEIVE_METHODS.map(t => `<option>${esc(t)}</option>`).join('');
+
+  let mainTab = 'req';
+  let filter = '대기';
+  let current = null;
+  let search = null;      // 신청 검색 조건
+  let logSearch = null;   // 이력 검색 조건
+
+  // ===== 기간 빠른 선택 (두 검색 폼 공통) =====
+  function bindQuickRange(form, fromId, toId) {
+    form.addEventListener('click', e => {
+      const b = e.target.closest('[data-days]');
+      if (!b) return;
+      const d = b.dataset.days;
+      if (d === 'all') { $(fromId).value = ''; $(toId).value = ''; }
+      else {
+        const today = listToday();
+        $(fromId).value = fmtDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - Number(d)));
+        $(toId).value = fmtDate(today);
+      }
+      form.querySelectorAll('[data-days]').forEach(x => x.classList.toggle('btn-adjust', x === b));
+    });
+    [fromId, toId].forEach(id => $(id).addEventListener('input', () => form.querySelectorAll('[data-days]').forEach(x => x.classList.remove('btn-adjust'))));
+  }
+  bindQuickRange($('searchForm'), 'sFrom', 'sTo');
+  bindQuickRange($('logForm'), 'hFrom', 'hTo');
+
+  // ===== 발급 신청: 검색 =====
+  function readSearch() {
+    const s = { type: $('sType').value, kw: $('sKeyword').value.trim().toLowerCase(), dateType: $('sDateType').value, from: $('sFrom').value, to: $('sTo').value, doc: $('sDoc').value, receive: $('sReceive').value };
+    if (s.from && s.to && s.from > s.to) { toast('기간 시작일이 종료일보다 늦습니다.'); return null; }
+    return s;
+  }
+  function matches(q) {
+    if (!search) return true;
+    const a = DocData.applicantOf(q);   // 주문 전 요청은 신청자 정보로 검색
+    const fields = { orderNo: q.orderNo, name: a.name, userId: a.userId, email: a.email, company: a.company };
+    const targets = search.type === 'all' ? Object.values(fields).concat([q.reqNo, q.requirement]) : [fields[search.type]];
+    const day = (q[search.dateType] || '').slice(0, 10);
+    const inPeriod = (!search.from && !search.to) || (day && (!search.from || day >= search.from) && (!search.to || day <= search.to));
+    return (!search.kw || targets.some(v => String(v).toLowerCase().includes(search.kw))) && inPeriod &&
+      (!search.doc || DocData.typesOf(q).includes(search.doc)) && (!search.receive || q.receiveBy === search.receive);   // 서류 종류: 함께 신청한 서류 중 하나라도
+  }
+
+  // ===== 목록 도구: N개씩 · 엑셀 다운로드 · 페이지 번호 (list-tools.js), 발급 신청·자동 발급 이력 각각 =====
+  //   엑셀은 현재 탭·검색 결과 전체 (목록 열 + 상세 모달의 주문·신청·처리 내용)
+  let reqRows = [], reqKey = '', logRows = [], logKey = '';
+  const bizOf = o => (o && o.member.business) || null;
+  const reqTools = ListTools.create({
+    section: $('listBody').closest('.panel'),
+    onChange: () => render(),
+    units: [{ label: '신청 단위', desc: '발급 신청 1건 = 1행 (주문·사업자·처리 내용 포함)', file: '서류발급신청목록',
+      rows: () => [['신청번호', '신청일시', '접수', '서류 수', '서류 종류', '주문번호', '주문일시', '주문자명', '아이디', '이메일', '휴대폰', '회원구분', '사업자명', '사업자번호', '결제수단', '결제상태', '총 결제금액(원)',
+        '담당자명', '담당자 연락처', '담당자 이메일', '기관/회사명', '요청 사항', '첨부 파일', '사업자등록증 첨부', '현금영수증 구분', '현금영수증 발급번호 종류', '현금영수증 발급번호', '수령 방법', '수령처', '희망일', '상태', '처리일시', '처리자', '발급 파일', '전달 방법', '전달처', '관리자 메모', '반려 사유', '처리 히스토리'],
+        ...reqRows.map(q => { const o = orderOf(q), b = bizOf(o); return [q.reqNo, q.at, q.manual ? `관리자 등록 (${q.channel})` : '고객 신청', DocData.typesOf(q).length, DocData.typesOf(q).join(', '), q.orderNo || '주문 전', o ? o.orderedAt : '', DocData.applicantOf(q).name, DocData.applicantOf(q).userId, DocData.applicantOf(q).email, '\t' + DocData.applicantOf(q).phone,
+          o ? `${o.member.category}${o.member.subCategory ? ` (${o.member.subCategory})` : ''}` : '', b ? b.companyName : DocData.applicantOf(q).company, b ? b.bizNo : '', o ? o.payMethod : '', o ? o.payStatus : '', o ? (o.payment.total || o.amount) : '',
+          (q.contact || {}).name || '', (q.contact || {}).phone ? '\t' + q.contact.phone : '', (q.contact || {}).email || '', (q.contact || {}).org || '',
+          q.requirement || '', q.attachment || '', q.bizCert || '', q.cashReceipt ? q.cashReceipt.purpose : '', q.cashReceipt ? q.cashReceipt.idType : '', q.cashReceipt ? q.cashReceipt.idValue : '', q.receiveBy, q.receiveTo || '', q.wantBy || '', STATUS_TEXT[q.status] || q.status, q.processedAt || '', q.processedBy || '',
+          q.file || '', q.sentBy || '', q.sentTo || '', q.memo || '', q.rejectReason || '', (q.history || []).map(h => `[${h.at}] ${h.content} (${h.by})`).join('\n')]; })] }]
+  });
+  const logTools = ListTools.create({
+    section: $('logBody').closest('.panel'),
+    onChange: () => renderLog(),
+    units: [{ label: '발급 이력 단위', desc: '발급 1건 = 1행', file: '서류자동발급이력',
+      rows: () => [['발급번호', '발급일시', '서류 종류', '용도', '주문번호', '주문자명', '아이디', '이메일', '회원구분', '사업자명', '금액(원)', '발급 경로', '발급 구분', '파일'],
+        ...logRows.map(x => [x.id, x.at, x.docType, x.purpose || '', x.orderNo || '', x.name, x.userId, x.email, x.category || '', x.company || '', x.amount || '', x.channel, x.by === '시스템' ? '자동 발급' : '관리자 발급·재발급', x.file || ''])] }]
+  });
+
+  // ===== 발급 신청: 목록 =====
+  function render() {
+    const base = requests.filter(matches);
+    const count = s => (s === '전체' ? base.length : base.filter(q => q.status === s).length);
+    $('statusTabs').innerHTML = STATUSES.map(s => `
+      <button type="button" role="tab" class="tab ${s === filter ? 'active' : ''}" aria-selected="${s === filter}" data-status="${s}">
+        ${s === '전체' ? '전체' : STATUS_TEXT[s]} <span class="tab-count">${count(s)}</span></button>`).join('');
+    const rows = base.filter(q => filter === '전체' || q.status === filter);
+    reqRows = rows;
+    const key = filter + '|' + JSON.stringify(search);   // 탭·검색이 바뀌면 1페이지로
+    if (key !== reqKey) { reqTools.first(); reqKey = key; }
+    if (!rows.length) reqTools.page(rows);
+    $('listGuide').innerHTML = (search ? `검색결과 <b>${rows.length}</b>건 · ` : '') + (filter === '대기'
+      ? '확인 버튼을 눌러 요청 사항을 확인한 뒤 서류를 만들어 전달하면 발급 완료, 발급할 수 없으면 반려합니다. 발급 희망일이 지난 건은 붉게 표시됩니다.' : `${STATUS_TEXT[filter] || filter} ${rows.length}건`);
+    const showStatus = filter === '전체';
+    const showDone = filter === '완료';   // 발급 완료 탭: 관리 앞에 처리일
+    const heads = ['신청일시', '서류 종류', '주문번호', '주문자명', '이메일', '회원구분', '요청 사항', '수령 방법', '희망일', ...(showStatus ? ['상태'] : []), ...(showDone ? ['처리일'] : []), '관리'];
+    const WIDTH = { '신청일시': 128, '서류 종류': 130, '주문번호': 120, '주문자명': 72, '이메일': 100, '회원구분': 70, '수령 방법': 76, '희망일': 96, '상태': 90, '처리일': 128, '관리': 72 };
+    $('headRow').innerHTML = heads.map(h => `<th${WIDTH[h] ? ` style="width:${WIDTH[h]}px"` : ''}>${h}</th>`).join('');
+    const today = fmtDate(listToday());
+    $('listBody').innerHTML = rows.length ? reqTools.page(rows).map(q => {
+      const a = DocData.applicantOf(q);
+      const late = q.status === '대기' && q.wantBy && q.wantBy < today;
+      return `<tr>
+        <td>${esc(q.at)}</td>
+        <td title="${esc(DocData.typesOf(q).join(', '))}">${docCell(q)}</td>
+        <td class="mono">${q.orderNo ? `<a class="name-link" href="order-detail.html?orderNo=${encodeURIComponent(q.orderNo)}" target="_blank">${esc(q.orderNo)}</a>` : '<span class="muted" title="주문과 연결되지 않은 요청 (주문 전 견적 요청 등)">주문 전</span>'}</td>
+        <td><b>${esc(a.name || '-')}</b></td>
+        <td class="left ellip" title="${esc(a.email)}">${esc(a.email ? localPart(a.email) : '-')}</td>
+        <td>${esc(a.category || '-')}</td>
+        <td class="left ellip" title="${esc(q.requirement)}">${esc(q.requirement)}${q.attachment ? ' <span class="muted">📎</span>' : ''}</td>
+        <td>${esc(q.receiveBy)}</td>
+        <td${late ? ' class="warn" title="발급 희망일이 지났습니다"' : ''}>${esc(q.wantBy || '-')}</td>
+        ${showStatus ? `<td>${statusBadge(q.status)}</td>` : ''}
+        ${showDone ? `<td>${esc(q.processedAt || '-')}</td>` : ''}
+        <td><button type="button" class="btn btn-sm ${q.status === '대기' ? 'btn-primary' : ''}" data-req="${esc(q.reqNo)}">확인</button></td>
+      </tr>`;
+    }).join('') : `<tr><td colspan="${heads.length}" class="empty">해당 상태의 신청이 없습니다.</td></tr>`;
+    $('reqCount').textContent = requests.filter(q => q.status === '대기').length ? `대기 ${requests.filter(q => q.status === '대기').length}` : '';
+  }
+
+  // ===== 발급 신청: 상세 모달 =====
+  function openDetail(reqNo) {
+    const q = requests.find(x => x.reqNo === reqNo);
+    if (!q) return;
+    current = q;
+    const o = orderOf(q);
+    $('modalTitle').textContent = `서류 발급 신청 상세 - ${q.reqNo}`;
+    $('dReqNo').textContent = q.reqNo;
+    $('dAt').textContent = q.at;
+    $('dDoc').innerHTML = `${DocData.typesOf(q).map(docBadge).join(' ')} <button type="button" class="btn btn-xs" id="btnDocZip" title="신청한 서류를 압축 파일(zip)로 내려받기" style="margin:0 4px">다운로드</button> <span class="muted">${DocData.typesOf(q).length > 1 ? `${DocData.typesOf(q).length}종 · ` : ''}${q.manual ? `관리자 등록 (${esc(q.channel)} 접수)` : '별도 발급 신청'}</span>`;
+    $('dReqSource').textContent = q.manual ? `관리자 등록 · ${q.channel} 접수` : '고객 입력';
+    $('dWantBy').innerHTML = q.wantBy ? `${esc(q.wantBy)}${q.status === '대기' && q.wantBy < fmtDate(listToday()) ? ' <span class="warn">(지남)</span>' : ''}` : '<span class="muted">지정 안 함</span>';
+    $('dReceive').innerHTML = `${esc(q.receiveBy)} <span class="muted">${esc(q.receiveTo || '')}</span>`;
+    $('dAttachment').innerHTML = q.attachment ? fileLink(q.attachment) : '<span class="muted">없음</span>';
+    $('dRequirement').textContent = q.requirement || '-';
+    // 담당자 · 기관/회사명, 세금계산서 → 사업자등록증 첨부, 현금영수증 → 발급 정보
+    const ct = q.contact || {};
+    $('dContact').innerHTML = ct.name ? `<b>${esc(ct.name)}</b>${ct.phone ? ` · ${esc(ct.phone)}` : ''}${ct.email ? ` · ${esc(ct.email)}` : ''}` : '<span class="muted">-</span>';
+    $('dOrg').innerHTML = ct.org ? esc(ct.org) : '<span class="muted">-</span>';
+    $('rowBizCert').hidden = !DocData.typesOf(q).includes('세금계산서');
+    $('dBizCert').innerHTML = q.bizCert ? fileLink(q.bizCert) : '<span class="warn">첨부 없음</span>';
+    $('rowCash').hidden = !DocData.typesOf(q).includes('현금영수증');
+    const cr = q.cashReceipt;
+    $('dCash').innerHTML = cr ? `<b>${esc(cr.purpose)}</b> · ${esc(cr.idType)} <span class="mono">${esc(cr.idValue)}</span>` : '<span class="warn">발급 정보 없음</span>';
+    const ap = DocData.applicantOf(q);
+    $('dOrderLink').hidden = !o;
+    if (!o) {   // 주문 전 요청: 주문 정보 대신 신청자 정보
+      $('dOrderNo').innerHTML = '<span class="muted">주문 전 요청 (주문번호 없음)</span>';
+      $('dOrderedAt').textContent = '-';
+      $('dBuyer').textContent = [`${ap.name}${ap.userId ? ` (${ap.userId})` : ''}`, ap.phone, ap.email].filter(Boolean).join(' · ');
+      $('dPay').textContent = '-';
+      $('dCategory').textContent = ap.category || '-';
+      $('dTotal').textContent = '-';
+      $('rowBiz').hidden = !ap.company;
+      if (ap.company) $('dBiz').innerHTML = `<b>${esc(ap.company)}</b>`;
+    }
+    // 처리 입력 기본값: 파일명은 서류 종류 + 주문번호(주문 전 요청은 신청자), 전달 방법·전달처는 고객이 고른 수령 방법
+    const fileKey = o ? o.orderNo : (ap.userId || ap.name || q.reqNo);
+    $('rFile').value = DocData.typesOf(q).length > 1 ? `서류${DocData.typesOf(q).length}종_${fileKey}.zip` : `${q.docType.replace(/ /g, '_')}_${fileKey}.pdf`;   // 여러 서류는 묶음 파일
+    $('rFileHint').textContent = '프로토타입에서는 파일명만 기록합니다. 실서비스에서는 만든 서류(PDF)를 올리면 고객에게 전달됩니다.';
+    $('rSentBy').value = q.receiveBy;
+    $('rSentTo').value = q.receiveTo || '';
+    $('rSentHint').textContent = `고객 수령 요청: ${q.receiveBy}${q.receiveTo ? ` (${q.receiveTo})` : ''}`;
+    if (o) {
+      const b = o.member.business;
+      $('dOrderLink').href = `order-detail.html?orderNo=${encodeURIComponent(o.orderNo)}`;
+      $('dOrderNo').textContent = o.orderNo;
+      $('dOrderedAt').textContent = o.orderedAt;
+      $('dBuyer').textContent = `${o.name} (${o.userId}) · ${o.phone} · ${o.email}`;
+      $('dPay').innerHTML = `${esc(o.payMethod)} · <span class="badge ps-${esc(o.payStatus)}">${esc(o.payStatus)}</span>${o.paidAt ? ` · 결제일 ${esc(o.paidAt)}` : ''}`;
+      $('dCategory').textContent = `${o.member.category}${o.member.subCategory ? ` (${o.member.subCategory})` : ''}`;
+      $('dTotal').textContent = won(o.payment.total || o.amount);
+      $('rowBiz').hidden = !b;
+      if (b) $('dBiz').innerHTML = `<b>${esc(b.companyName)}</b> · 사업자번호 <span class="mono">${esc(b.bizNo)}</span> · 대표 ${esc(b.ceo)} · ${esc(b.bizType)}/${esc(b.bizItem)}<div class="muted">${esc(b.address)} · 담당 ${esc(b.managerName)} ${esc(b.managerPhone)}</div>`;
+    }
+    renderStatus();
+    $('modal').classList.add('open');
+  }
+  function renderStatus() {
+    const q = current, pending = q.status === '대기';
+    $('statusBanner').className = `status-banner st-${q.status === '완료' ? '승인' : q.status}`;
+    $('statusBanner').innerHTML = pending
+      ? `<b>${STATUS_TEXT['대기']}</b> 요청 사항을 확인하고 서류를 만들어 전달한 뒤 발급 완료 처리합니다. 발급할 수 없으면 반려 사유를 적어 반려합니다.`
+      : q.status === '완료'
+        ? `<b>발급 완료</b> ${esc(q.processedAt)} · ${esc(q.processedBy)}<div class="banner-sub">${esc(q.sentBy)} 전달${q.sentTo ? ` (${esc(q.sentTo)})` : ''}${q.file ? ` · ${esc(q.file)}` : ''}</div>`
+        : `<b>반려</b> ${esc(q.processedAt)} · ${esc(q.processedBy)}<div class="banner-sub">반려 사유: ${esc(q.rejectReason)}</div>`;
+    $('doneBox').hidden = q.status !== '완료';
+    if (q.status === '완료') {
+      $('doneFile').innerHTML = fileLink(q.file);
+      $('doneSent').innerHTML = `${esc(q.sentBy)}${q.sentTo ? ` <span class="muted">${esc(q.sentTo)}</span>` : ''}`;
+      $('doneMemo').textContent = q.memo || '-';
+    }
+    $('reviewBox').hidden = !pending;
+    $('btnComplete').hidden = !pending;
+    $('btnReject').hidden = !pending;
+    $('rMemo').value = '';
+    $('rReject').value = '';
+    $('rFilePick').value = '';
+    $('eReview').classList.remove('show');
+    $('dHistory').innerHTML = q.history.slice().reverse().map(h => `<tr><td>${esc(h.at)}</td><td class="left">${esc(h.content)}</td><td>${esc(h.by)}</td></tr>`).join('');
+  }
+  // ===== 서류 다운로드 (상세 > 서류 종류 옆 '다운로드'): 신청한 서류를 압축 파일(zip)로 =====
+  //   서류마다 HTML 파일 1개 (브라우저·워드에서 열림). 주문이 있으면 주문 상품·금액을 넣고, 주문 전 요청은 사양 협의 안내
+  //   TODO: 실서비스에서는 서버에서 실제 서류(PDF)를 만들어 zip으로 내려받기 (GET /api/admin/documents/requests/{reqNo}/download)
+  const STOPBOOK = { name: '(주)스탑북', bizNo: '123-45-67890', ceo: '홍길동', address: '서울특별시 마포구 월드컵북로 12', tel: '02-0000-0000', bank: '국민은행 123456-01-234567 (예금주 (주)스탑북)' };
+  function docHtml(type, q) {
+    const o = orderOf(q), ct = q.contact || {}, ap = DocData.applicantOf(q), today = fmtDate(listToday());
+    const row = (k, v) => `<tr><th>${esc(k)}</th><td>${v}</td></tr>`;
+    const items = o ? o.items.filter(it => it.payStatus !== '취소') : [];
+    const sum = items.reduce((t, it) => t + (it.paid || 0), 0), supply = Math.round(sum / 1.1);
+    const itemTable = items.length ? `<table class="items"><thead><tr><th>품목</th><th>수량</th><th>단가</th><th>금액</th></tr></thead><tbody>${items.map(it => `<tr><td>${esc(it.name)}</td><td>${it.qty}부</td><td>${won(Math.round((it.paid || 0) / it.qty))}</td><td>${won(it.paid || 0)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="3">공급가액</td><td>${won(supply)}</td></tr><tr><td colspan="3">부가세</td><td>${won(sum - supply)}</td></tr><tr><td colspan="3"><b>합계</b></td><td><b>${won(sum)}</b></td></tr></tfoot></table>`
+      : '<p class="note">주문 전 요청입니다. 제작 사양(상품·수량·옵션)을 협의한 뒤 금액이 확정됩니다.</p>';
+    const head = [row('문서번호', `${esc(q.reqNo)}-${esc(type)}`), row('발급일', today), row('수신', `${esc(ct.org || ap.company || '')} ${esc(ct.name || ap.name)} 귀하`), row('연락처', `${esc(ct.phone || '')} ${esc(ct.email || '')}`)];
+    if (o) head.push(row('주문번호', `${esc(o.orderNo)} (주문일 ${esc(o.orderDate)})`));
+    let body = '';
+    if (type === '사업자등록증') body = `<table>${[row('상호', STOPBOOK.name), row('사업자등록번호', STOPBOOK.bizNo), row('대표자', STOPBOOK.ceo), row('사업장 소재지', STOPBOOK.address), row('업태 / 종목', '제조업 / 출판·인쇄물 제작')].join('')}</table>`;
+    else if (type === '통장사본') body = `<table>${[row('예금주', STOPBOOK.name), row('계좌', STOPBOOK.bank)].join('')}</table>`;
+    else if (type === '현금영수증') body = `<table>${[row('구분', esc((q.cashReceipt || {}).purpose || '-')), row((q.cashReceipt || {}).idType || '발급번호', esc((q.cashReceipt || {}).idValue || '-')), row('금액', won(sum))].join('')}</table>${itemTable}`;
+    else if (type === '세금계산서') body = `<table>${[row('공급자', `${STOPBOOK.name} (${STOPBOOK.bizNo})`), row('공급받는자', esc(ct.org || ap.company || ap.name)), row('사업자등록증', esc(q.bizCert || '-'))].join('')}</table>${itemTable}`;
+    else body = itemTable;
+    return `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${esc(type)} - ${esc(q.reqNo)}</title>
+<style>body{font-family:'Malgun Gothic',sans-serif;max-width:720px;margin:40px auto;color:#18181b}h1{text-align:center;letter-spacing:.3em}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #d4d4d8;padding:6px 10px;text-align:left;font-size:13px}th{background:#f4f4f5;width:140px}.items th{width:auto}.items td:nth-child(n+2){text-align:right}.note{color:#71717a}.sign{margin-top:32px;text-align:right}</style></head>
+<body><h1>${esc(type)}</h1><table>${head.join('')}</table>${body}<p class="note">요청 사항: ${esc(q.requirement || '-')}</p>
+<div class="sign">${STOPBOOK.name} · 대표 ${STOPBOOK.ceo} (인)<br>${STOPBOOK.address} · ${STOPBOOK.tel}</div><p class="note">※ 프로토타입 샘플 서류입니다.</p><\/body><\/html>`;
+  }
+  function downloadDocs(q) {
+    const types = DocData.typesOf(q);
+    const files = types.map(t => ({ name: `${t.replace(/ /g, '_')}_${q.reqNo}.html`, content: docHtml(t, q) }));
+    ListTools.downloadZip(files, `서류_${q.reqNo}.zip`);
+    toast(`서류 ${types.length}종(${types.join(', ')})을 압축 파일로 내려받았습니다. (서류_${q.reqNo}.zip)`);
+  }
+
+  const closeDetail = () => { $('modal').classList.remove('open'); current = null; };
+  const reloadWith = (done, req) => location.replace(`claim-documents.html?done=${done}&req=${encodeURIComponent(req)}&tab=${encodeURIComponent(filter)}`);
+
+  function complete() {
+    const q = current, o = orderOf(q);
+    const file = $('rFile').value.trim(), sentBy = $('rSentBy').value, sentTo = $('rSentTo').value.trim();
+    let msg = '';
+    if (!file) msg = '발급 파일을 입력하거나 선택하세요.';
+    else if (!sentTo) msg = `전달처(${sentBy === '이메일' ? '이메일 주소' : sentBy === '팩스' ? '팩스 번호' : '우편 주소'})를 입력하세요.`;
+    $('eReview').textContent = msg;
+    $('eReview').classList.toggle('show', !!msg);
+    if (msg) return;
+    if (!confirm(`${o ? `${o.name}(${o.userId}) 회원의 ` : ''}${DocData.typesOf(q).join(', ')} 발급 신청 ${q.reqNo}을(를) 발급 완료 처리하시겠습니까?\n${sentBy}(${sentTo})으로 ${file}을(를) 전달합니다.`)) return;
+    // TODO: 실서비스에서는 POST /api/admin/documents/requests/{reqNo}/complete (파일 업로드 + 전달 방법) → 이메일/팩스 발송, 우편은 발송 접수
+    const ok = DocData.complete(q, { file, sentBy, sentTo, memo: $('rMemo').value.trim(), by: ADMIN_NAME });
+    if (!ok) { toast('저장소를 사용할 수 없어 처리하지 못했습니다.'); return; }
+    reloadWith('completed', q.reqNo);
+  }
+  function reject() {
+    const q = current, reason = $('rReject').value.trim();
+    $('eReview').textContent = reason ? '' : '반려 사유를 입력하세요. 고객에게 안내됩니다.';
+    $('eReview').classList.toggle('show', !reason);
+    if (!reason) { $('rReject').focus(); return; }
+    const o = orderOf(q);
+    if (!confirm(`${o ? `${o.name}(${o.userId}) 회원의 ` : ''}${DocData.typesOf(q).join(', ')} 발급 신청 ${q.reqNo}을(를) 반려하시겠습니까?`)) return;
+    // TODO: 실서비스에서는 POST /api/admin/documents/requests/{reqNo}/reject { reason }
+    if (!DocData.reject(q, reason, ADMIN_NAME)) { toast('저장소를 사용할 수 없어 처리하지 못했습니다.'); return; }
+    reloadWith('rejected', q.reqNo);
+  }
+
+  // ===== 자동 발급 이력 =====
+  function readLogSearch() {
+    const s = { type: $('hType').value, kw: $('hKeyword').value.trim().toLowerCase(), from: $('hFrom').value, to: $('hTo').value, doc: $('hDoc').value, by: $('hBy').value };
+    if (s.from && s.to && s.from > s.to) { toast('발급일 시작일이 종료일보다 늦습니다.'); return null; }
+    return s;
+  }
+  function logMatches(x) {
+    if (!logSearch) return true;
+    const s = logSearch;
+    const fields = { orderNo: x.orderNo, name: x.name, userId: x.userId, email: x.email, company: x.company };
+    const targets = s.type === 'all' ? Object.values(fields).concat([x.id, x.file]) : [fields[s.type]];
+    const day = x.at.slice(0, 10);
+    return (!s.kw || targets.some(v => String(v).toLowerCase().includes(s.kw))) &&
+      (!s.from || day >= s.from) && (!s.to || day <= s.to) &&
+      (!s.doc || x.docType === s.doc) && (!s.by || x.by === s.by);
+  }
+  function renderLog() {
+    const rows = issues.filter(logMatches);
+    logRows = rows;
+    const key = JSON.stringify(logSearch);   // 검색이 바뀌면 1페이지로
+    if (key !== logKey) { logTools.first(); logKey = key; }
+    const shown = logTools.page(rows);
+    const byType = DocData.AUTO_TYPES.map(t => [t, rows.filter(x => x.docType === t).length]).filter(([, n]) => n);
+    $('logGuide').innerHTML = `${logSearch ? '검색결과 ' : ''}<b>${rows.length.toLocaleString()}</b>건 · 고객 요청으로 시스템이 자동 발급한 서류입니다. 재발급하면 같은 내용으로 다시 만들어 고객에게 전달됩니다.`;
+    $('logSummary').textContent = byType.map(([t, n]) => `${t} ${n.toLocaleString()}`).join(' · ');
+    $('logBody').innerHTML = shown.length ? shown.map(x => `<tr>
+        <td>${esc(x.at)}</td>
+        <td>${docBadge(x.docType)}${x.purpose ? ` <span class="muted">${esc(x.purpose)}</span>` : ''}</td>
+        <td class="mono">${x.orderNo ? `<a class="name-link" href="order-detail.html?orderNo=${encodeURIComponent(x.orderNo)}" target="_blank">${esc(x.orderNo)}</a>` : '<span class="muted">-</span>'}</td>
+        <td><b>${esc(x.name)}</b></td>
+        <td class="left ellip" title="${esc(x.email)}">${esc(localPart(x.email))}</td>
+        <td>${esc(x.category || '-')}</td>
+        <td class="left ellip" title="${esc(x.company)}">${esc(x.company || '-')}</td>
+        <td class="num">${x.amount ? won(x.amount) : '<span class="muted">-</span>'}</td>
+        <td>${esc(x.channel)}</td>
+        <td>${x.by === '시스템' ? '자동' : `<span title="${esc(x.channel)}">관리자</span>`}</td>
+        <td><button type="button" class="btn btn-sm" data-file="${esc(x.file)}">다운로드</button> <button type="button" class="btn btn-sm" data-reissue="${esc(x.id)}">재발급</button></td>
+      </tr>`).join('') : '<tr><td colspan="11" class="empty">조건에 맞는 발급 이력이 없습니다.</td></tr>';
+    $('logMore').hidden = true;   // 더 보기 대신 페이지 번호 (list-tools.js)
+    $('logCount').textContent = issues.length.toLocaleString();
+  }
+  function reissue(id) {
+    const x = issues.find(i => i.id === id);
+    if (!x) return;
+    if (!confirm(`${x.name}(${x.userId}) 회원의 ${x.docType}${x.orderNo ? ` (주문 ${x.orderNo})` : ''}을(를) 같은 내용으로 재발급하시겠습니까?\n고객 이메일(${x.email})로 전달되고 발급 이력에 관리자 재발급으로 남습니다.`)) return;
+    // TODO: 실서비스에서는 POST /api/admin/documents/issues/{id}/reissue → 서류 재생성 + 이메일 발송
+    const rec = DocData.reissue(x, ADMIN_NAME);
+    if (!rec) { toast('저장소를 사용할 수 없어 재발급하지 못했습니다.'); return; }
+    renderLog();
+    toast(`${rec.docType}을(를) 재발급했습니다. (${rec.file})`);
+  }
+
+  // ===== 서류 발급 등록 (유선 등으로 받은 별도 발급 신청을 관리자가 직접 입력) =====
+  //   주문번호는 선택: 주문이 있으면 주문 확인으로 주문자 정보를, 주문 전 요청(견적서 등)이면 신청자 이름·연락처/이메일을 입력
+  //   서류 종류(여러 개 가능)·요청 사항·수령 방법을 입력 → 처리 대기에 추가, 이후 처리는 고객 신청과 같음
+  $('gChannel').innerHTML = DocData.RECEIPT_CHANNELS.map(c => `<option>${esc(c)}</option>`).join('');
+  $('gReceiveBy').innerHTML = DocData.RECEIVE_METHODS.map(m => `<option>${esc(m)}</option>`).join('');
+  $('gTypes').innerHTML = DocData.REQUEST_TYPES.map((t, i) => `<label class="check-chip"><input type="checkbox" name="gType" value="${esc(t)}"> ${esc(t)}</label>`).join('');
+  let regOrder = null;
+  const regErr = msg => { $('gErr').textContent = msg; $('gErr').classList.toggle('show', !!msg); };
+  // 수령처 기본값: 이메일 = 주문자(신청자) 이메일, 우편 = 배송지 주소, 팩스 = 직접 입력
+  const fillReceiveTo = () => {
+    const by = $('gReceiveBy').value;
+    if (regOrder) $('gReceiveTo').value = by === '이메일' ? regOrder.email : by === '우편' ? `${regOrder.delivery.address || ''} ${regOrder.delivery.detail || ''}`.trim() : '';
+    else if (by === '이메일' && $('gEmail').value.trim()) $('gReceiveTo').value = $('gEmail').value.trim();
+  };
+  // 주문 확인 시 담당자 칸 채우기: 사업자 회원이면 사업자 담당자, 아니면 주문자 (관리자가 고칠 수 있음)
+  const syncApplicant = () => {
+    if (!regOrder) return;
+    const b = regOrder.member.business;
+    $('gName').value = b ? b.managerName : regOrder.name;
+    $('gPhone').value = b ? b.managerPhone : regOrder.phone;
+    $('gEmail').value = b ? b.managerEmail : regOrder.email;
+    $('gCompany').value = b ? b.companyName : '';
+  };
+  // 서류 종류에 따라 추가 입력: 세금계산서 → 사업자등록증 첨부, 현금영수증 → 발급 정보
+  const syncTypeRows = () => {
+    const types = [...document.querySelectorAll('input[name=gType]:checked')].map(c => c.value);
+    $('gBizRow').hidden = !types.includes('세금계산서');
+    $('gCashRow').hidden = !types.includes('현금영수증');
+  };
+  const syncCashIdType = () => {
+    const opts = DocData.CASH_ID_TYPES[$('gCashPurpose').value];
+    $('gCashIdType').innerHTML = opts.map(o => `<option>${esc(o)}</option>`).join('');
+    syncCashPlaceholder();
+  };
+  const syncCashPlaceholder = () => {
+    const t = $('gCashIdType').value;
+    $('gCashId').placeholder = t === '휴대폰' ? '010-0000-0000' : t === '주민번호' ? '000000-0000000' : '000-00-00000';
+    if (t === '사업자등록번호' && regOrder && regOrder.member.business && !$('gCashId').value) $('gCashId').value = regOrder.member.business.bizNo;
+    if (t === '휴대폰' && !$('gCashId').value) $('gCashId').value = $('gPhone').value.trim();
+  };
+  $('gTypes').addEventListener('change', syncTypeRows);
+  $('gCashPurpose').addEventListener('change', () => { $('gCashId').value = ''; syncCashIdType(); });
+  $('gCashIdType').addEventListener('change', () => { $('gCashId').value = ''; syncCashPlaceholder(); });
+  $('gBizPick').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) $('gBizCert').value = f.name; });
+  function findOrder() {
+    const no = $('gOrderNo').value.trim();
+    regOrder = no ? OrderData.find(no) : null;
+    $('gOrderInfo').innerHTML = regOrder
+      ? `<b>${esc(regOrder.name)}</b> (${esc(regOrder.userId)}) · ${esc(regOrder.phone)} · ${esc(regOrder.email)} · 주문일 ${esc(regOrder.orderDate)} · ${esc(regOrder.title)}${regOrder.member.business ? ` · 사업자 ${esc(regOrder.member.business.companyName)}` : ''}`
+      : `<span class="warn">${no ? '해당 주문번호의 주문이 없습니다.' : '주문번호를 입력하세요.'}</span>`;
+    if (!no) $('gOrderInfo').innerHTML = '주문 전 요청은 주문번호 없이 아래 담당자 정보를 입력하세요.';
+    if (regOrder) { fillReceiveTo(); regErr(''); }
+    syncApplicant();
+    return regOrder;
+  }
+  function openRegister() {
+    $('regForm').reset();
+    regOrder = null;
+    $('gOrderInfo').textContent = '주문 전 요청(견적서 등)은 비워 두세요. 주문번호를 넣고 주문 확인을 누르면 아래 담당자 정보가 주문자·사업자 정보로 채워집니다.';
+    syncTypeRows();
+    syncCashIdType();
+    regErr('');
+    $('regModal').classList.add('open');
+    $('gOrderNo').focus();
+  }
+  const closeRegister = () => $('regModal').classList.remove('open');
+  $('btnRegister').addEventListener('click', openRegister);
+  $('gFind').addEventListener('click', findOrder);
+  $('gOrderNo').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); findOrder(); } });
+  $('gOrderNo').addEventListener('input', () => { regOrder = null; });
+  $('gEmail').addEventListener('change', fillReceiveTo);
+  $('gReceiveBy').addEventListener('change', fillReceiveTo);
+  $('gAttachPick').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) $('gAttachment').value = f.name; });
+  document.querySelectorAll('#regModal [data-regclose]').forEach(b => b.addEventListener('click', closeRegister));
+  $('regModal').addEventListener('click', e => { if (e.target === $('regModal')) closeRegister(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('regModal').classList.contains('open')) closeRegister(); });
+  $('regForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const types = [...document.querySelectorAll('input[name=gType]:checked')].map(c => c.value);
+    const orderNoInput = $('gOrderNo').value.trim();
+    const o = orderNoInput ? (regOrder || findOrder()) : null;   // 주문번호는 선택. 입력했으면 있는 주문이어야 함
+    const contact = { name: $('gName').value.trim(), phone: $('gPhone').value.trim(), email: $('gEmail').value.trim(), org: $('gCompany').value.trim() };
+    const customer = o ? null : { name: contact.name, phone: contact.phone, email: contact.email, company: contact.org };   // 주문 전 요청은 담당자가 신청자
+    const needBiz = types.includes('세금계산서'), needCash = types.includes('현금영수증');
+    const bizCert = $('gBizCert').value.trim();
+    const cashReceipt = needCash ? { purpose: $('gCashPurpose').value, idType: $('gCashIdType').value, idValue: $('gCashId').value.trim() } : null;
+    const requirement = $('gRequirement').value.trim(), receiveTo = $('gReceiveTo').value.trim();
+    const msg = orderNoInput && !o ? '입력한 주문번호의 주문이 없습니다. 주문 전 요청이면 주문번호를 비워 주세요.'
+      : !contact.name ? '담당자명을 입력하세요.' : !contact.phone && !contact.email ? '담당자 연락처 또는 이메일을 입력하세요.'
+      : !types.length ? '서류 종류를 하나 이상 선택하세요.' : needBiz && !bizCert ? '세금계산서 발급에는 사업자등록증 첨부가 필요합니다.'
+      : needCash && !cashReceipt.idValue ? `현금영수증 발급정보(${cashReceipt.idType})를 입력하세요.` : !requirement ? '요청 사항을 입력하세요.' : !receiveTo ? '수령처(이메일 주소·팩스 번호·우편 주소)를 입력하세요.' : '';
+    regErr(msg);
+    if (msg) return;
+    // TODO: 실서비스에서는 POST /api/admin/documents/requests (관리자 등록)
+    const req = DocData.addRequest({ orderNo: o ? o.orderNo : '', customer, contact, bizCert: needBiz ? bizCert : '', cashReceipt, docTypes: types, requirement, receiveBy: $('gReceiveBy').value, receiveTo, wantBy: $('gWantBy').value,
+      attachment: $('gAttachment').value.trim(), channel: $('gChannel').value, memo: $('gMemo').value.trim() }, ADMIN_NAME);
+    if (!req) { regErr('저장소를 사용할 수 없어 등록하지 못했습니다.'); return; }
+    closeRegister();
+    filter = '대기';
+    render();
+    toast(`${req.reqNo} ${DocData.typeLabel(req)} 발급 신청을 등록했습니다. 처리 대기에 추가되었습니다.`);
+  });
+
+  // ===== 화면 탭 =====
+  function showTab(tab) {
+    mainTab = tab;
+    $('mainTabs').querySelectorAll('[data-tab]').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on)); });
+    $('panelReq').hidden = tab !== 'req';
+    $('panelLog').hidden = tab !== 'log';
+  }
+
+  // ===== 이벤트 =====
+  $('mainTabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) showTab(b.dataset.tab); });
+  $('searchForm').addEventListener('submit', e => { e.preventDefault(); const s = readSearch(); if (s) { search = s; render(); } });
+  $('btnReset').addEventListener('click', () => { $('searchForm').reset(); setDefaultRange('sFrom', 'sTo'); search = readSearch(); render(); });
+  $('statusTabs').addEventListener('click', e => { const b = e.target.closest('[data-status]'); if (b) { filter = b.dataset.status; render(); } });
+  $('listBody').addEventListener('click', e => { const b = e.target.closest('[data-req]'); if (b) openDetail(b.dataset.req); });
+  $('logForm').addEventListener('submit', e => { e.preventDefault(); const s = readLogSearch(); if (s) { logSearch = s; renderLog(); } });
+  $('btnLogReset').addEventListener('click', () => { $('logForm').reset(); setDefaultRange('hFrom', 'hTo'); logSearch = readLogSearch(); renderLog(); });
+  $('logBody').addEventListener('click', e => {
+    const r = e.target.closest('[data-reissue]');
+    if (r) { reissue(r.dataset.reissue); return; }
+    const f = e.target.closest('[data-file]');
+    if (f) { e.preventDefault(); toast(`${f.dataset.file} 내려받기 (프로토타입에서는 파일이 없습니다)`); }
+  });
+  // 모달 안 파일 링크(첨부·발급 파일) 내려받기 안내, 파일 선택 → 파일명 채움
+  $('modal').addEventListener('click', e => {
+    if (e.target.closest('#btnDocZip')) { if (current) downloadDocs(current); return; }
+    const f = e.target.closest('[data-file]');
+    if (f) { e.preventDefault(); toast(`${f.dataset.file} 내려받기 (프로토타입에서는 파일이 없습니다)`); }
+  });
+  $('rFilePick').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) { $('rFile').value = f.name; $('eReview').classList.remove('show'); } });
+  $('btnComplete').addEventListener('click', complete);
+  $('btnReject').addEventListener('click', reject);
+  document.querySelectorAll('#modal [data-close]').forEach(b => b.addEventListener('click', closeDetail));
+  $('modal').addEventListener('click', e => { if (e.target === $('modal')) closeDetail(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && current) closeDetail(); });
+
+  // ===== 시작: 기간 기본 1개월, 처리 결과 안내 =====
+  setDefaultRange('sFrom', 'sTo');
+  setDefaultRange('hFrom', 'hTo');
+  search = readSearch();
+  logSearch = readLogSearch();
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('done')) {
+    filter = qs.get('tab') && STATUSES.includes(qs.get('tab')) ? qs.get('tab') : '대기';
+    toast(qs.get('done') === 'completed' ? `${qs.get('req')} 발급 완료 처리했습니다. 고객에게 전달됩니다.` : `${qs.get('req')} 반려 처리했습니다.`);
+    try { history.replaceState(null, '', 'claim-documents.html'); } catch (err) { /* file:// 등 */ }
+  }
+  if (qs.get('tab') === 'log') showTab('log');
+  initSidebar();
+  render();
+  renderLog();
+  // 다른 화면(계산서 영수증 발급 관리 등)에서 신청번호로 열면 그 신청의 처리 모달을 바로 엶 (?req=신청번호)
+  if (qs.get('req') && !qs.get('done')) {
+    const q = requests.find(x => x.reqNo === qs.get('req'));
+    if (q) { filter = q.status; render(); openDetail(q.reqNo); } else toast('신청을 찾을 수 없습니다.');
+  }
+})();
+</script>
+</body>
+</html>
