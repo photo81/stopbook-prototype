@@ -1362,8 +1362,10 @@
   function renderDone(m, mileage, coupon, adText, marketingUse, at) {
     $('doneTitle').textContent = `${m.name}님, 가입을 환영합니다`;
     const login = isSns() ? `${SNS_LABEL[state.method]} 간편 로그인` : `${m.email} (이메일 로그인)`;
-    $('doneSummary').innerHTML = [['로그인', login], ['가입유형', m.memberType], ['휴대폰', m.phone], ['가입일', m.joinDate]]
-      .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+    // 가입유형: 로그인 정보 찾기와 같은 배지 (SNS = 서비스 로고 / 스탑북 = S)
+    const type = `<span class="method">${methodBadge(isSns() ? state.method : '')}${esc(m.memberType)}</span>`;
+    $('doneSummary').innerHTML = [['로그인', esc(login)], ['가입유형', type], ['휴대폰', esc(m.phone)], ['가입일', esc(m.joinDate)]]
+      .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('');
     const gifts = mileage.map(e => `<div class="gift"><span class="g-ico">P</span><span><b>${e.delta.toLocaleString()}P</b> ${esc(e.reason)} 마일리지</span></div>`)
       .concat(coupon.map(e => `<div class="gift"><span class="g-ico">%</span><span><b>${esc(e.item)}</b> 쿠폰 1장</span></div>`));
     $('gifts').innerHTML = gifts.join('');
