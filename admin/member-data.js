@@ -654,7 +654,7 @@
     };
   });
 
-  // ===== 쇼핑몰 회원가입 (stopbook-user/signup.html) =====
+  // ===== 쇼핑몰 회원가입 (user/signup.html) =====
   // 회원가입 화면에서 가입한 회원을 localStorage에 보관하고, 샘플 회원 뒤에 이어 붙여 관리자 화면(회원 목록·대시보드·마일리지 내역)에 함께 보이게 함
   //   신규 가입은 이메일로 로그인하므로 아이디(userId) = 이메일. 구분은 기본 구분(일반), 등급은 '일반', 주문·문의·장바구니는 없음
   //   가입 혜택(회원가입 적립 마일리지·신규가입 쿠폰)은 가입 기록의 ledger에 담아 두고 여기서 원장으로 만듦
@@ -678,7 +678,7 @@
   }
   loadSignups().forEach(attachSignup);
 
-  // ===== 회원 로그인 (stopbook-user 로그인 화면 ↔ 관리자 회원 상세의 패스워드 초기화·변경) =====
+  // ===== 회원 로그인 (user 로그인 화면 ↔ 관리자 회원 상세의 패스워드 초기화·변경) =====
   // 비밀번호 정보와 최근 접속 기록을 localStorage에 보관해 쇼핑몰 로그인과 관리자 화면이 같은 정보를 봄
   //   AUTH_KEY:  { [회원 no]: { hash, changedAt, temp, fail, lockedUntil, snoozeUntil, log: [{ at, content, by }] } }
   //     hash = 해시(회원 no + 비밀번호) · changedAt = 비밀번호 변경 일시(YYYY-MM-DD HH:mm, 예전 기록은 YYYY-MM-DD)

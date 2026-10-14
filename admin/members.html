@@ -1330,7 +1330,7 @@
     if (!m || !confirm(`${m.name}(${m.userId}) 회원의 패스워드를 초기화하시겠습니까?`)) return;
     closePwChange();
     // TODO: 실서비스에서는 POST /api/admin/members/{no}/password/reset 호출 후 서버가 발급한 임시 패스워드 표시
-    // 임시 패스워드는 쇼핑몰 로그인(stopbook-user)에 바로 반영 — 회원이 로그인하면 패스워드 변경 화면이 나옴
+    // 임시 패스워드는 쇼핑몰 로그인(user)에 바로 반영 — 회원이 로그인하면 패스워드 변경 화면이 나옴
     const temp = makeTempPassword();
     $('pwTempValue').textContent = temp;
     $('pwTemp').hidden = false;
