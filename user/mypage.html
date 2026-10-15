@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 마이페이지 - 회원정보 수정</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="../admin/feedback.css?v=20261015"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
+<link rel="stylesheet" href="../admin/feedback.css?v=20261015-2"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
 <style>
   /* 쇼핑몰(고객) 화면 — 회원가입(signup.html)과 같은 톤앤매너·토큰·입력 요소 사용 */
   :root {
@@ -35,6 +35,11 @@
 
   /* 마이페이지 레이아웃: 왼쪽 메뉴 + 본문 */
   .my-wrap { max-width: 1136px; margin: 0 auto; padding: 36px 16px 80px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 40px; align-items: start; }
+  /* 상단(프로토타입 띠 + 상단 메뉴) 고정. 높이는 --top-h (실제 높이를 스크립트가 다시 넣음) */
+  :root { --top-h: 65px; }
+  html { scroll-padding-top: calc(var(--top-h) + 16px); }   /* 입력칸으로 이동할 때 상단에 가리지 않게 */
+  .site-top { position: sticky; top: 0; z-index: 15; }
+  .my-nav { position: sticky; top: calc(var(--top-h) + 24px); }   /* 스크롤해도 왼쪽 메뉴 고정 (좁은 화면은 아래 미디어 쿼리에서 해제) */
   .my-nav h2 { margin: 0 0 14px; font-size: 20px; font-weight: 800; color: var(--main); }
   .my-user { font-size: 13px; color: var(--ink-2); margin-bottom: 18px; line-height: 1.5; }
   .my-user b { display: block; font-size: 15px; color: var(--ink); }
@@ -43,7 +48,7 @@
   .my-nav li button, .my-nav li a { display: block; width: 100%; padding: 12px 2px; background: none; border: 0; text-align: left; font-size: 14px; color: var(--ink-2); cursor: pointer; text-decoration: none; }
   .my-nav li button:hover { color: var(--ink); }
   .my-nav li [aria-current="page"] { color: var(--main); font-weight: 700; }
-  .my-main { max-width: 680px; }
+  .my-main { min-width: 0; }   /* 본문은 오른쪽 끝까지 (상단 메뉴 '고객센터' 끝과 같은 선) */
   .my-main > h1 { margin: 0 0 6px; font-size: 22px; font-weight: 800; }
   .page-sub { margin: 0 0 22px; color: var(--ink-2); font-size: 13.5px; }
 
@@ -184,14 +189,64 @@
   .consent-result b { color: var(--ink); }
   .result-foot { padding: 16px 28px 24px; }
 
+  /* ===== 마이페이지 첫 화면 (회원 정보 요약) ===== */
+  .my-nav h2 a { color: inherit; text-decoration: none; }
+  .my-nav h2 a:hover { color: var(--brand-dark); }
+  .home-hero { display: flex; align-items: center; gap: 18px; }
+  .hero-avatar { flex: none; width: 60px; height: 60px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 22px; font-weight: 800; }
+  .hero-main { flex: 1; min-width: 0; }
+  .hero-hi { margin: 0 0 6px; font-size: 18px; font-weight: 700; }
+  .hero-hi b { color: var(--brand); }
+  .hero-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+  .htag { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: var(--radius-sm); background: var(--field); font-size: 12px; font-weight: 600; color: var(--ink-2); }
+  .htag.grade { background: var(--brand-soft); color: var(--brand); }
+  .htag .sns-circle.mini { width: 16px; height: 16px; }
+  .htag .sns-circle.mini svg { width: 9px; height: 9px; }
+  .htag .sns-circle.stopbook { font-size: 9px; }
+  .hero-meta { margin: 8px 0 0; font-size: 12.5px; color: var(--ink-3); }
+  .hero-edit { flex: none; }
+  .home-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+  .tile { background: var(--surface); border-radius: var(--radius); padding: 18px 20px; }
+  .tile .k { font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+  .tile .k i { width: 22px; height: 22px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 800; }
+  .tile .v { margin-top: 8px; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .tile .v small { font-size: 14px; font-weight: 600; margin-left: 2px; }
+  .home-tiles + .card { margin-top: 14px; }
+  .card-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .card-title-row h2 { margin: 0; font-size: 16px; font-weight: 700; }
+  .card-aside { font-size: 12.5px; color: var(--ink-3); }
+  .order-flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); text-align: center; }
+  .order-flow li { position: relative; padding: 4px 0; }
+  .order-flow li + li::before { content: "›"; position: absolute; left: -4px; top: 14px; color: var(--line-2); font-size: 18px; }
+  .order-flow b { display: block; font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+  .order-flow b.on { color: var(--brand); }
+  .order-flow span { font-size: 12.5px; color: var(--ink-2); }
+  .home-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 14px 0; }
+  .home-pair .card + .card { margin-top: 0; }
+  .card.mini { padding: 18px 20px; }
+  .card.mini .k { font-size: 13px; color: var(--ink-2); }
+  .card.mini .v { margin-top: 6px; font-size: 18px; font-weight: 800; }
+  .card.mini .s { margin-top: 2px; font-size: 12.5px; color: var(--ink-3); }
+  .card.mini .s b { color: var(--accent1); }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chips span { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: var(--radius-sm); background: var(--brand-soft); color: var(--brand); font-size: 12px; font-weight: 600; }
+  .info-list dd .muted { color: var(--ink-3); font-weight: 400; }
+  @media (max-width: 640px) {
+    .home-hero { flex-wrap: wrap; }
+    .hero-edit { width: 100%; }
+    .home-tiles { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .home-pair { grid-template-columns: minmax(0, 1fr); }
+    .order-flow b { font-size: 20px; }
+  }
+
   /* 주소 · 관심분야 */
   .zip-row { align-items: center; }
   .zip-row input { flex: 0 0 140px !important; }
   .addr-clear { margin-left: auto; font-size: 12px; color: var(--ink-3); }
-  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 4px; }   /* 넓은 화면에서 12개가 한 줄. 좁으면 줄바꿈 */
   .chip-check { position: relative; }
   .chip-check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-  .chip-check span { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border: 1px solid var(--line-2); border-radius: var(--radius-md); background: #fff; font-size: 13px; color: var(--ink-2); cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+  .chip-check span { display: inline-flex; align-items: center; height: 28px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: var(--radius-sm); background: #fff; font-size: 12px; white-space: nowrap; color: var(--ink-2); cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
   .chip-check span:hover { border-color: var(--ink-3); }
   .chip-check input:checked + span { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); font-weight: 600; }
   .chip-check input:focus-visible + span { box-shadow: 0 0 0 3px var(--ring); }
@@ -252,6 +307,7 @@
 
   @media (max-width: 760px) {
     .my-wrap { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-top: 20px; }
+    .my-nav { position: static; }
     .my-nav ul { display: flex; overflow-x: auto; border-top: 0; border-bottom: 1px solid var(--line-2); }
     .my-nav li { border: 0; flex: none; }
     .my-nav li button, .my-nav li a { padding: 10px 12px; white-space: nowrap; }
@@ -271,6 +327,7 @@
 </style>
 </head>
 <body>
+<header class="site-top" id="siteTop">
 <div class="proto-band">PROTOTYPE - 마이페이지</div>
 <nav class="util" aria-label="이용 메뉴">
   <ul>
@@ -280,26 +337,57 @@
     <li><button type="button" data-todo="고객센터">고객센터</button></li>
   </ul>
 </nav>
+</header>
 
 <div class="my-wrap">
   <aside class="my-nav" aria-label="마이페이지 메뉴">
-    <h2>마이페이지</h2>
+    <h2><a href="mypage.html" id="navHome">마이페이지</a></h2>
     <div class="my-user" id="myUser"></div>
     <ul>
-      <li><a href="mypage.html" aria-current="page">회원정보 수정</a></li>
+      <li><a href="mypage.html#edit" id="navEdit">회원정보 수정</a></li>
     </ul>
   </aside>
 
   <main class="my-main">
-    <h1>회원정보 수정</h1>
-    <p class="page-sub" id="pageSub">회원님의 정보를 확인하고 수정할 수 있습니다.</p>
+    <h1 id="pageTitle">마이페이지</h1>
+    <p class="page-sub" id="pageSub">고객님의 혜택과 정보를 한눈에 확인할 수 있습니다.</p>
 
     <!-- 로그인 필요 -->
     <section class="card gate" id="viewNeedLogin" hidden>
       <h2>로그인이 필요합니다</h2>
-      <p class="card-sub">회원정보 수정은 로그인한 뒤 이용할 수 있습니다.</p>
+      <p class="card-sub">마이페이지는 로그인한 뒤 이용할 수 있습니다.</p>
       <button type="button" class="btn btn-primary btn-block" data-open-login>로그인하기</button>
     </section>
+
+    <!-- 마이페이지 첫 화면: 회원 정보 요약 (조회 전용. 수정은 #edit → 비밀번호 확인 후) -->
+    <div id="viewHome" hidden>
+      <section class="card home-hero">
+        <div class="hero-avatar" id="hAvatar" aria-hidden="true"></div>
+        <div class="hero-main">
+          <p class="hero-hi" id="hHi"></p>
+          <div class="hero-badges" id="hBadges"></div>
+          <p class="hero-meta" id="hMeta"></p>
+        </div>
+        <a class="btn btn-line btn-sm hero-edit" href="#edit">회원정보 수정</a>
+      </section>
+
+      <div class="home-tiles" id="hTiles"></div>
+
+      <section class="card">
+        <div class="card-title-row"><h2>주문/배송 현황</h2><span class="card-aside" id="hOrderSum"></span></div>
+        <ol class="order-flow" id="hFlow"></ol>
+      </section>
+
+      <div class="home-pair">
+        <section class="card mini" id="hInquiry"></section>
+        <section class="card mini" id="hCart"></section>
+      </div>
+
+      <section class="card">
+        <div class="card-title-row"><h2>내 정보</h2><a class="btn-text" href="#edit">수정하기</a></div>
+        <dl class="info-list" id="hInfo"></dl>
+      </section>
+    </div>
 
     <!-- 진입 확인 (요구사항 PRD_MEM_009: 진입 시 비밀번호 재확인) -->
     <section class="card gate" id="viewGate" hidden>
@@ -566,11 +654,11 @@
 
 <!-- 회원 데이터·로그인 정보는 관리자 화면(admin)과 같은 저장소(localStorage) 사용 → 수정 내용이 관리자 회원 상세·변경 히스토리에 반영
      TODO: 실서비스에서는 회원 API로 대체 -->
-<script src="../admin/member-type-store.js?v=20261015"></script>
-<script src="../admin/mileage-types.js?v=20261015"></script>
-<script src="../admin/message-store.js?v=20261015"></script>
-<script src="../admin/member-data.js?v=20261015"></script>
-<script src="../admin/feedback.js?v=20261015"></script>
+<script src="../admin/member-type-store.js?v=20261015-2"></script>
+<script src="../admin/mileage-types.js?v=20261015-2"></script>
+<script src="../admin/message-store.js?v=20261015-2"></script>
+<script src="../admin/member-data.js?v=20261015-2"></script>
+<script src="../admin/feedback.js?v=20261015-2"></script>
 <!-- 카카오 우편번호 서비스: https://postcode.map.kakao.com/guide (file://에서도 열리도록 https 사용)
      가이드 기준 현재 주소(t1.kakaocdn.net)·이름(kakao.Postcode) 사용 (예전 다음 주소 t1.daumcdn.net에서는 결과 선택이 되지 않는 문제가 있었음) -->
 <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
@@ -584,7 +672,20 @@
   // TODO: 실서비스에서는 비밀번호 확인·본인 인증·저장을 서버에서 처리하고, 인증을 마친 경우에만 민감정보 변경 API 허용
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const MD = window.MemberData, A = MD.Auth;
+  // 고정 상단 높이를 CSS 변수로 (왼쪽 메뉴 고정 위치·스크롤 여백에 사용, 화면 폭이 바뀌면 다시 계산)
+  const syncTopH = () => document.documentElement.style.setProperty('--top-h', `${$('siteTop').offsetHeight}px`);
+  syncTopH();
+  if (window.ResizeObserver) new ResizeObserver(syncTopH).observe($('siteTop')); else window.addEventListener('resize', syncTopH);
+
+  const MD = window.MemberData;
+  // 브라우저에 예전 공통 파일(member-data.js 등)이 캐시돼 있으면 필요한 기능이 없어 화면이 비어 버림 → 새로 고침 안내
+  if (!MD || !MD.Auth || !MD.Auth.verifyPassword || !MD.updateProfile || !MD.INTERESTS) {
+    const card = $('viewNeedLogin');
+    card.innerHTML = '<h2>화면을 불러오지 못했습니다</h2><p class="card-sub">브라우저에 예전 파일이 남아 있습니다. <b>Ctrl+F5</b>(맥: <b>Cmd+Shift+R</b>)로 새로 고쳐 주세요.</p><button type="button" class="btn btn-primary btn-block" onclick="location.reload()">새로 고침</button>';
+    card.hidden = false;
+    return;
+  }
+  const A = MD.Auth;
   const digits = s => String(s || '').replace(/\D/g, '');
   const SESSION_KEY = 'stopbook.session', AFTER_LOGIN_KEY = 'stopbook.afterLogin';
 
@@ -625,7 +726,26 @@
   const validPhone = v => /^01[016789]\d{7,8}$/.test(digits(v));
   const validEmail = v => /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(v);
   const maskPhone = p => String(p).replace(/^(\d{3})-?\d{3,4}-?(\d{4})$/, '$1-****-$2');
-  const show = view => ['viewNeedLogin', 'viewGate', 'editForm'].forEach(id => { $(id).hidden = id !== view; });
+  const show = view => ['viewNeedLogin', 'viewHome', 'viewGate', 'editForm'].forEach(id => { $(id).hidden = id !== view; });
+
+  // ===== 화면 주소: mypage.html = 마이페이지 첫 화면(요약) / mypage.html#edit = 회원정보 수정 =====
+  const isEditRoute = () => location.hash === '#edit';
+  function setPage(edit) {
+    $('pageTitle').textContent = edit ? '회원정보 수정' : '마이페이지';
+    $('pageSub').textContent = edit ? '고객님의 정보를 확인하고 수정할 수 있습니다.' : '고객님의 혜택과 정보를 한눈에 확인할 수 있습니다.';
+    document.title = `스탑북 마이페이지${edit ? ' - 회원정보 수정' : ''}`;
+    if (edit) $('navEdit').setAttribute('aria-current', 'page'); else $('navEdit').removeAttribute('aria-current');
+    if (edit) $('navHome').removeAttribute('aria-current'); else $('navHome').setAttribute('aria-current', 'page');
+  }
+  // 로그인 상태에서 주소에 맞는 화면 열기. 회원정보 수정은 들어올 때마다 비밀번호 확인(B9)
+  function route() {
+    const edit = isEditRoute();
+    setPage(edit);
+    if (!me) { show('viewNeedLogin'); return; }
+    if (edit) openGate(); else renderHome();
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', () => { if (!loginDlg.open) route(); });
 
   // ===== 로그인 상태 (signup.html과 같은 sessionStorage 사용) =====
   let me = null;
@@ -699,7 +819,8 @@
     me = m;
     loginDlg.close();
     renderUtil();
-    openEdit();
+    // 방금 로그인으로 비밀번호(SNS 계정)를 확인했으므로 회원정보 수정은 재확인 없이 바로 진입
+    if (isEditRoute()) { setPage(true); openEdit(); } else route();
     toast(msg || `${m.name}님, 반갑습니다.`);
   }
 
@@ -802,7 +923,7 @@
       $('gSnsBtn').className = `btn btn-prov ${code}`;
       $('gSnsBtn').innerHTML = `${SNS_LABEL[code]} 계정으로 확인`;
     } else {
-      $('gateSub').textContent = '회원님의 개인정보를 안전하게 보호하기 위해 비밀번호를 한 번 더 입력해 주세요.';
+      $('gateSub').textContent = '고객님의 개인정보를 안전하게 보호하기 위해 비밀번호를 한 번 더 입력해 주세요.';
       $('gId').value = me.userId;
       $('gPw').value = '';
       markInvalid('gPw', false);
@@ -842,6 +963,54 @@
     show('editForm');
     $('pageSub').textContent = '변경할 항목을 수정한 뒤 저장해 주세요.';
     window.scrollTo(0, 0);
+  }
+
+  // ===== 마이페이지 첫 화면: 회원 정보 요약 (조회 전용, 개인정보는 가려서 표시) =====
+  // TODO: 실서비스에서는 GET /api/members/me/summary (혜택 잔액·주문 상태별 건수·문의·장바구니)
+  const won = n => `${Number(n || 0).toLocaleString()}`;
+  const maskEmail = e => { const [l, d] = String(e || '').split('@'); return d ? `${l.slice(0, Math.min(3, Math.max(1, l.length - 2)))}${'*'.repeat(Math.max(2, l.length - 3))}@${d}` : ''; };
+  // 주문 진행 단계: 결제상태가 전체취소인 주문 제외. 배송중(부분/전체)은 '배송중'으로 묶음
+  const FLOW = [['주문대기', '입금대기'], ['주문완료', '주문완료'], ['제작중', '제작중'], ['배송중', '배송중'], ['배송완료', '배송완료']];
+  const flowKey = s => (/^배송중/.test(s || '') ? '배송중' : s);
+  function renderHome() {
+    const m = me, code = sns();
+    $('hAvatar').textContent = String(m.name).trim().charAt(0);
+    $('hHi').innerHTML = `<b>${esc(m.name)}</b>님, 안녕하세요`;
+    $('hBadges').innerHTML = [
+      `<span class="htag grade">${esc(m.grade)} 등급</span>`,
+      `<span class="htag">${badge(code)}${esc(m.memberType)}</span>`,
+      m.category && m.category !== '일반' ? `<span class="htag">${esc(m.category)}${m.subCategory ? ` · ${esc(m.subCategory)}` : ''}</span>` : ''
+    ].join('');
+    $('hMeta').textContent = `가입일 ${m.joinDate}${m.lastLogin ? ` · 최근 접속 ${m.lastLogin}` : ''}`;
+
+    // 보유 혜택
+    $('hTiles').innerHTML = [['P', '마일리지', won(m.mileage), 'P'], ['%', '쿠폰', won(m.coupon), '장'], ['원', '상품권', won(m.giftCard), '원']]
+      .map(([i, k, v, u]) => `<div class="tile"><div class="k"><i aria-hidden="true">${i}</i>${k}</div><div class="v">${v}<small>${u}</small></div></div>`).join('');
+
+    // 주문/배송 현황 (최근 1년 샘플 주문 기준)
+    const orders = MD.validOrders(m);
+    const count = key => orders.filter(o => flowKey(o.status) === key).length;
+    $('hFlow').innerHTML = FLOW.map(([key, label]) => { const n = count(key); return `<li><b class="${n ? 'on' : ''}">${n}</b><span>${label}</span></li>`; }).join('');
+    const total = orders.reduce((s, o) => s + (o.amount || 0), 0);
+    $('hOrderSum').textContent = orders.length ? `전체 ${orders.length}건 · ${won(total)}원` : '주문 내역이 없습니다';
+
+    // 1:1 문의 · 장바구니
+    const inq = m.inquiries || [], waiting = inq.filter(q => q.status === '답변대기').length;
+    $('hInquiry').innerHTML = `<div class="k">1:1 문의</div><div class="v">${inq.length}건</div><div class="s">${waiting ? `답변 대기 <b>${waiting}</b>건` : inq.length ? '모두 답변 완료' : '문의 내역이 없습니다'}</div>`;
+    const cart = m.cart || [], qty = cart.reduce((s, c) => s + (c.qty || 1), 0);
+    $('hCart').innerHTML = `<div class="k">장바구니</div><div class="v">${cart.length}종 ${qty}개</div><div class="s">${cart.length ? `결제 예정 ${won(cart.reduce((s, c) => s + c.price * (c.qty || 1), 0))}원` : '담긴 상품이 없습니다'}</div>`;
+
+    // 내 정보 (가린 값. 원래 값은 회원정보 수정에서 확인)
+    const none = t => `<span class="muted">${t}</span>`;
+    const interests = [...(m.interests || []), ...(m.interestEtc ? [m.interestEtc] : [])];
+    $('hInfo').innerHTML = [
+      ['이메일', esc(maskEmail(m.email))],
+      ['휴대폰', esc(maskPhone(m.phone))],
+      ['주소', m.address1 ? `${esc(m.address1)}${m.address2 ? ' <span class="muted">(상세 주소 등록됨)</span>' : ''}` : none('등록된 주소가 없습니다')],
+      ['관심분야', interests.length ? `<span class="chips">${interests.map(t => `<span>${esc(t)}</span>`).join('')}</span>` : none('선택한 관심분야가 없습니다')],
+      ['마케팅 수신', `SMS ${m.marketingSms === 'Y' ? '동의' : none('거부')} · 이메일 ${m.marketingEmail === 'Y' ? '동의' : none('거부')}`]
+    ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+    show('viewHome');
   }
 
   function fillForm() {
@@ -1235,7 +1404,8 @@
 
   // ===== 시작 =====
   renderUtil();
-  if (!me) { show('viewNeedLogin'); openLogin(); } else openGate();   // 비로그인: 로그인 모달 (닫으면 '로그인이 필요합니다' 안내)
+  route();
+  if (!me) openLogin();   // 비로그인: 로그인 모달 (닫으면 '로그인이 필요합니다' 안내)
 })();
 </script>
 </body>
