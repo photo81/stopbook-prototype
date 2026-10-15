@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 회원가입</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="../admin/feedback.css?v=20261015"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
 <style>
   /* 쇼핑몰(고객) 화면 — 관리자 화면(admin.css)과 별도 스타일
      톤앤매너: 사이트 컬러 팔레트 기준 (따뜻하고 포근한 감성, 글꼴은 모두 고딕 계열 Pretendard)
@@ -173,8 +174,6 @@
   .btn-later:hover { color: var(--ink); }
   .util .logout { color: var(--ink-3); margin-left: 8px; font-size: 12px; }
 
-  .foot-link { text-align: center; color: var(--ink-3); font-size: 13px; margin: 18px 0 0; }
-  .foot-link a { text-underline-offset: 3px; }
 
   /* 약관 */
   .check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
@@ -557,7 +556,6 @@
       <div class="nav-row">
         <button type="button" class="btn btn-primary btn-block" id="doneClose">스탑북 시작하기</button>
       </div>
-      <p class="foot-link"><a href="../admin/members.html">관리자 화면에서 가입 회원 확인하기</a></p>
     </div>
   </section>
   </div>
@@ -578,6 +576,8 @@
 <script src="../admin/mileage-types.js?v=20261014"></script>
 <script src="../admin/message-store.js?v=20261014"></script>
 <script src="../admin/member-data.js?v=20261014"></script>
+<!-- 피드백 입력: 관리자 화면과 같은 구글 시트로 전송 (사이트 = 사용자) -->
+<script src="../admin/feedback.js?v=20261015"></script>
 <script>
 (function () {
   'use strict';
