@@ -1,0 +1,53 @@
+/* 피드백 입력 버튼·모달 — 사용자 화면용 (feedback.js)
+   관리자 화면은 admin.css에 같은 스타일이 있어 불러오지 않음. 사용자 화면은 admin.css를 쓰지 않으므로
+   관리자 화면과 똑같이 보이도록 필요한 규칙만 #fbModal / .fb-float 안으로 한정해 담음 (사용자 화면의 .btn·.modal 등과 섞이지 않게 값을 모두 지정) */
+.fb-float, #fbModal {
+  --fb-subtle: #fafafa; --fb-hover: #f4f4f5; --fb-border: #e4e4e7; --fb-border-strong: #d4d4d8;
+  --fb-text: #18181b; --fb-text-2: #3f3f46; --fb-muted: #71717a; --fb-accent: #4f46e5; --fb-accent-soft: #eef2ff; --fb-danger: #dc2626;
+  font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; letter-spacing: -0.005em; -webkit-font-smoothing: antialiased;
+}
+.fb-float { position: fixed; left: 16px; bottom: 16px; z-index: 90; display: inline-flex; align-items: center; gap: 6px; height: 38px; margin: 0; padding: 0 16px; border: 0; border-radius: 999px; background: var(--fb-text); color: #fff; font-size: 13px; font-weight: 600; line-height: 1.45; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.18); transition: transform .12s, background .12s; }
+.fb-float:hover { background: #3f3f46; transform: translateY(-1px); }
+.fb-float:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--fb-accent-soft), 0 6px 18px rgba(0,0,0,.18); }
+
+#fbModal { position: fixed; inset: 0; background: rgba(9, 9, 11, .4); display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px; color: var(--fb-text); font-size: 13px; line-height: 1.45; text-align: left; }
+#fbModal.open { display: flex; animation: fb-fade .12s ease-out; }
+@keyframes fb-fade { from { opacity: 0; } to { opacity: 1; } }
+#fbModal *, #fbModal *::before, #fbModal *::after { box-sizing: border-box; }
+#fbModal button, #fbModal input, #fbModal textarea { font: inherit; color: inherit; letter-spacing: inherit; }
+#fbModal .modal { position: static; background: #fff; border-radius: 12px; width: 560px; max-width: 100%; max-height: 90vh; margin: 0; padding: 0; display: flex; flex-direction: column; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 24px 48px -12px rgba(0,0,0,.25); }
+#fbModal .modal-header { padding: 16px 24px; border-bottom: 1px solid var(--fb-border); display: flex; justify-content: space-between; align-items: center; }
+#fbModal .modal-header h2 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+#fbModal .modal-header .close { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: none; font-size: 20px; line-height: 1; cursor: pointer; color: var(--fb-muted); }
+#fbModal .modal-header .close:hover { background: var(--fb-hover); color: var(--fb-text); }
+#fbModal .modal-body { padding: 8px 24px 20px; overflow-y: auto; }
+#fbModal .modal-footer { padding: 12px 24px; border-top: 1px solid var(--fb-border); display: flex; justify-content: flex-end; gap: 6px; background: var(--fb-subtle); border-radius: 0 0 12px 12px; }
+
+#fbModal .form-table { width: 100%; margin: 8px 0 4px; border-collapse: separate; border-spacing: 0; border: 1px solid var(--fb-border); border-radius: 8px; overflow: hidden; }
+#fbModal .form-table th, #fbModal .form-table td { height: auto; padding: 9px 12px; border-bottom: 1px solid var(--fb-border); vertical-align: middle; text-align: left; }
+#fbModal .form-table tr:last-child > * { border-bottom: 0; }
+#fbModal .form-table th { width: 96px; background: var(--fb-subtle); color: var(--fb-muted); font-size: 12px; font-weight: 500; }
+#fbModal .form-table th + td { border-left: 1px solid var(--fb-border); }
+#fbModal input[type=text], #fbModal textarea { display: block; width: 100%; height: 32px; margin: 0; padding: 0 10px; border: 1px solid var(--fb-border); border-radius: 6px; background: #fff; font-size: 13px; transition: border-color .12s, box-shadow .12s; }
+#fbModal textarea { height: 140px; padding: 8px 10px; resize: vertical; line-height: 1.5; }
+#fbModal input[type=text]:hover, #fbModal textarea:hover { background: #fff; border-color: var(--fb-border-strong); }
+#fbModal input[type=text]:focus, #fbModal textarea:focus { outline: none; background: #fff; border-color: var(--fb-accent); box-shadow: 0 0 0 3px var(--fb-accent-soft); }
+#fbModal input::placeholder, #fbModal textarea::placeholder { color: #a1a1aa; }
+#fbModal input[type=radio] { accent-color: var(--fb-accent); margin: 0 4px 0 0; vertical-align: -2px; }
+#fbModal .check-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+#fbModal .check-chip { display: inline-flex; align-items: center; gap: 2px; height: 28px; margin: 0; padding: 0 10px; border: 1px solid var(--fb-border); border-radius: 999px; font-size: 13px; cursor: pointer; }
+#fbModal .check-chip:hover { border-color: var(--fb-border-strong); }
+#fbModal .check-chip:has(input:checked) { border-color: var(--fb-text); background: var(--fb-subtle); font-weight: 600; }
+#fbModal .readonly { color: var(--fb-text-2); }
+#fbModal .fb-meta { margin-top: 4px; text-align: right; font-size: 11px; }
+#fbModal .fb-note { margin: 10px 0 0; font-size: 12px; }
+#fbModal .err { color: var(--fb-danger); font-size: 12px; margin-top: 4px; display: none; }
+#fbModal .err.show { display: block; }
+
+#fbModal .btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; width: auto; height: 32px; margin: 0; padding: 0 12px; border: 1px solid var(--fb-border); border-radius: 6px; background: #fff; color: var(--fb-text-2); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; box-shadow: none; transition: background .12s, border-color .12s; }
+#fbModal .btn:hover { background: var(--fb-hover); border-color: var(--fb-border-strong); color: var(--fb-text); }
+#fbModal .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--fb-accent-soft); border-color: var(--fb-accent); }
+#fbModal .btn-primary, #fbModal .btn-primary:disabled { background: var(--fb-text); border-color: var(--fb-text); color: #fff; }
+#fbModal .btn-primary:hover { background: #3f3f46; border-color: #3f3f46; color: #fff; }
+#fbModal .btn:disabled { opacity: .4; cursor: not-allowed; }
+@media print { .fb-float { display: none; } }

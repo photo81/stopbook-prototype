@@ -1,5 +1,6 @@
 // 피드백 입력 (모든 화면 공통): 왼쪽 아래 플로팅 버튼 → 모달에서 구분(오류/개선/기타)·내용·확인자명(선택) 입력 → 구글 시트로 전송
 // member-type-store.js(AdminUtil) 다음에 로드. 다른 화면 안에 끼워 넣은 화면(body.embed)에서는 버튼을 숨김
+// 사용자 화면(user/)도 같은 버튼·같은 시트 사용: ../admin/feedback.css + ../admin/feedback.js 를 불러옴
 //
 // 구글 시트 취합: 구글 Apps Script 웹 앱(feedback-apps-script.gs)으로 전송 → 시트에 한 줄씩 추가
 //   FEEDBACK_ENDPOINT 에 배포한 웹 앱 URL(https://script.google.com/macros/s/.../exec)을 넣으면 연결됨
@@ -17,6 +18,8 @@
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const toast = msg => (window.AdminUtil ? AdminUtil.toast(msg) : alert(msg));
+  // 사용자 화면(/user/, feedback.css 사용)과 관리자 화면 피드백을 같은 시트에 모으되 구분할 수 있게 표시
+  const SITE = /\/user\//.test(location.pathname) ? '사용자' : '관리자';
   const pad = n => String(n).padStart(2, '0');
   const nowText = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
 
@@ -115,15 +118,18 @@
       const text = $('fbText').value.trim();
       if (!text) { $('fbErr').textContent = '내용을 입력하세요.'; $('fbErr').classList.add('show'); $('fbText').focus(); return; }
       const ver = document.querySelector('[data-proto-version]');
+      const pageName = (document.querySelector('h1') || {}).childNodes ? (document.querySelector('h1').childNodes[0].textContent || '').trim() : document.title;
       const rec = Object.assign({
         submittedAt: nowText(),
+        site: SITE,
         type: document.querySelector('input[name=fbType]:checked').value,
         content: text,
         checker: $('fbChecker').value.trim(),   // 확인자명 (선택)
-        page: (document.querySelector('h1') || {}).childNodes ? (document.querySelector('h1').childNodes[0].textContent || '').trim() : document.title,
+        // 화면 열에도 [사용자]/[관리자]를 붙임 (구분 열이 없는 이전 배포의 시트에서도 구분되도록)
+        page: `[${SITE}] ${pageName || document.title}`,
         url: location.href,
         version: ver ? ver.textContent.trim() : '',
-        admin: (window.AdminUtil && AdminUtil.ADMIN_NAME) || ''
+        admin: SITE === '관리자' ? ((window.AdminUtil && AdminUtil.ADMIN_NAME) || '') : ''
       }, deviceInfo());
       try { localStorage.setItem(CHECKER_KEY, rec.checker); } catch (err) { /* 저장소 사용 불가 */ }
       $('fbSubmit').disabled = true;
@@ -148,9 +154,26 @@
     $('fbText').focus();
   }
 
+  // 사용자 화면은 회원가입·로그인을 <dialog>.showModal()로 띄움 → 열려 있는 동안 바깥 요소는 누를 수 없음(inert)
+  // 버튼과 모달을 맨 위에 열린 모달 dialog 안으로 옮겨 그 위에서도 쓸 수 있게 하고, 닫히면 body로 되돌림
+  function rehome() {
+    const btn = $('fbOpen'), el = $('fbModal');
+    if (!btn || !el) return;
+    const host = [...document.querySelectorAll('dialog[open]')].filter(dl => { try { return dl.matches(':modal'); } catch (e) { return true; } }).pop() || document.body;
+    if (btn.parentNode !== host) { host.appendChild(btn); host.appendChild(el); }
+  }
+
   function init() {
     if (document.body.classList.contains('embed')) return;   // 다른 화면 안에 끼워 넣은 화면에서는 숨김
     ensure();
+    if (document.querySelector('dialog')) {
+      new MutationObserver(rehome).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['open'] });
+      // dialog 안에 있을 때 Esc는 피드백 모달만 닫음 (뒤의 dialog까지 닫히지 않게)
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && $('fbModal').classList.contains('open') && $('fbModal').closest('dialog')) { e.preventDefault(); e.stopPropagation(); $('fbModal').classList.remove('open'); }
+      }, true);
+      rehome();
+    }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 

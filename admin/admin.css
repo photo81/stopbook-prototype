@@ -1239,3 +1239,34 @@ table.mt-table tr.off td { color: var(--faint); }
 table.rc-table { table-layout: fixed; min-width: 1150px; }
 table.rc-table td { overflow: hidden; text-overflow: ellipsis; }
 #rcModal .modal { width: 760px; max-width: calc(100vw - 32px); }
+
+/* ===== 관리자 계정관리 (admin-accounts.html) ===== */
+/* 레벨 설정 모달 > 접근 메뉴: 대메뉴 상자 안에 카테고리 한 줄씩, 카테고리 체크 = 하위 메뉴 전체 */
+.perm-tools { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.perm-tools .perm-sum { margin-right: auto; color: var(--muted); font-size: 12px; }
+.perm-tools .perm-sum b { color: var(--accent); }
+.perm-sec { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+.perm-sec-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--subtle); font-weight: 600; }
+.perm-sec-head small { color: var(--muted); font-weight: 400; font-size: 12px; }
+.perm-cat { display: flex; align-items: flex-start; gap: 12px; padding: 8px 12px; border-top: 1px solid var(--border); }
+.perm-cat-name { flex: none; width: 150px; font-weight: 500; }
+.perm-items { display: flex; flex-wrap: wrap; gap: 4px 16px; min-width: 0; }
+.perm-tree label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; margin: 0; }
+.perm-tree input:disabled + span { color: var(--text-2); }
+.perm-tree label.menu-off span { color: var(--faint); }
+.form-table td .perm-note { margin-top: 6px; }
+/* 레벨 목록: 접근 카테고리 요약 */
+.perm-chips { display: flex; flex-wrap: wrap; gap: 2px; white-space: normal; padding: 6px 0; }
+td:has(> .perm-chips) { max-width: 520px; }
+/* 레벨별 접근 메뉴 한눈에 보기 */
+table.perm-matrix th.lv, table.perm-matrix td.lv { width: 110px; text-align: center; }
+table.perm-matrix td.cat { color: var(--muted); font-size: 12px; }
+table.perm-matrix .on { color: var(--success); font-weight: 700; }
+table.perm-matrix .off { color: var(--border-strong); }
+/* 계정 추가: 아이디 + @kstudy.com 고정 */
+.email-field { display: flex; align-items: center; gap: 6px; }
+.email-field input { flex: 1; min-width: 0; }
+.email-field span { flex: none; color: var(--text-2); }
+#levelModal .modal { width: 1040px; max-width: calc(100vw - 32px); }
+#accountModal .modal { width: 760px; max-width: calc(100vw - 32px); }
+@media (max-width: 760px) { .perm-cat { flex-direction: column; gap: 6px; } .perm-cat-name { width: auto; } }

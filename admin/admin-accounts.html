@@ -101,20 +101,188 @@
   <div class="main">
     <header class="topbar">
       <div class="breadcrumb">홈 &gt; 관리자계정관리 &gt; <b>계정 관리</b></div>
-      <div><span class="proto-ver" data-proto-version>프로토타입 v2.75 (2026-10-13)</span> 관리자님 | <a href="#">로그아웃</a></div>
+      <div><span class="proto-ver" data-proto-version>프로토타입 v2.76 (2026-10-15)</span> 관리자님 | <a href="#">로그아웃</a></div>
     </header>
 
-        <main class="content">
-      <h1>계정 관리 <span class="page-desc">관리자 계정을 등록하고 권한과 사용 상태를 관리합니다.</span></h1>
+    <main class="content">
+      <h1>계정 관리 <span class="page-desc">관리자 레벨별 접근 메뉴를 지정하고, 사내 구글 계정(@kstudy.com)을 관리자로 등록합니다.</span></h1>
 
-      <!-- 빈 페이지: 화면 구성 예정 -->
-      <section class="panel">
-        <div class="empty-page">
-          <b>준비 중인 화면입니다.</b>
-          <p>계정 관리 화면은 구성 예정입니다.</p>
-        </div>
-      </section>
+      <div class="tabs" role="tablist" id="tabs"></div>
+
+      <!-- ===== 레벨 관리 탭 ===== -->
+      <div id="levelPanel" role="tabpanel" hidden>
+        <section class="panel">
+          <div class="list-head">
+            <div class="count"><b>관리자 레벨</b> · 수정 버튼(또는 레벨명)을 누르면 이름과 접근 메뉴를 수정할 수 있습니다. 계정이 지정된 레벨은 삭제할 수 없습니다.</div>
+            <div class="right">
+              <button type="button" class="btn btn-primary" id="btnAddLevel">+ 레벨 추가</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>레벨명</th><th style="text-align:right">접근 메뉴</th><th>접근 카테고리</th><th style="text-align:right">계정</th><th class="col-desc">설명</th><th>관리</th></tr>
+              </thead>
+              <tbody id="levelBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="list-head">
+            <div class="count"><b>레벨별 접근 메뉴 한눈에 보기</b> · 대시보드는 모든 레벨이 볼 수 있고, 상세 화면은 목록 화면의 권한을 따릅니다.</div>
+          </div>
+          <div class="table-wrap">
+            <table class="perm-matrix">
+              <thead><tr id="matrixHead"></tr></thead>
+              <tbody id="matrixBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===== 계정 추가 탭 ===== -->
+      <div id="accountPanel" role="tabpanel" hidden>
+        <section class="panel">
+          <div class="list-head">
+            <div class="count"><b>계정 추가</b> · 사내 구글 계정(@kstudy.com)만 등록할 수 있습니다. 등록한 계정으로 로그인하면 지정한 레벨의 메뉴만 볼 수 있습니다. <span class="readonly">(구글 로그인 연동은 추후 설정)</span></div>
+          </div>
+          <form id="addForm" novalidate>
+            <table class="form-table multi-col">
+              <colgroup><col class="c-th"><col><col class="c-th"><col></colgroup>
+              <tr>
+                <th>구글 계정 *</th><td>
+                  <div class="email-field"><input type="text" id="acEmail" maxlength="40" placeholder="아이디" autocomplete="off" spellcheck="false"><span id="acDomain"></span></div>
+                  <div class="err" id="acEmailErr"></div>
+                </td>
+                <th>이름 *</th><td>
+                  <input type="text" id="acName" maxlength="20" placeholder="예) 홍길동">
+                  <div class="err" id="acNameErr"></div>
+                </td>
+              </tr>
+              <tr>
+                <th>부서</th><td><input type="text" id="acDept" maxlength="30" placeholder="예) 고객지원팀"></td>
+                <th>레벨 *</th><td>
+                  <select id="acLevel"></select>
+                  <div class="readonly at-note" id="acLevelInfo"></div>
+                </td>
+              </tr>
+              <tr>
+                <th>메모</th><td colspan="3"><input type="text" id="acMemo" maxlength="100" placeholder="관리 참고용 메모 (선택)"></td>
+              </tr>
+            </table>
+            <div class="page-actions">
+              <button type="reset" class="btn">초기화</button>
+              <button type="submit" class="btn btn-primary">계정 추가</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="list-head">
+            <div class="count" id="accountCount"></div>
+            <div class="right">
+              <select id="fLevel" aria-label="레벨로 보기"></select>
+              <select id="fUse" aria-label="사용 상태로 보기">
+                <option value="">전체 상태</option>
+                <option value="Y">사용</option>
+                <option value="N">사용 안 함</option>
+              </select>
+              <input type="search" id="fText" placeholder="이름·계정·부서 검색" style="width:200px;height:32px">
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>이름</th><th>구글 계정</th><th>부서</th><th>레벨</th><th>사용</th><th>마지막 로그인</th><th>등록일</th><th class="col-desc">메모</th><th>관리</th></tr>
+              </thead>
+              <tbody id="accountBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
     </main>
+  </div>
+</div>
+
+<!-- 레벨 추가/설정 모달 -->
+<div class="modal-bg" id="levelModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="levelTitle">
+    <div class="modal-header">
+      <h2 id="levelTitle"></h2>
+      <button type="button" class="close" data-close aria-label="닫기">&times;</button>
+    </div>
+    <form id="levelForm" class="modal-body" novalidate>
+      <div class="section-title">기본 정보</div>
+      <table class="form-table">
+        <tr><th>레벨명 *</th><td>
+          <input type="text" id="lvName" maxlength="20" placeholder="예) CS 담당">
+          <div class="err" id="lvNameErr"></div>
+        </td></tr>
+        <tr><th>설명</th><td><textarea id="lvDesc" maxlength="300" placeholder="이 레벨이 담당하는 업무를 적어 주세요."></textarea></td></tr>
+      </table>
+
+      <div class="section-title">접근 메뉴</div>
+      <div class="perm-tools">
+        <span class="perm-sum" id="permSum"></span>
+        <button type="button" class="btn btn-sm" id="btnPermAll">전체 선택</button>
+        <button type="button" class="btn btn-sm" id="btnPermNone">전체 해제</button>
+      </div>
+      <div class="readonly at-note" id="permLocked" style="margin:0 0 8px" hidden>최고 관리자 레벨은 항상 모든 메뉴(이후 추가되는 메뉴 포함)에 접근하며 변경할 수 없습니다.</div>
+      <div class="perm-tree" id="permTree"></div>
+      <div class="err" id="permErr"></div>
+    </form>
+    <div class="modal-footer">
+      <button type="button" class="btn" data-close>취소</button>
+      <button type="submit" form="levelForm" class="btn btn-primary" id="lvSubmit"></button>
+    </div>
+  </div>
+</div>
+
+<!-- 계정 설정 모달 -->
+<div class="modal-bg" id="accountModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="accountTitle">
+    <div class="modal-header">
+      <h2 id="accountTitle">계정 수정</h2>
+      <button type="button" class="close" data-close aria-label="닫기">&times;</button>
+    </div>
+    <form id="accountForm" class="modal-body" novalidate>
+      <div class="section-title">계정 정보</div>
+      <table class="form-table">
+        <tr><th>구글 계정 *</th><td>
+          <div class="email-field"><input type="text" id="edEmail" maxlength="40" autocomplete="off" spellcheck="false"><span id="edDomain"></span></div>
+          <div class="err" id="edEmailErr"></div>
+        </td></tr>
+        <tr><th>이름 *</th><td>
+          <input type="text" id="edName" maxlength="20">
+          <div class="err" id="edNameErr"></div>
+        </td></tr>
+        <tr><th>부서</th><td><input type="text" id="edDept" maxlength="30"></td></tr>
+        <tr><th>레벨 *</th><td>
+          <select id="edLevel"></select>
+          <div class="readonly at-note" id="edLevelInfo"></div>
+        </td></tr>
+        <tr><th>사용</th><td>
+          <label><input type="radio" name="edUse" value="Y"> 사용</label>
+          <label style="margin-left:12px"><input type="radio" name="edUse" value="N"> 사용 안 함</label>
+          <span class="readonly" style="margin-left:8px">사용 안 함: 관리자 페이지에 로그인할 수 없음</span>
+        </td></tr>
+        <tr><th>메모</th><td><input type="text" id="edMemo" maxlength="100"></td></tr>
+      </table>
+      <div class="err" id="edErr"></div>
+
+      <div class="section-title">변경 이력</div>
+      <div class="table-wrap history-wrap">
+        <table class="history-table">
+          <thead><tr><th>일시</th><th>내용</th><th>처리자</th></tr></thead>
+          <tbody id="edHistory"></tbody>
+        </table>
+      </div>
+    </form>
+    <div class="modal-footer">
+      <button type="button" class="btn" data-close>취소</button>
+      <button type="submit" form="accountForm" class="btn btn-primary">저장</button>
+    </div>
   </div>
 </div>
 
@@ -123,6 +291,355 @@
 <script src="board-store.js?v=20261231"></script>
 <script src="member-type-store.js?v=20261231"></script>
 <script src="feedback.js?v=20261231"></script>
-<script>AdminUtil.initSidebar();</script>
+<script src="admin-account-store.js?v=20261231"></script>
+<script>
+(function () {
+  'use strict';
+  const { esc, toast, fmtDateTime, initSidebar, ADMIN_NAME } = AdminUtil;
+  const S = AdminAccountStore;
+  const $ = id => document.getElementById(id);
+  const d = S.load();
+  // 사이드 메뉴(게시판 통합 관리에서 만든 게시판 포함)에서 메뉴 목록 구성
+  const catalog = S.menuCatalog();
+  const TOTAL = S.allHrefs(catalog).length;
+  const levelBy = code => d.levels.find(l => l.code === code);
+  const levelName = code => { const l = levelBy(code); return l ? l.name : '(삭제된 레벨)'; };
+  const off = t => `<span class="yn-off">${t}</span>`;
+  const log = (it, content) => (it.history || (it.history = [])).push({ at: fmtDateTime(new Date()), content, by: ADMIN_NAME });
+  const persist = msg => { const saved = S.save(d); render(); toast(saved ? msg : '저장소를 사용할 수 없어 이 화면에만 반영되었습니다.'); };
+
+  // 카테고리별 접근 메뉴 수 [{ cat, k, m }]
+  const catSummary = lv => {
+    const mine = S.levelMenus(lv, catalog);
+    return catalog.flatMap(s => s.cats).map(c => ({ cat: c.cat, k: c.items.filter(i => mine.includes(i.href)).length, m: c.items.length }));
+  };
+  const summaryText = lv => {
+    if (lv.all) return '모든 메뉴에 접근합니다.';
+    const list = catSummary(lv).filter(x => x.k);
+    return list.length ? '접근 메뉴: ' + list.map(x => x.k === x.m ? x.cat : `${x.cat} ${x.k}/${x.m}`).join(' · ') : '접근 가능한 메뉴가 없습니다.';
+  };
+
+  // ===== 탭 (?tab= 로 유지) =====
+  const TABS = [['level', '레벨 관리', () => d.levels.length], ['account', '계정 추가', () => d.accounts.length]];
+  const params = new URLSearchParams(location.search);
+  let current = TABS.some(t => t[0] === params.get('tab')) ? params.get('tab') : 'level';
+
+  function render() {
+    $('tabs').innerHTML = TABS.map(([key, label, count]) => `
+      <button type="button" role="tab" class="tab ${key === current ? 'active' : ''}"
+        aria-selected="${key === current}" data-tab="${key}">${esc(label)} <span class="tab-count">${count()}</span></button>`).join('');
+    $('levelPanel').hidden = current !== 'level';
+    $('accountPanel').hidden = current !== 'account';
+    if (current === 'level') renderLevels(); else renderAccounts();
+  }
+
+  $('tabs').addEventListener('click', e => {
+    const b = e.target.closest('[data-tab]');
+    if (!b || b.dataset.tab === current) return;
+    current = b.dataset.tab;
+    try { history.replaceState(null, '', `?tab=${current}`); } catch (err) { /* file:// 등에서 차단될 수 있음 */ }
+    render();
+  });
+
+  // ===== 레벨 관리 =====
+  function renderLevels() {
+    $('levelBody').innerHTML = d.levels.map(lv => {
+      const n = S.levelMenus(lv, catalog).length;
+      const users = d.accounts.filter(a => a.level === lv.code).length;
+      const chips = lv.all
+        ? '<span class="chip-sm">전체 메뉴</span>'
+        : catSummary(lv).filter(x => x.k).map(x => `<span class="chip-sm">${esc(x.cat)}${x.k < x.m ? ` <span class="readonly">${x.k}/${x.m}</span>` : ''}</span>`).join('') || off('없음');
+      return `<tr>
+        <td><button type="button" class="link-btn" data-edit-level="${esc(lv.code)}">${esc(lv.name)}</button>${lv.system ? ' <span class="badge">기본</span>' : ''}</td>
+        <td class="num">${n} / ${TOTAL}</td>
+        <td><div class="perm-chips">${chips}</div></td>
+        <td class="num">${users ? `${users}명` : off('0명')}</td>
+        <td class="left cat-desc" title="${esc(lv.desc)}">${esc(lv.desc)}</td>
+        <td class="keep"><button type="button" class="btn btn-sm" data-edit-level="${esc(lv.code)}">수정</button>
+          ${lv.system ? '<button type="button" class="btn btn-sm btn-danger" disabled title="기본 레벨은 삭제할 수 없습니다.">삭제</button>' : `<button type="button" class="btn btn-sm btn-danger" data-del-level="${esc(lv.code)}">삭제</button>`}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="6" class="empty">등록된 레벨이 없습니다.</td></tr>';
+
+    // 한눈에 보기: 메뉴 × 레벨
+    $('matrixHead').innerHTML = '<th>대메뉴</th><th>카테고리</th><th>메뉴</th>' + d.levels.map(lv => `<th class="lv">${esc(lv.name)}</th>`).join('');
+    const menusOf = d.levels.map(lv => S.levelMenus(lv, catalog));
+    $('matrixBody').innerHTML = catalog.flatMap(s => s.cats.flatMap((c, ci) => c.items.map((it, ii) => `<tr>
+        <td class="cat">${ci === 0 && ii === 0 ? esc(s.label) : ''}</td>
+        <td class="cat">${ii === 0 ? esc(c.cat) : ''}</td>
+        <td>${esc(it.label)}</td>
+        ${menusOf.map(m => `<td class="lv">${m.includes(it.href) ? '<span class="on" aria-label="접근">●</span>' : '<span class="off" aria-label="접근 불가">–</span>'}</td>`).join('')}
+      </tr>`))).join('');
+  }
+
+  $('levelPanel').addEventListener('click', e => {
+    const ed = e.target.closest('[data-edit-level]');
+    if (ed) return openLevel(ed.dataset.editLevel);
+    const del = e.target.closest('[data-del-level]');
+    if (del) return deleteLevel(del.dataset.delLevel);
+  });
+
+  function deleteLevel(code) {
+    const lv = levelBy(code);
+    if (!lv || lv.system) return;
+    const users = d.accounts.filter(a => a.level === code).length;
+    if (users) { toast(`'${lv.name}' 레벨에 지정된 계정 ${users}개를 먼저 다른 레벨로 옮겨 주세요.`); return; }
+    if (!confirm(`'${lv.name}' 레벨을 삭제하시겠습니까?\n삭제하면 되돌릴 수 없습니다.`)) return;
+    // TODO: 실서비스에서는 DELETE /api/admin/admin-levels/{code}
+    d.levels = d.levels.filter(l => l.code !== code);
+    persist(`'${lv.name}' 레벨이 삭제되었습니다.`);
+  }
+
+  // ----- 레벨 추가/설정 모달: 접근 메뉴 트리 -----
+  $('permTree').innerHTML = catalog.map(s => `
+    <div class="perm-sec">
+      <div class="perm-sec-head"><label><input type="checkbox" data-sec><span>${esc(s.label)}</span></label><small>${s.cats.reduce((n, c) => n + c.items.length, 0)}개 메뉴</small></div>
+      ${s.cats.map(c => `<div class="perm-cat">
+        <label class="perm-cat-name"><input type="checkbox" data-cat><span>${esc(c.cat)}</span></label>
+        <div class="perm-items">${c.items.map(it => `<label><input type="checkbox" data-menu value="${esc(it.href)}"><span>${esc(it.label)}</span></label>`).join('')}</div>
+      </div>`).join('')}
+    </div>`).join('');
+
+  const menuBoxes = (root = $('permTree')) => [...root.querySelectorAll('input[data-menu]')];
+  // 하위 메뉴 선택 상태에 맞춰 카테고리·대메뉴 체크(일부 선택은 indeterminate) 갱신
+  function syncPerm() {
+    const setGroup = (box, items) => {
+      const k = items.filter(x => x.checked).length;
+      box.checked = k > 0 && k === items.length;
+      box.indeterminate = k > 0 && k < items.length;
+    };
+    $('permTree').querySelectorAll('.perm-cat').forEach(el => setGroup(el.querySelector('[data-cat]'), menuBoxes(el)));
+    $('permTree').querySelectorAll('.perm-sec').forEach(el => setGroup(el.querySelector('[data-sec]'), menuBoxes(el)));
+    const k = menuBoxes().filter(x => x.checked).length;
+    $('permSum').innerHTML = `<b>${k}</b> / ${TOTAL}개 메뉴 선택`;
+  }
+  $('permTree').addEventListener('change', e => {
+    const t = e.target;
+    if (t.matches('[data-cat]')) menuBoxes(t.closest('.perm-cat')).forEach(x => { x.checked = t.checked; });
+    if (t.matches('[data-sec]')) menuBoxes(t.closest('.perm-sec')).forEach(x => { x.checked = t.checked; });
+    $('permErr').classList.remove('show');
+    syncPerm();
+  });
+  const setAllPerm = on => { menuBoxes().forEach(x => { if (!x.disabled) x.checked = on; }); syncPerm(); };
+  $('btnPermAll').addEventListener('click', () => setAllPerm(true));
+  $('btnPermNone').addEventListener('click', () => setAllPerm(false));
+
+  let editLevel = null;
+  function openLevel(code) {
+    const lv = code ? levelBy(code) : null;
+    editLevel = lv ? lv.code : null;
+    $('levelTitle').textContent = lv ? '레벨 수정' : '레벨 추가';
+    $('lvSubmit').textContent = lv ? '저장' : '추가';
+    $('lvName').value = lv ? lv.name : '';
+    $('lvDesc').value = lv ? lv.desc : '';
+    // 최고 관리자: 항상 전체 메뉴 (변경 불가)
+    const locked = !!(lv && lv.all);
+    const mine = lv ? S.levelMenus(lv, catalog) : [];
+    $('permTree').querySelectorAll('input').forEach(x => { x.disabled = locked; });
+    menuBoxes().forEach(x => { x.checked = mine.includes(x.value); });
+    $('btnPermAll').hidden = $('btnPermNone').hidden = locked;
+    $('permLocked').hidden = !locked;
+    ['lvNameErr', 'permErr'].forEach(id => $(id).classList.remove('show'));
+    syncPerm();
+    $('levelModal').classList.add('open');
+    $('lvName').focus();
+  }
+
+  $('levelForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = $('lvName').value.trim();
+    const nameMsg = S.checkLevelName(d, name, editLevel);
+    $('lvNameErr').textContent = nameMsg;
+    $('lvNameErr').classList.toggle('show', !!nameMsg);
+    const lv = editLevel ? levelBy(editLevel) : null;
+    const locked = !!(lv && lv.all);
+    const menus = menuBoxes().filter(x => x.checked).map(x => x.value);
+    const permMsg = !locked && !menus.length ? '접근 메뉴를 하나 이상 선택하세요.' : '';
+    setErr('permErr', permMsg);
+    if (nameMsg || permMsg) return;
+
+    const desc = $('lvDesc').value.trim();
+    // TODO: 실서비스에서는 POST /api/admin/admin-levels, PUT /api/admin/admin-levels/{code}
+    if (lv) {
+      const changes = [];
+      if (lv.name !== name) changes.push(`레벨명 변경: ${lv.name} → ${name}`);
+      if (!locked) {
+        const before = S.levelMenus(lv, catalog);
+        const plus = menus.filter(h => !before.includes(h)).length, minus = before.filter(h => !menus.includes(h)).length;
+        if (plus || minus) changes.push(`접근 메뉴 변경 (추가 ${plus} · 제외 ${minus})`);
+        lv.menus = menus;
+      }
+      if (lv.desc !== desc) changes.push('설명 변경');
+      Object.assign(lv, { name, desc });
+      if (changes.length) log(lv, changes.join(' / '));
+    } else {
+      const nlv = { code: 'L' + Date.now().toString(36).toUpperCase(), name, desc, all: false, system: false, menus, history: [] };
+      log(nlv, `레벨 생성 (접근 메뉴 ${menus.length}개)`);
+      d.levels.push(nlv);
+    }
+    closeModal('levelModal');
+    persist(`'${name}' 레벨이 ${lv ? '저장' : '추가'}되었습니다.`);
+  });
+
+  // ===== 계정 추가 =====
+  $('acDomain').textContent = $('edDomain').textContent = '@' + S.DOMAIN;
+  const levelOptions = () => d.levels.map(l => `<option value="${esc(l.code)}">${esc(l.name)} (메뉴 ${S.levelMenus(l, catalog).length}개)</option>`).join('');
+  const showLevelInfo = (selId, infoId) => { const lv = levelBy($(selId).value); $(infoId).textContent = lv ? summaryText(lv) : ''; };
+  $('acLevel').addEventListener('change', () => showLevelInfo('acLevel', 'acLevelInfo'));
+  $('edLevel').addEventListener('change', () => showLevelInfo('edLevel', 'edLevelInfo'));
+
+  function renderAccounts() {
+    // 추가 폼 레벨 선택지 (선택값 유지, 없으면 권한이 가장 적은 맨 아래 레벨을 기본으로)
+    const keep = $('acLevel').value;
+    $('acLevel').innerHTML = levelOptions();
+    $('acLevel').value = levelBy(keep) ? keep : (d.levels[d.levels.length - 1] || {}).code || '';
+    showLevelInfo('acLevel', 'acLevelInfo');
+
+    const fl = $('fLevel').value;
+    $('fLevel').innerHTML = '<option value="">전체 레벨</option>' + d.levels.map(l => `<option value="${esc(l.code)}">${esc(l.name)}</option>`).join('');
+    $('fLevel').value = levelBy(fl) ? fl : '';
+
+    const lvF = $('fLevel').value, useF = $('fUse').value, q = $('fText').value.trim().toLowerCase();
+    const list = d.accounts.filter(a => (!lvF || a.level === lvF) && (!useF || a.use === (useF === 'Y'))
+      && (!q || [a.name, a.email, a.dept].some(v => (v || '').toLowerCase().includes(q))));
+    $('accountCount').innerHTML = `<b>등록된 계정</b> · ${list.length === d.accounts.length ? `${d.accounts.length}개` : `${list.length}개 / 전체 ${d.accounts.length}개`} · 수정 버튼(또는 이름)을 누르면 입력한 정보를 수정할 수 있습니다.`;
+    $('accountBody').innerHTML = list.map(a => `<tr${a.use ? '' : ' class="row-hidden"'}>
+        <td><button type="button" class="link-btn" data-edit-account="${esc(a.id)}">${esc(a.name)}</button></td>
+        <td class="email">${esc(a.email)}</td>
+        <td>${a.dept ? esc(a.dept) : off('-')}</td>
+        <td>${esc(levelName(a.level))}</td>
+        <td class="keep"><button type="button" class="use-toggle" role="switch" aria-checked="${a.use}" data-use="${esc(a.id)}"
+          aria-label="${esc(a.name)} ${a.use ? '사용' : '사용 안 함'}"><span class="use-track"></span><span class="use-label">${a.use ? '사용' : '사용 안 함'}</span></button></td>
+        <td>${a.lastLoginAt ? esc(a.lastLoginAt) : off('로그인 기록 없음')}</td>
+        <td>${esc(a.createdAt.slice(0, 10))}</td>
+        <td class="left cat-desc" title="${esc(a.memo)}">${esc(a.memo)}</td>
+        <td class="keep"><button type="button" class="btn btn-sm" data-edit-account="${esc(a.id)}">수정</button>
+          <button type="button" class="btn btn-sm btn-danger" data-del-account="${esc(a.id)}">삭제</button></td>
+      </tr>`).join('') || `<tr><td colspan="9" class="empty">${d.accounts.length ? '조건에 맞는 계정이 없습니다.' : '등록된 계정이 없습니다.'}</td></tr>`;
+  }
+  ['fLevel', 'fUse'].forEach(id => $(id).addEventListener('change', renderAccounts));
+  $('fText').addEventListener('input', renderAccounts);
+
+  const setErr = (id, msg) => { $(id).textContent = msg; $(id).classList.toggle('show', !!msg); return !!msg; };
+
+  $('addForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const idPart = $('acEmail').value.trim();
+    const name = $('acName').value.trim();
+    const bad = [setErr('acEmailErr', S.checkEmailId(d, idPart, null)), setErr('acNameErr', S.checkAccountName(name))].some(Boolean);
+    if (bad) return;
+    if (!levelBy($('acLevel').value)) { toast('레벨을 먼저 추가하세요.'); return; }
+    // TODO: 실서비스에서는 POST /api/admin/admin-accounts
+    const now = fmtDateTime(new Date());
+    const a = { id: 'A' + Date.now().toString(36).toUpperCase(), email: `${idPart.toLowerCase()}@${S.DOMAIN}`, name, dept: $('acDept').value.trim(),
+      level: $('acLevel').value, use: true, memo: $('acMemo').value.trim(), createdAt: now, lastLoginAt: '', history: [] };
+    log(a, `계정 등록 (레벨: ${levelName(a.level)})`);
+    d.accounts.unshift(a);
+    $('addForm').reset();
+    persist(`${a.email} 계정이 추가되었습니다.`);
+    $('acEmail').focus();
+  });
+  $('addForm').addEventListener('reset', () => {
+    ['acEmailErr', 'acNameErr'].forEach(id => $(id).classList.remove('show'));
+    setTimeout(() => { renderAccounts(); }, 0);   // reset 후 레벨 기본값·안내 다시 표시
+  });
+
+  // 최고 관리자 레벨의 사용 중 계정이 모두 사라지지 않도록 막음
+  const isActiveSuper = a => a.use && !!(levelBy(a.level) || {}).system;
+  const lastSuperMsg = '최고 관리자 레벨의 사용 중인 계정이 하나 이상 있어야 합니다.';
+
+  $('accountBody').addEventListener('click', e => {
+    const ed = e.target.closest('[data-edit-account]');
+    if (ed) return openAccount(ed.dataset.editAccount);
+    const tg = e.target.closest('[data-use]');
+    if (tg) return toggleUse(tg.dataset.use);
+    const del = e.target.closest('[data-del-account]');
+    if (del) return deleteAccount(del.dataset.delAccount);
+  });
+
+  function toggleUse(id) {
+    const a = d.accounts.find(x => x.id === id);
+    if (!a) return;
+    if (a.use && isActiveSuper(a) && !S.activeSuperCount(d, a.id)) { toast(lastSuperMsg); return; }
+    if (a.use && !confirm(`${a.email} 계정을 사용 안 함으로 바꾸시겠습니까?\n이 계정으로 관리자 페이지에 로그인할 수 없게 됩니다.`)) return;
+    a.use = !a.use;
+    log(a, `사용 상태 변경: ${a.use ? '사용 안 함 → 사용' : '사용 → 사용 안 함'}`);
+    persist(`${a.email} 계정을 ${a.use ? '사용합니다' : '사용 안 함으로 바꿨습니다'}.`);
+  }
+
+  function deleteAccount(id) {
+    const a = d.accounts.find(x => x.id === id);
+    if (!a) return;
+    if (isActiveSuper(a) && !S.activeSuperCount(d, a.id)) { toast(lastSuperMsg); return; }
+    if (!confirm(`${a.name} (${a.email}) 계정을 삭제하시겠습니까?\n삭제하면 되돌릴 수 없습니다. 잠시 막으려면 사용 안 함으로 바꿔 주세요.`)) return;
+    // TODO: 실서비스에서는 DELETE /api/admin/admin-accounts/{id}
+    d.accounts = d.accounts.filter(x => x.id !== id);
+    persist(`${a.email} 계정이 삭제되었습니다.`);
+  }
+
+  // ----- 계정 설정 모달 -----
+  let editAccount = null;
+  function openAccount(id) {
+    const a = d.accounts.find(x => x.id === id);
+    if (!a) return;
+    editAccount = a.id;
+    $('edEmail').value = a.email.replace(`@${S.DOMAIN}`, '');
+    $('edName').value = a.name;
+    $('edDept').value = a.dept || '';
+    $('edLevel').innerHTML = levelOptions();
+    $('edLevel').value = levelBy(a.level) ? a.level : '';
+    showLevelInfo('edLevel', 'edLevelInfo');
+    document.querySelector(`input[name=edUse][value=${a.use ? 'Y' : 'N'}]`).checked = true;
+    $('edMemo').value = a.memo || '';
+    ['edEmailErr', 'edNameErr', 'edErr'].forEach(x => $(x).classList.remove('show'));
+    $('edHistory').innerHTML = (a.history || []).slice().reverse().map(h => `<tr><td>${esc(h.at)}</td><td class="left">${esc(h.content)}</td><td>${esc(h.by)}</td></tr>`).join('')
+      || '<tr><td colspan="3" class="empty">변경 이력이 없습니다.</td></tr>';
+    $('accountModal').classList.add('open');
+    $('edEmail').focus();
+  }
+
+  $('accountForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const a = d.accounts.find(x => x.id === editAccount);
+    if (!a) return;
+    const idPart = $('edEmail').value.trim();
+    const name = $('edName').value.trim();
+    const bad = [setErr('edEmailErr', S.checkEmailId(d, idPart, a.id)), setErr('edNameErr', S.checkAccountName(name))].some(Boolean);
+    if (bad) return;
+    const email = `${idPart.toLowerCase()}@${S.DOMAIN}`;
+    const level = $('edLevel').value;
+    if (!levelBy(level)) { setErr('edErr', '레벨을 선택하세요.'); return; }
+    const use = document.querySelector('input[name=edUse]:checked').value === 'Y';
+    const after = Object.assign({}, a, { level, use });
+    if (isActiveSuper(a) && !isActiveSuper(after) && !S.activeSuperCount(d, a.id)) { setErr('edErr', lastSuperMsg); return; }
+
+    const changes = [];
+    if (a.email !== email) changes.push(`구글 계정 변경: ${a.email} → ${email}`);
+    if (a.name !== name) changes.push(`이름 변경: ${a.name} → ${name}`);
+    if (a.level !== level) changes.push(`레벨 변경: ${levelName(a.level)} → ${levelName(level)}`);
+    if (a.use !== use) changes.push(`사용 상태 변경: ${use ? '사용 안 함 → 사용' : '사용 → 사용 안 함'}`);
+    const dept = $('edDept').value.trim(), memo = $('edMemo').value.trim();
+    if ((a.dept || '') !== dept) changes.push('부서 변경');
+    if ((a.memo || '') !== memo) changes.push('메모 변경');
+    // TODO: 실서비스에서는 PUT /api/admin/admin-accounts/{id}
+    Object.assign(a, { email, name, dept, level, use, memo });
+    if (changes.length) log(a, changes.join(' / '));
+    closeModal('accountModal');
+    persist(`${a.email} 계정이 저장되었습니다.`);
+  });
+
+  // ===== 모달 공통 =====
+  const MODALS = ['levelModal', 'accountModal'];
+  const closeModal = id => $(id).classList.remove('open');
+  $('btnAddLevel').addEventListener('click', () => openLevel(null));
+  MODALS.forEach(id => {
+    document.querySelectorAll(`#${id} [data-close]`).forEach(b => b.addEventListener('click', () => closeModal(id)));
+    $(id).addEventListener('click', e => { if (e.target === $(id)) closeModal(id); });
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') MODALS.forEach(closeModal); });
+
+  initSidebar();
+  render();
+})();
+</script>
 </body>
 </html>
