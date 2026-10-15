@@ -782,7 +782,7 @@
   window.AdminUtil = { fmtDateTime, esc, toast, initSidebar, setDefaultRange, listToday, keepTodayPending, ADMIN_NAME: '관리자' };  // TODO: 로그인 관리자명
 
   // 상단바 프로토타입 버전 표시. 버전을 올릴 때는 여기만 바꾸면 모든 화면에 반영됨 (HTML의 같은 문구는 스크립트 실패 시 대비용)
-  const PROTO_VERSION = '프로토타입 v2.75 (2026-10-13)';
+  const PROTO_VERSION = '프로토타입 v2.76 (2026-10-15)';
   document.querySelectorAll('[data-proto-version]').forEach(el => { el.textContent = PROTO_VERSION; });
 
   // ===== 상단 대메뉴(GNB): 회원 / 주문·배송 =====
@@ -796,6 +796,7 @@
     { key: 'board', label: '게시판', cats: ['게시판관리', '게시글관리'] },   // 게시판관리(통합·관리자 공지·1:1 문의 설정) / 게시글관리(공지사항·1:1 문의·FAQ·이용후기)
     { key: 'benefit', label: '혜택', cats: ['혜택관리', '혜택내역'] }   // 혜택관리(마일리지 유형 관리) / 혜택내역(마일리지 내역)
   ];
+  window.AdminUtil.GNB = GNB;   // 관리자 계정관리 > 레벨별 접근 메뉴 구성에서 사용
   function initGnb() {
     const sidebar = document.querySelector('.sidebar'), topbar = document.querySelector('.topbar');
     if (!sidebar || !topbar || document.querySelector('.gnb')) return;
