@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스탑북 마이페이지 - 회원정보 수정</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="../admin/feedback.css?v=20261015"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
+<style>
+  /* 쇼핑몰(고객) 화면 — 회원가입(signup.html)과 같은 톤앤매너·토큰·입력 요소 사용 */
+  :root {
+    --base: #F5F0E8; --sub: #FCEDD2; --main: #63302B; --accent1: #D3775C; --accent2: #A56255;
+    --bg: var(--base); --surface: #FFFFFF; --band: var(--main); --util: var(--sub);
+    --ink: #1F1B19; --ink-2: #6B6460; --ink-3: #A39C97; --line: #EEEAE6; --line-2: #DDD7D2;
+    --field: #F6F4F2; --tonal: #F1EDEA; --tonal-hover: #E9E4E0;
+    --brand: var(--main); --brand-dark: #4C221E; --brand-soft: #F5EDEB; --ring: rgba(99,48,43,.14);
+    --danger: #D64532; --danger-soft: #FDF1EF; --ok: #2F8A5B;
+    --radius: 12px; --radius-md: 8px; --radius-sm: 6px;   /* 모달·카드 / 버튼·박스 / 안내 박스 (너무 둥글지 않게) */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 14px/1.6 "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.01em; }
+  a { color: inherit; }
+  button, input, select { font: inherit; color: inherit; letter-spacing: inherit; }
+  [hidden] { display: none !important; }
+
+  /* 쇼핑몰 공통 상단 */
+  .proto-band { background: var(--band); color: var(--sub); text-align: center; font-size: 12px; font-weight: 700; padding: 5px 16px; letter-spacing: .02em; }
+  .util { background: var(--util); border-bottom: 1px solid #F1E2C6; }
+  .util ul { display: flex; justify-content: flex-end; gap: 22px; list-style: none; max-width: 1136px; margin: 0 auto; padding: 8px 16px; font-size: 12px; color: #7E5A4E; }
+  .util button, .util a { background: none; border: 0; padding: 0; cursor: pointer; color: inherit; text-decoration: none; }
+  .util button:hover, .util a:hover { color: var(--accent1); }
+  .util .me, .util .login, .util [aria-current="page"] { color: var(--main); font-weight: 700; }
+  .util .logout { color: var(--ink-3); margin-left: 8px; font-size: 12px; }
+
+  /* 마이페이지 레이아웃: 왼쪽 메뉴 + 본문 */
+  .my-wrap { max-width: 1136px; margin: 0 auto; padding: 36px 16px 80px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .my-nav h2 { margin: 0 0 14px; font-size: 20px; font-weight: 800; color: var(--main); }
+  .my-user { font-size: 13px; color: var(--ink-2); margin-bottom: 18px; line-height: 1.5; }
+  .my-user b { display: block; font-size: 15px; color: var(--ink); }
+  .my-nav ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line-2); }
+  .my-nav li { border-bottom: 1px solid var(--line); }
+  .my-nav li button, .my-nav li a { display: block; width: 100%; padding: 12px 2px; background: none; border: 0; text-align: left; font-size: 14px; color: var(--ink-2); cursor: pointer; text-decoration: none; }
+  .my-nav li button:hover { color: var(--ink); }
+  .my-nav li [aria-current="page"] { color: var(--main); font-weight: 700; }
+  .my-main { max-width: 680px; }
+  .my-main > h1 { margin: 0 0 6px; font-size: 22px; font-weight: 800; }
+  .page-sub { margin: 0 0 22px; color: var(--ink-2); font-size: 13.5px; }
+
+  .card { background: var(--surface); border-radius: var(--radius); padding: 24px 28px; box-shadow: 0 1px 2px rgba(20,14,12,.04); }
+  .card + .card { margin-top: 14px; }
+  .card > h2 { margin: 0 0 4px; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card > h2 small { font-size: 11px; font-weight: 700; color: var(--accent1); background: #FBEDE8; border-radius: 999px; padding: 1px 8px; }
+  .card-sub { margin: 0 0 18px; color: var(--ink-3); font-size: 13px; line-height: 1.6; }
+  .card-sub:last-child { margin-bottom: 0; }
+
+  /* 버튼 (signup.html과 같음) */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 18px; border-radius: var(--radius-md); border: 1px solid transparent; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background .15s, border-color .15s, color .15s, box-shadow .15s; }
+  .btn-block { width: 100%; }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:hover { background: var(--brand-dark); }
+  .btn-primary:disabled { background: var(--tonal); color: #BDB6B0; cursor: not-allowed; }
+  .btn-line { background: var(--surface); border-color: var(--line-2); color: var(--ink); }
+  .btn-line:hover { border-color: var(--ink-3); }
+  .btn-sm { height: 44px; padding: 0 14px; font-size: 13px; white-space: nowrap; background: var(--tonal); border-color: transparent; color: var(--ink); }
+  .btn-sm:hover { background: var(--tonal-hover); border-color: transparent; }
+  .btn-sm:disabled { background: var(--field); color: var(--ok); cursor: default; }
+  .btn-text { background: none; border: 0; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0; font-size: 13px; }
+  .btn-text:hover { color: var(--ink); }
+  .btn:focus-visible, .btn-text:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+  .btn-prov { width: 100%; height: 48px; font-weight: 600; }
+  .btn-prov.kakao { background: #FEE500; color: rgba(0,0,0,.85); }
+  .btn-prov.naver { background: #03C75A; color: #fff; }
+  .btn-prov.google { background: #fff; color: #3C4043; border-color: var(--line-2); }
+  .mock-tag { display: inline-block; font-size: 11px; font-weight: 600; color: var(--ink-3); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; margin-bottom: 12px; }
+
+  /* 입력 폼 (signup.html과 같음) */
+  .field { margin-bottom: 18px; }
+  .field > label, .field > .label { display: block; font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 8px; }
+  .field .req { color: var(--accent1); margin-left: 2px; }
+  .field .opt { color: var(--ink-3); font-weight: 400; font-size: 12px; margin-left: 4px; }
+  .form-inline .field { display: grid; grid-template-columns: 110px minmax(0, 1fr); column-gap: 12px; align-items: start; margin-bottom: 14px; }
+  .form-inline .field:last-child { margin-bottom: 0; }
+  .form-inline .field > label, .form-inline .field > .label { grid-column: 1; margin: 0; min-height: 44px; display: flex; align-items: center; flex-wrap: wrap; line-height: 1.3; }
+  .form-inline .field > :not(label):not(.label) { grid-column: 2; }
+  .form-inline .dev-code { justify-self: start; }
+  .form-inline .field .opt { display: block; width: 100%; margin: 2px 0 0; }
+  .row { display: flex; gap: 8px; }
+  .row > .input-wrap, .row > input { flex: 1; min-width: 0; }
+  input[type=text], input[type=email], input[type=password], input[type=tel] {
+    width: 100%; height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--radius-md); background: var(--field); outline: none; font-size: 14px; transition: border-color .15s, background .15s, box-shadow .15s;
+  }
+  input::placeholder { color: #B9B2AC; }
+  input:hover { background: #F2EFEC; }
+  input:focus { background: #fff; border-color: var(--brand); box-shadow: 0 0 0 3px var(--ring); }
+  input:read-only, input:read-only:hover, input:read-only:focus { color: var(--ink-2); background: var(--field); border-color: transparent; box-shadow: none; }
+  input.invalid { background: #fff; border-color: var(--danger); }
+  input.invalid:focus { box-shadow: 0 0 0 3px rgba(214,69,50,.12); }
+  .input-wrap { position: relative; }
+  .input-wrap .timer { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--danger); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .msg { font-size: 12.5px; margin: 6px 2px 0; }
+  .msg:empty { display: none; }
+  .msg.err { color: var(--danger); }
+  .msg.ok { color: var(--ok); }
+  .msg.info { color: var(--ink-3); }
+  .hint { font-size: 12px; color: var(--ink-3); margin: 6px 2px 0; line-height: 1.5; }
+  .dev-code { display: inline-block; font-size: 11.5px; font-weight: 600; color: var(--accent2); background: var(--field); border-radius: 6px; padding: 3px 8px; margin-top: 8px; }
+  .radio-row { display: flex; gap: 4px; padding: 4px; background: var(--field); border-radius: var(--radius-md); }
+  .radio-row label { flex: 1; }
+  .radio-row input { position: absolute; opacity: 0; }
+  .radio-row span { display: flex; align-items: center; justify-content: center; height: 36px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--ink-2); transition: background .15s, box-shadow .15s; }
+  .radio-row input:checked + span { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(20,14,12,.1); }
+  .radio-row input:focus-visible + span { box-shadow: 0 0 0 3px var(--ring); }
+  .pw-field { position: relative; }
+  .pw-field input { padding-right: 64px; }
+  .pw-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: 0; cursor: pointer; font-size: 12px; color: var(--ink-3); padding: 6px 8px; border-radius: 6px; }
+  .pw-toggle:hover { color: var(--ink); background: var(--tonal); }
+  .login-err, .form-error { font-size: 12.5px; color: var(--danger); background: var(--danger-soft); border-radius: var(--radius-sm); padding: 10px 12px; margin: 0 0 12px; line-height: 1.55; }
+  .login-err small { display: block; color: var(--ink-2); font-size: 12px; margin-top: 2px; }
+
+  /* 체크박스 (약관 동의와 같음) */
+  .check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; position: relative; }
+  .check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .check .box { flex: none; width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--line-2); background: #fff; display: grid; place-items: center; margin-top: 1px; transition: background .15s, border-color .15s, box-shadow .15s; }
+  .check .box::after { content: ""; width: 9px; height: 5px; border: 2px solid transparent; border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
+  .check input:checked + .box { background: var(--brand); border-color: var(--brand); }
+  .check input:checked + .box::after { border-color: #fff; }
+  .check input:focus-visible + .box { box-shadow: 0 0 0 3px var(--ring); }
+  /* 일부 선택 (광고성 정보: SMS·이메일 중 하나만) */
+  .check input:indeterminate + .box { background: var(--brand); border-color: var(--brand); }
+  .check input:indeterminate + .box::after { width: 9px; height: 0; border: 0; border-top: 2px solid #fff; transform: none; }
+  .consent-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 13.5px; }
+  .consent-list .channels { display: flex; gap: 22px; padding-left: 30px; flex-wrap: wrap; }
+  .consent-list .channels .check { font-size: 13px; color: var(--ink-2); align-items: center; }
+  .consent-list .channels .box { width: 18px; height: 18px; border-radius: 5px; margin-top: 0; }
+  .consent-list .tag { font-size: 13px; font-weight: 600; color: var(--ink-3); margin-right: 4px; }
+
+  /* 로그인 정보 (읽기 전용) */
+  .info-list { display: grid; grid-template-columns: 110px 1fr; margin: 14px 0 0; font-size: 13.5px; }
+  .info-list dt, .info-list dd { padding: 10px 0; border-top: 1px solid var(--line); margin: 0; }
+  .info-list dt:first-of-type, .info-list dd:first-of-type { border-top: 0; }
+  .info-list dt { color: var(--ink-3); }
+  .info-list dd { font-weight: 600; word-break: break-all; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .info-list dd small { font-weight: 400; color: var(--ink-3); font-size: 12px; }
+  .sns-circle { border-radius: 50%; display: grid; place-items: center; }
+  .sns-circle.mini { width: 22px; height: 22px; flex: none; }
+  .sns-circle.mini svg { width: 12px; height: 12px; display: block; }
+  .sns-circle.kakao { background: #FEE500; }
+  .sns-circle.naver { background: #03C75A; }
+  .sns-circle.naver svg { width: 9px; height: 9px; }
+  .sns-circle.google { background: #fff; border: 1px solid var(--line-2); }
+  .sns-circle.stopbook { background: var(--brand); color: #fff; font-size: 12px; font-weight: 800; line-height: 1; }
+
+  /* 민감정보 본인 인증 */
+  .sens-lock { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: var(--radius-md); background: var(--field); }
+  .sens-lock .ico { flex: none; width: 36px; height: 36px; border-radius: 50%; background: #fff; display: grid; place-items: center; color: var(--brand); }
+  .sens-lock .txt { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-2); line-height: 1.55; }
+  .sens-lock .txt b { display: block; color: var(--ink); font-size: 13.5px; }
+  .sens-auth { margin-top: 12px; }
+  .sens-ok { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 10px 12px; border-radius: var(--radius-sm); background: #EEF7F1; color: var(--ok); font-size: 12.5px; font-weight: 600; }
+
+  /* 비밀번호 확인 (진입) */
+  .gate { max-width: 460px; }
+  .gate .field { margin-bottom: 10px; }
+  .gate .btn-primary { margin-top: 6px; }
+  .gate-links { margin-top: 14px; text-align: center; font-size: 13px; color: var(--ink-3); }
+
+  .actions { display: flex; gap: 8px; margin-top: 18px; }
+  .actions .btn-line { flex: 0 0 120px; background: var(--tonal); border-color: transparent; }
+  .actions .btn-line:hover { background: var(--tonal-hover); }
+  .actions .btn-primary { flex: 1; }
+  .leave { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line-2); display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; color: var(--ink-3); }
+
+  /* 저장 결과 레이어 */
+  .result-dlg { border: 0; border-radius: var(--radius); padding: 0; width: min(440px, calc(100vw - 32px)); color: var(--ink); box-shadow: 0 30px 80px rgba(20,14,12,.25); }
+  .result-dlg::backdrop { background: rgba(20,14,12,.36); }
+  .result-dlg[open] { animation: pop .22s cubic-bezier(.2,.9,.3,1); }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+  .result-body { padding: 28px 28px 8px; text-align: center; }
+  .result-body .ico { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 12px; background: var(--brand-soft); color: var(--brand); font-size: 22px; font-weight: 800; }
+  .result-body h3 { margin: 0 0 12px; font-size: 17px; }
+  .result-body ul { margin: 0; padding: 12px 16px; list-style: none; text-align: left; background: var(--field); border-radius: var(--radius-md); font-size: 13px; color: var(--ink-2); line-height: 1.8; }
+  .consent-result { margin-top: 10px; text-align: left; font-size: 12.5px; color: var(--ink-2); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 12px 16px; line-height: 1.8; }
+  .consent-result b { color: var(--ink); }
+  .result-foot { padding: 16px 28px 24px; }
+
+  /* 주소 · 관심분야 */
+  .zip-row { align-items: center; }
+  .zip-row input { flex: 0 0 140px !important; }
+  .addr-clear { margin-left: auto; font-size: 12px; color: var(--ink-3); }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip-check { position: relative; }
+  .chip-check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .chip-check span { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border: 1px solid var(--line-2); border-radius: var(--radius-md); background: #fff; font-size: 13px; color: var(--ink-2); cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+  .chip-check span:hover { border-color: var(--ink-3); }
+  .chip-check input:checked + span { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+  .chip-check input:focus-visible + span { box-shadow: 0 0 0 3px var(--ring); }
+  .zip-layer { position: fixed; inset: 0; z-index: 20; background: rgba(20,14,12,.42); display: grid; place-items: center; padding: 16px; }
+  .zip-box { width: min(500px, 100%); height: min(560px, calc(100vh - 32px)); background: #fff; border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(20,14,12,.25); }
+  .zip-head { flex: none; display: flex; align-items: center; justify-content: space-between; height: 52px; padding: 0 10px 0 20px; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .zip-head button { width: 36px; height: 36px; border: 0; background: none; border-radius: 50%; font-size: 22px; line-height: 1; color: var(--ink-2); cursor: pointer; }
+  .zip-head button:hover { background: var(--tonal); }
+  .zip-wrap { flex: 1; min-height: 0; }
+
+  /* ===== 로그인 모달 (signup.html 로그인/회원가입 모달과 같은 모양) ===== */
+  .auth { border: 0; padding: 0; border-radius: var(--radius); width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 48px); color: var(--ink); background: var(--surface); box-shadow: 0 30px 80px rgba(20,14,12,.22), 0 2px 8px rgba(20,14,12,.06); overflow: hidden; }
+  .auth[open] { display: flex; flex-direction: column; animation: pop .22s cubic-bezier(.2,.9,.3,1); }
+  .auth::backdrop { background: rgba(20,14,12,.42); backdrop-filter: blur(3px); }
+  body:has(dialog[open]) { overflow: hidden; }
+  .auth-head { flex: none; display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; height: 56px; padding: 0 10px; }
+  .auth-head button { background: none; border: 0; cursor: pointer; color: var(--ink-2); width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; transition: background .15s; }
+  .auth-head button:hover { background: var(--tonal); }
+  .auth-head #lgClose { grid-column: 3; justify-self: end; }
+  .auth-head-title { grid-column: 2; text-align: center; font-size: 14px; font-weight: 600; }
+  .auth-body { flex: 1; overflow: auto; padding: 4px 32px 32px; scrollbar-width: thin; }
+  .auth .view-title { font-size: 18px; font-weight: 700; margin: 0 0 4px; }
+  .auth .view-sub { color: var(--ink-2); font-size: 13.5px; margin: 0 0 18px; }
+  #lvLogin .field, #lvSns .field { margin-bottom: 8px; }
+  .login-save { font-size: 13px; color: var(--ink-2); align-items: center; margin: 12px 0 16px; width: fit-content; }
+  .login-save .box { width: 18px; height: 18px; border-radius: 5px; margin-top: 0; }
+  .login-links { display: flex; justify-content: center; align-items: center; gap: 14px; margin: 18px 0 0; font-size: 13px; }
+  .login-links a { color: var(--ink-2); text-decoration: none; }
+  .login-links a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .login-links span { width: 1px; height: 11px; background: var(--line-2); }
+  .auth .divider { border: 0; border-top: 1px solid var(--line); margin: 24px 0 22px; }
+  .sns-row { display: flex; justify-content: center; gap: 36px; }
+  .sns-item { background: none; border: 0; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
+  .sns-item .sns-circle { width: 50px; height: 50px; transition: transform .15s, box-shadow .15s; }
+  .sns-item .sns-circle svg { width: 24px; height: 24px; display: block; }
+  .sns-item .sns-circle.naver svg { width: 18px; height: 18px; }
+  .sns-item:hover .sns-circle { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(20,14,12,.12); }
+  .sns-item:focus-visible { outline: none; }
+  .sns-item:focus-visible .sns-circle { box-shadow: 0 0 0 3px var(--ring); }
+  .prov { text-align: center; }
+  .prov .sns-circle { margin: 4px auto 16px; width: 56px; height: 56px; }
+  .prov .sns-circle svg { width: 26px; height: 26px; display: block; }
+  .prov h3 { font-size: 17px; font-weight: 700; margin: 0 0 4px; }
+  .prov .view-sub { color: var(--ink-3); margin-bottom: 24px; }
+  .prov form { text-align: left; }
+  .prov .btn-prov.google { background: #1A73E8; color: #fff; border-color: transparent; }
+  .btn-later { display: block; margin: 14px auto 0; background: none; border: 0; cursor: pointer; font-size: 13px; color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px; }
+  .btn-later:hover { color: var(--ink); }
+  #lvPw .field { margin-bottom: 14px; }
+  @media (max-width: 560px) {
+    .auth { width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0; }
+    .auth-body { padding: 4px 20px 28px; }
+  }
+
+  .toast { z-index: 10; position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 20px); background: rgba(31,27,25,.92); color: #fff; font-size: 13.5px; padding: 12px 18px; border-radius: var(--radius-md); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 32px); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 760px) {
+    .my-wrap { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-top: 20px; }
+    .my-nav ul { display: flex; overflow-x: auto; border-top: 0; border-bottom: 1px solid var(--line-2); }
+    .my-nav li { border: 0; flex: none; }
+    .my-nav li button, .my-nav li a { padding: 10px 12px; white-space: nowrap; }
+    .my-nav li [aria-current="page"] { box-shadow: inset 0 -2px 0 var(--main); }
+    .my-user { display: none; }
+    .card { padding: 20px; }
+  }
+  @media (max-width: 480px) {
+    .util ul { gap: 16px; }
+    .form-inline .field, .info-list { grid-template-columns: minmax(0, 1fr); }
+    .form-inline .field > label, .form-inline .field > .label { min-height: 0; margin-bottom: 6px; }
+    .info-list dt { padding-bottom: 0; }
+    .info-list dd { border-top: 0; padding-top: 2px; }
+    .sens-lock { flex-wrap: wrap; }
+    .sens-lock .btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="proto-band">PROTOTYPE - 마이페이지</div>
+<nav class="util" aria-label="이용 메뉴">
+  <ul>
+    <li id="authMenu"><button type="button" class="login" data-open-login>로그인/회원가입</button></li>
+    <li><a href="mypage.html" aria-current="page">마이페이지</a></li>
+    <li><button type="button" data-todo="장바구니">장바구니 (0)</button></li>
+    <li><button type="button" data-todo="고객센터">고객센터</button></li>
+  </ul>
+</nav>
+
+<div class="my-wrap">
+  <aside class="my-nav" aria-label="마이페이지 메뉴">
+    <h2>마이페이지</h2>
+    <div class="my-user" id="myUser"></div>
+    <ul>
+      <li><a href="mypage.html" aria-current="page">회원정보 수정</a></li>
+    </ul>
+  </aside>
+
+  <main class="my-main">
+    <h1>회원정보 수정</h1>
+    <p class="page-sub" id="pageSub">회원님의 정보를 확인하고 수정할 수 있습니다.</p>
+
+    <!-- 로그인 필요 -->
+    <section class="card gate" id="viewNeedLogin" hidden>
+      <h2>로그인이 필요합니다</h2>
+      <p class="card-sub">회원정보 수정은 로그인한 뒤 이용할 수 있습니다.</p>
+      <button type="button" class="btn btn-primary btn-block" data-open-login>로그인하기</button>
+    </section>
+
+    <!-- 진입 확인 (요구사항 PRD_MEM_009: 진입 시 비밀번호 재확인) -->
+    <section class="card gate" id="viewGate" hidden>
+      <h2 id="gateTitle">비밀번호 확인</h2>
+      <p class="card-sub" id="gateSub"></p>
+      <form id="gateForm" novalidate>
+        <div class="field"><input type="text" id="gId" readonly aria-label="로그인 아이디"></div>
+        <div class="field pw-field">
+          <input type="password" id="gPw" autocomplete="current-password" placeholder="비밀번호" aria-label="비밀번호">
+          <button type="button" class="pw-toggle" id="gPwToggle" aria-label="비밀번호 보기" aria-pressed="false">보기</button>
+        </div>
+        <div class="login-err" id="gErr" role="alert" hidden></div>
+        <button type="submit" class="btn btn-primary btn-block">확인</button>
+      </form>
+      <!-- 간편 로그인 회원: 비밀번호가 없으므로 가입한 SNS 계정으로 다시 확인 -->
+      <div id="gateSns" hidden>
+        <span class="mock-tag">가상 본인 확인 · 프로토타입</span>
+        <button type="button" class="btn btn-prov" id="gSnsBtn"></button>
+      </div>
+      <div class="gate-links"><a class="btn-text" href="signup.html#find-pw" id="gFindLink" data-go-login hidden>비밀번호가 기억나지 않나요?</a></div>
+    </section>
+
+    <!-- 회원정보 수정 -->
+    <form id="editForm" novalidate hidden>
+      <section class="card">
+        <h2>로그인 정보</h2>
+        <dl class="info-list" id="loginInfo"></dl>
+      </section>
+
+      <section class="card">
+        <h2>기본 정보</h2>
+        <div class="form-inline" style="margin-top:14px">
+          <div class="field">
+            <label for="eName">이름<span class="req">*</span></label>
+            <div><input type="text" id="eName" maxlength="20" autocomplete="name"><p class="msg" id="mName" aria-live="polite"></p></div>
+          </div>
+          <div class="field">
+            <label for="eBirth">생년월일<span class="req" id="birthReq">*</span><span class="opt" id="birthOpt" hidden>(선택)</span></label>
+            <div><input type="text" id="eBirth" maxlength="10" inputmode="numeric" autocomplete="bday" placeholder="예) 19900101"><p class="msg" id="mBirth" aria-live="polite"></p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 민감정보 (요구사항 PRD_MEM_009: 이메일·휴대폰 번호는 변경 전 휴대폰 인증) -->
+      <section class="card">
+        <h2 style="margin-bottom:14px">이메일 · 휴대폰 번호 <small>민감정보</small></h2>
+
+        <div id="sensLocked">
+          <div class="form-inline" style="margin-bottom:14px">
+            <div class="field"><span class="label">이메일</span><div><input type="text" id="cEmail" readonly aria-label="현재 이메일"></div></div>
+            <div class="field"><span class="label">휴대폰 번호</span><div><input type="text" id="cPhone" readonly aria-label="현재 휴대폰 번호"></div></div>
+          </div>
+          <div class="sens-lock">
+            <span class="ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+            <span class="txt"><b>휴대폰 본인 인증 후 변경할 수 있어요</b><span id="idPhoneText"></span></span>
+            <button type="button" class="btn btn-line btn-sm" id="idSend">인증번호 받기</button>
+          </div>
+          <div class="sens-auth" id="idCodeArea" hidden>
+            <div class="row">
+              <div class="input-wrap"><input type="text" id="idCode" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="인증번호 6자리"><span class="timer" id="idTimer"></span></div>
+              <button type="button" class="btn btn-line btn-sm" id="idCheck">확인</button>
+            </div>
+            <span class="dev-code" id="idDev" hidden></span>
+          </div>
+          <p class="msg" id="mId" aria-live="polite"></p>
+        </div>
+
+        <div id="sensOpen" hidden>
+          <div class="sens-ok">✓ 본인 인증이 완료되었습니다. 이메일·휴대폰 번호를 변경할 수 있습니다.</div>
+          <div class="form-inline">
+            <div class="field">
+              <label for="eEmail">이메일<span class="req">*</span></label>
+              <div>
+                <div class="row">
+                  <input type="email" id="eEmail" maxlength="100" autocomplete="email">
+                  <button type="button" class="btn btn-line btn-sm" id="checkEmail">중복 확인</button>
+                </div>
+                <p class="msg" id="mEmail" aria-live="polite"></p>
+                <p class="hint" id="emailHint"></p>
+              </div>
+            </div>
+            <div class="field">
+              <label for="ePhone">휴대폰 번호<span class="req">*</span></label>
+              <div>
+                <div class="row">
+                  <input type="tel" id="ePhone" maxlength="13" inputmode="numeric" autocomplete="tel">
+                  <button type="button" class="btn btn-line btn-sm" id="phSend">인증번호 받기</button>
+                </div>
+                <div class="row" id="phCodeRow" style="margin-top:8px" hidden>
+                  <div class="input-wrap"><input type="text" id="phCode" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="인증번호 6자리"><span class="timer" id="phTimer"></span></div>
+                  <button type="button" class="btn btn-line btn-sm" id="phCheck">확인</button>
+                </div>
+                <span class="dev-code" id="phDev" hidden></span>
+                <p class="msg" id="mPhone" aria-live="polite"></p>
+                <p class="hint">새 번호로 바꾸려면 새 번호로 한 번 더 인증해 주세요.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="pwCard">
+        <h2>비밀번호 변경</h2>
+        <div class="form-inline" style="margin-top:14px">
+          <div class="field">
+            <label for="ePw">새 비밀번호</label>
+            <div><input type="password" id="ePw" maxlength="20" autocomplete="new-password" placeholder="8~20자, 영문·숫자·특수문자 포함"><p class="msg" id="mPw" aria-live="polite"></p></div>
+          </div>
+          <div class="field">
+            <label for="ePw2">새 비밀번호 확인</label>
+            <div><input type="password" id="ePw2" maxlength="20" autocomplete="new-password" placeholder="새 비밀번호를 한 번 더 입력해 주세요"><p class="msg" id="mPw2" aria-live="polite"></p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>선택 정보</h2>
+        <div class="form-inline" style="margin-top:14px">
+          <div class="field">
+            <label for="eNick">닉네임<span class="opt">(선택)</span></label>
+            <div><input type="text" id="eNick" maxlength="12" placeholder="2~12자"><p class="msg" id="mNick" aria-live="polite"></p></div>
+          </div>
+          <div class="field">
+            <span class="label" id="genderLabel">성별<span class="opt">(선택)</span></span>
+            <div class="radio-row" role="radiogroup" aria-labelledby="genderLabel">
+              <label><input type="radio" name="eGender" value="여"><span>여성</span></label>
+              <label><input type="radio" name="eGender" value="남"><span>남성</span></label>
+              <label><input type="radio" name="eGender" value=""><span>선택 안 함</span></label>
+            </div>
+          </div>
+          <!-- 주소: 우편번호 검색(카카오 우편번호 서비스) → 우편번호·기본 주소 자동 입력, 상세 주소는 직접 입력 -->
+          <div class="field">
+            <span class="label" id="addrLabel">주소<span class="opt">(선택)</span></span>
+            <div role="group" aria-labelledby="addrLabel">
+              <div class="row zip-row">
+                <input type="text" id="eZip" readonly placeholder="우편번호" aria-label="우편번호" maxlength="5" inputmode="numeric">
+                <button type="button" class="btn btn-line btn-sm" id="btnZip">우편번호 검색</button>
+                <button type="button" class="btn-text addr-clear" id="btnAddrClear" hidden>주소 지우기</button>
+              </div>
+              <input type="text" id="eAddr1" readonly placeholder="우편번호를 검색하면 기본 주소가 입력됩니다" aria-label="기본 주소" maxlength="100" style="margin-top:8px">
+              <input type="text" id="eAddr2" maxlength="100" placeholder="상세 주소 (동·호수 등)" aria-label="상세 주소" style="margin-top:8px">
+              <p class="msg" id="mAddr" aria-live="polite"></p>
+            </div>
+          </div>
+          <!-- 관심분야: 여러 개 선택 가능, '직접 입력'을 고르면 입력란 표시 -->
+          <div class="field">
+            <span class="label" id="intLabel">관심분야<span class="opt">(선택)</span></span>
+            <div>
+              <div class="chip-row" id="intChips" role="group" aria-labelledby="intLabel"></div>
+              <input type="text" id="eIntEtc" maxlength="20" placeholder="관심분야를 직접 입력해 주세요 (20자 이내)" aria-label="관심분야 직접 입력" hidden style="margin-top:8px">
+              <p class="msg" id="mInt" aria-live="polite"></p>
+              <p class="hint">여러 개를 선택할 수 있습니다.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 style="margin-bottom:14px">마케팅 정보 수신 동의</h2>
+        <ul class="consent-list">
+          <li><label class="check"><input type="checkbox" id="mkUse"><span class="box" aria-hidden="true"></span><span><span class="tag">[선택]</span>마케팅 목적 개인정보 수집·이용 동의</span></label></li>
+          <li><label class="check"><input type="checkbox" id="mkAd"><span class="box" aria-hidden="true"></span><span><span class="tag">[선택]</span>광고성 정보 수신 동의</span></label></li>
+          <li class="channels" role="group" aria-label="광고성 정보 수신 방법">
+            <label class="check"><input type="checkbox" id="mkSms" data-channel><span class="box" aria-hidden="true"></span><span>SMS</span></label>
+            <label class="check"><input type="checkbox" id="mkEmail" data-channel><span class="box" aria-hidden="true"></span><span>이메일</span></label>
+          </li>
+        </ul>
+        <p class="hint">광고성 정보 수신은 마케팅 목적 개인정보 수집·이용 동의와 함께 선택됩니다. 변경하면 처리 결과를 안내해 드립니다.</p>
+      </section>
+
+      <div class="form-error" id="formError" role="alert" hidden style="margin-top:14px"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-line" id="btnReset">취소</button>
+        <button type="submit" class="btn btn-primary">저장하기</button>
+      </div>
+      <div class="leave">
+        <span>더 이상 스탑북을 이용하지 않으시나요?</span>
+        <button type="button" class="btn-text" data-todo="회원 탈퇴">회원 탈퇴</button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<!-- 로그인 모달: 비로그인 상태로 마이페이지에 들어오면 바로 띄움 (회원가입 화면의 로그인과 같은 규칙·같은 회원 정보) -->
+<dialog class="auth" id="loginDlg" aria-labelledby="lgTitle">
+  <div class="auth-head">
+    <button type="button" id="lgBack" aria-label="이전" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <span class="auth-head-title" id="lgTitle">스탑북 회원 로그인</span>
+    <button type="button" id="lgClose" aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="auth-body">
+    <!-- 스탑북 회원 로그인 -->
+    <section id="lvLogin">
+      <p class="view-sub">마이페이지는 로그인 후 이용할 수 있습니다.</p>
+      <form id="loginForm" novalidate>
+        <div class="field"><input type="text" id="lId" autocomplete="username" placeholder="이메일 또는 아이디" aria-label="이메일 또는 아이디"></div>
+        <div class="field pw-field">
+          <input type="password" id="lPw" autocomplete="current-password" placeholder="비밀번호" aria-label="비밀번호">
+          <button type="button" class="pw-toggle" id="lPwToggle" aria-label="비밀번호 보기" aria-pressed="false">보기</button>
+        </div>
+        <label class="check login-save"><input type="checkbox" id="lSave"><span class="box" aria-hidden="true"></span><span>이메일(아이디) 저장</span></label>
+        <div class="login-err" id="mLogin" role="alert" hidden></div>
+        <button type="submit" class="btn btn-primary btn-block">로그인</button>
+      </form>
+      <!-- 찾기·가입은 회원가입 화면에서 진행 (로그인하면 마이페이지로 돌아옴) -->
+      <div class="login-links">
+        <a href="signup.html#find-id" data-go-login>내 로그인 정보 찾기</a><span aria-hidden="true"></span>
+        <a href="signup.html#find-pw" data-go-login>비밀번호 찾기</a><span aria-hidden="true"></span>
+        <a href="signup.html#join">회원가입</a>
+      </div>
+      <hr class="divider">
+      <div class="sns-row" id="lgSnsRow"></div>
+    </section>
+
+    <!-- SNS 로그인 화면 (가상) -->
+    <section class="prov" id="lvSns" hidden>
+      <span class="mock-tag">가상 로그인 화면 · 프로토타입</span>
+      <div id="provLogo"></div>
+      <h3 id="provTitle"></h3>
+      <p class="view-sub" id="provSub"></p>
+      <form id="provForm" novalidate>
+        <div class="field"><input type="text" id="provId" autocomplete="username" aria-label="아이디"></div>
+        <div class="field"><input type="password" id="provPw" autocomplete="current-password" placeholder="비밀번호" aria-label="비밀번호"></div>
+        <div class="login-err" id="mProv" role="alert" hidden></div>
+        <button type="submit" class="btn btn-prov" id="provBtn">로그인</button>
+      </form>
+    </section>
+
+    <!-- 비밀번호 변경: 임시 비밀번호(필수) · 90일 이상 미변경 -->
+    <section id="lvPw" hidden>
+      <h3 class="view-title" id="pwTitle"></h3>
+      <p class="view-sub" id="pwSub"></p>
+      <form id="pwForm" novalidate>
+        <div class="field"><label for="pNew">새 비밀번호</label><input type="password" id="pNew" maxlength="20" autocomplete="new-password" placeholder="8~20자, 영문·숫자·특수문자 포함"><p class="msg" id="mPNew" aria-live="polite"></p></div>
+        <div class="field"><label for="pNew2">새 비밀번호 확인</label><input type="password" id="pNew2" maxlength="20" autocomplete="new-password" placeholder="새 비밀번호를 한 번 더 입력해 주세요"><p class="msg" id="mPNew2" aria-live="polite"></p></div>
+        <button type="submit" class="btn btn-primary btn-block">비밀번호 변경</button>
+        <button type="button" class="btn-later" id="pwLater">다음에 변경하기</button>
+      </form>
+    </section>
+  </div>
+</dialog>
+
+<!-- 우편번호 검색 레이어 (카카오 우편번호 서비스 embed) -->
+<div class="zip-layer" id="zipLayer" hidden>
+  <div class="zip-box" role="dialog" aria-modal="true" aria-labelledby="zipTitle">
+    <div class="zip-head"><b id="zipTitle">우편번호 검색</b><button type="button" id="zipClose" aria-label="닫기">&times;</button></div>
+    <div class="zip-wrap" id="zipWrap"></div>
+  </div>
+</div>
+
+<!-- 저장 결과 -->
+<dialog class="result-dlg" id="resultDlg" aria-labelledby="resultTitle">
+  <div class="result-body">
+    <div class="ico" aria-hidden="true">✓</div>
+    <h3 id="resultTitle">회원정보가 수정되었습니다</h3>
+    <ul id="resultList"></ul>
+    <div class="consent-result" id="consentResult" hidden></div>
+  </div>
+  <div class="result-foot"><button type="button" class="btn btn-primary btn-block" id="resultClose">확인</button></div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- 회원 데이터·로그인 정보는 관리자 화면(admin)과 같은 저장소(localStorage) 사용 → 수정 내용이 관리자 회원 상세·변경 히스토리에 반영
+     TODO: 실서비스에서는 회원 API로 대체 -->
+<script src="../admin/member-type-store.js?v=20261015"></script>
+<script src="../admin/mileage-types.js?v=20261015"></script>
+<script src="../admin/message-store.js?v=20261015"></script>
+<script src="../admin/member-data.js?v=20261015"></script>
+<script src="../admin/feedback.js?v=20261015"></script>
+<!-- 카카오 우편번호 서비스: https://postcode.map.kakao.com/guide (file://에서도 열리도록 https 사용)
+     가이드 기준 현재 주소(t1.kakaocdn.net)·이름(kakao.Postcode) 사용 (예전 다음 주소 t1.daumcdn.net에서는 결과 선택이 되지 않는 문제가 있었음) -->
+<script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script>
+(function () {
+  'use strict';
+  // 요구사항 정의서 PRD_MEM_009 (회원정보수정)
+  //   진입 시 비밀번호를 한 번 더 확인한 뒤 진입 (간편 로그인 회원은 가입한 SNS 계정으로 확인)
+  //   민감정보(이메일·휴대폰 번호)는 변경 전 가입한 휴대폰 번호로 본인 인증. 새 휴대폰 번호는 그 번호로 한 번 더 인증
+  //   입력 규칙(이름·생년월일·비밀번호·닉네임·중복 확인)은 회원가입(signup.html)과 같음
+  // TODO: 실서비스에서는 비밀번호 확인·본인 인증·저장을 서버에서 처리하고, 인증을 마친 경우에만 민감정보 변경 API 허용
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const MD = window.MemberData, A = MD.Auth;
+  const digits = s => String(s || '').replace(/\D/g, '');
+  const SESSION_KEY = 'stopbook.session', AFTER_LOGIN_KEY = 'stopbook.afterLogin';
+
+  // 가입유형 → SNS 코드 (관리자 > 회원 유형 관리 > 가입유형 이름 기준, signup.html과 같음)
+  const TYPE_FALLBACK = { stopbook: '스탑북회원', kakao: '카카오회원', naver: '네이버회원', google: '구글회원' };
+  const typeName = code => {
+    try { const g = MemberTypeStore.load().find(x => x.key === 'memberType'); const it = g && g.items.find(x => x.code === code); if (it) return it.name; } catch (e) { /* 기본 이름 */ }
+    return TYPE_FALLBACK[code];
+  };
+  const SNS_LABEL = { kakao: '카카오', naver: '네이버', google: '구글' };
+  const snsCodeOf = m => (Object.keys(TYPE_FALLBACK).find(c => c !== 'stopbook' && typeName(c) === m.memberType) || '');
+  const SNS_ICON = {
+    kakao: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#191919" d="M12 3.2C6.6 3.2 2.2 6.6 2.2 10.8c0 2.7 1.8 5.1 4.6 6.4l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.5.1 1 .1 1.5.1 5.4 0 9.8-3.4 9.8-7.7S17.4 3.2 12 3.2z"/></svg>',
+    naver: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="#fff" d="M13.56 10.7 6.17 0H0v20h6.44V9.3L13.83 20H20V0h-6.44z"/></svg>',
+    google: '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>'
+  };
+  const badge = sns => (sns ? `<span class="sns-circle mini ${sns}" aria-hidden="true">${SNS_ICON[sns]}</span>` : '<span class="sns-circle mini stopbook" aria-hidden="true">S</span>');
+
+  // ===== 공통 =====
+  let toastTimer;
+  function toast(msg) {
+    const t = $('toast');
+    ([...document.querySelectorAll('dialog[open]')].pop() || document.body).appendChild(t);
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-todo]');
+    if (!b) return;
+    e.preventDefault();
+    toast(`프로토타입: ${b.dataset.todo} 화면은 준비 중입니다.`);
+  });
+  const setMsg = (id, text, kind) => { const m = $(id); m.textContent = text || ''; m.className = 'msg' + (text ? ' ' + (kind || 'err') : ''); };
+  const markInvalid = (id, bad) => { $(id).classList.toggle('invalid', !!bad); if (bad) $(id).setAttribute('aria-invalid', 'true'); else $(id).removeAttribute('aria-invalid'); };
+  const fmtPhone = v => { const d = digits(v).slice(0, 11); return d.length < 4 ? d : d.length < 8 ? `${d.slice(0, 3)}-${d.slice(3)}` : `${d.slice(0, 3)}-${d.slice(3, d.length - 4)}-${d.slice(-4)}`; };
+  const validPhone = v => /^01[016789]\d{7,8}$/.test(digits(v));
+  const validEmail = v => /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(v);
+  const maskPhone = p => String(p).replace(/^(\d{3})-?\d{3,4}-?(\d{4})$/, '$1-****-$2');
+  const show = view => ['viewNeedLogin', 'viewGate', 'editForm'].forEach(id => { $(id).hidden = id !== view; });
+
+  // ===== 로그인 상태 (signup.html과 같은 sessionStorage 사용) =====
+  let me = null;
+  try { const no = Number(sessionStorage.getItem(SESSION_KEY)); me = (no && MD.members.find(x => x.no === no)) || null; } catch (e) { /* 무시 */ }
+  const sns = () => snsCodeOf(me);
+
+  function renderUtil() {
+    $('authMenu').innerHTML = me
+      ? `<span class="me">${esc(me.name)}님</span> <button type="button" id="logoutBtn" class="logout">로그아웃</button>`
+      : '<button type="button" class="login" data-open-login>로그인/회원가입</button>';
+    $('myUser').innerHTML = me ? `<b>${esc(me.name)}님</b>${esc(me.grade)} 등급 · ${esc(me.memberType)}` : '';
+  }
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-open-login]')) openLogin();
+    // 찾기 화면(회원가입 화면)으로 가면 로그인 후 이 화면으로 돌아옴 (signup.html completeLogin)
+    if (e.target.closest('[data-go-login]')) { try { sessionStorage.setItem(AFTER_LOGIN_KEY, 'mypage.html'); } catch (err) { /* 무시 */ } }
+    if (e.target.closest('#logoutBtn')) {
+      try { sessionStorage.removeItem(SESSION_KEY); } catch (err) { /* 무시 */ }
+      me = null; renderUtil(); show('viewNeedLogin');
+      toast('로그아웃되었습니다.');
+    }
+  });
+
+  // ===== 로그인 모달 =====
+  // 스탑북 회원 로그인·SNS 로그인(가상)·비밀번호 변경은 회원가입 화면(signup.html)과 같은 규칙, 같은 저장소(MemberData.Auth)
+  //   방금 로그인하며 비밀번호(또는 SNS 계정)를 확인했으므로 비밀번호 재확인 없이 바로 회원정보 수정으로 진입
+  // TODO: 실서비스에서는 공통 로그인 모달 컴포넌트 사용
+  const SAVED_ID_KEY = 'stopbook.savedLoginId';
+  const loginDlg = $('loginDlg');
+  const loginEnv = () => (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'MO' : 'PC');
+  const LG_VIEWS = { login: 'lvLogin', sns: 'lvSns', pw: 'lvPw' };
+  const LG_TITLE = { login: '스탑북 회원 로그인', sns: '', pw: '비밀번호 변경' };
+  const PROV = {
+    kakao: { title: '카카오계정으로 로그인', sub: '스탑북에서 카카오계정으로 로그인합니다.', idPh: '카카오메일 아이디, 이메일, 전화번호', domain: 'kakao.com' },
+    naver: { title: '네이버 아이디로 로그인', sub: '네이버 아이디로 스탑북에 로그인합니다.', idPh: '아이디 또는 전화번호', domain: 'naver.com' },
+    google: { title: 'Google 계정으로 로그인', sub: 'Stopbook(으)로 이동', idPh: '이메일 또는 휴대전화', domain: 'gmail.com' }
+  };
+  const lg = { view: 'login', sns: '', pwMember: null, pwKind: '' };
+  function lgGo(view) {
+    lg.view = view;
+    Object.entries(LG_VIEWS).forEach(([k, id]) => { $(id).hidden = k !== view; });
+    $('lgBack').hidden = view !== 'sns';
+    $('lgTitle').textContent = LG_TITLE[view];
+  }
+  $('lgSnsRow').innerHTML = Object.keys(PROV).map(c => `<button type="button" class="sns-item" data-lg-sns="${c}"><span class="sns-circle ${c}">${SNS_ICON[c]}</span>${SNS_LABEL[c]}</button>`).join('');
+
+  function openLogin() {
+    let saved = '';
+    try { saved = localStorage.getItem(SAVED_ID_KEY) || ''; } catch (e) { /* 저장 불가 */ }
+    $('lId').value = saved; $('lSave').checked = !!saved; $('lPw').value = '';
+    $('lPw').type = 'password'; $('lPwToggle').textContent = '보기'; $('lPwToggle').setAttribute('aria-pressed', 'false');
+    $('mLogin').hidden = true;
+    ['lId', 'lPw'].forEach(id => markInvalid(id, false));
+    lgGo('login');
+    if (!loginDlg.open) loginDlg.showModal();
+    ($('lId').value ? $('lPw') : $('lId')).focus();
+  }
+  $('lgClose').addEventListener('click', () => loginDlg.close());
+  $('lgBack').addEventListener('click', () => lgGo('login'));
+  $('lPwToggle').addEventListener('click', () => {
+    const on = $('lPw').type === 'password';
+    $('lPw').type = on ? 'text' : 'password';
+    $('lPwToggle').textContent = on ? '숨기기' : '보기';
+    $('lPwToggle').setAttribute('aria-pressed', String(on));
+  });
+  ['lId', 'lPw'].forEach(id => $(id).addEventListener('input', () => markInvalid(id, false)));
+  const loginError = html => { $('mLogin').innerHTML = html; $('mLogin').hidden = false; };
+
+  function completeLogin(m, msg) {
+    try { sessionStorage.setItem(SESSION_KEY, String(m.no)); } catch (e) { /* 저장 불가 시 이 화면에서만 로그인 */ }
+    me = m;
+    loginDlg.close();
+    renderUtil();
+    openEdit();
+    toast(msg || `${m.name}님, 반갑습니다.`);
+  }
+
+  $('loginForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const id = $('lId').value.trim(), pw = $('lPw').value;
+    markInvalid('lId', !id); markInvalid('lPw', !!id && !pw);
+    if (!id) { loginError('이메일 또는 아이디를 입력해 주세요.'); $('lId').focus(); return; }
+    if (!pw) { loginError('비밀번호를 입력해 주세요.'); $('lPw').focus(); return; }
+    const res = A.login(id, pw, loginEnv());
+    if (res.error === 'locked') { markInvalid('lPw', true); loginError(`비밀번호를 ${A.LOCK_FAILS}회 잘못 입력해 <b>${esc(res.until.slice(11))}</b>까지 로그인이 제한됩니다.<small>비밀번호가 기억나지 않으면 비밀번호 찾기에서 임시 비밀번호를 받아 주세요.</small>`); return; }
+    if (res.error) {
+      // 없는 계정·간편 로그인 계정·비밀번호 틀림을 구분하지 않음 (가입 여부 노출 방지)
+      markInvalid('lPw', true);
+      loginError(`이메일(아이디) 또는 비밀번호가 맞지 않습니다.${res.fails >= 2 ? ` (${res.fails}/${A.LOCK_FAILS}회)` : ''}<small>카카오·네이버·구글로 가입하셨다면 아래 간편 로그인을 이용해 주세요.</small>`);
+      $('lPw').select();
+      return;
+    }
+    try { if ($('lSave').checked) localStorage.setItem(SAVED_ID_KEY, id); else localStorage.removeItem(SAVED_ID_KEY); } catch (err) { /* 저장 불가 */ }
+    if (res.change) { openPwChange(res.member, res.change, res.changedAt); return; }
+    completeLogin(res.member);
+  });
+
+  // SNS 로그인 (가상): 그 SNS로 가입한 회원(같은 이메일·같은 가입유형)이면 로그인, 아니면 회원가입 안내
+  // TODO: 실서비스에서는 각 SNS OAuth 로그인 창 → 콜백의 SNS 식별값으로 회원 확인
+  $('lgSnsRow').addEventListener('click', e => {
+    const b = e.target.closest('[data-lg-sns]');
+    if (!b) return;
+    const code = b.dataset.lgSns, p = PROV[code];
+    lg.sns = code;
+    $('provLogo').innerHTML = `<span class="sns-circle ${code}">${SNS_ICON[code]}</span>`;
+    $('provTitle').textContent = p.title;
+    $('provSub').textContent = p.sub;
+    $('provId').placeholder = p.idPh;
+    $('provId').value = ''; $('provPw').value = '';
+    $('mProv').hidden = true;
+    $('provBtn').className = `btn btn-prov ${code}`;
+    LG_TITLE.sns = `${SNS_LABEL[code]} 로그인`;
+    lgGo('sns');
+    $('provId').focus();
+  });
+  $('provForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const id = $('provId').value.trim(), pw = $('provPw').value, code = lg.sns;
+    if (!id || !pw) { $('mProv').textContent = '아이디와 비밀번호를 입력해 주세요.'; $('mProv').hidden = false; return; }
+    const email = id.includes('@') ? id : `${id}@${PROV[code].domain}`;
+    const dup = MD.findDuplicate({ email });
+    if (dup && dup.member.memberType === typeName(code)) {
+      A.recordLogin(dup.member.no, loginEnv());
+      completeLogin(dup.member, `${dup.member.name}님, ${SNS_LABEL[code]} 계정으로 로그인되었습니다.`);
+      return;
+    }
+    $('mProv').innerHTML = `${esc(SNS_LABEL[code])} 계정으로 가입한 회원 정보가 없습니다.<small><a href="signup.html#join">회원가입</a> 후 이용해 주세요.</small>`;
+    $('mProv').hidden = false;
+  });
+
+  // 비밀번호 변경 (임시 비밀번호 로그인: 필수 · 90일 이상 미변경: 다음에 변경 가능)
+  function openPwChange(m, kind, changedAt) {
+    Object.assign(lg, { pwMember: m, pwKind: kind });
+    const temp = kind === 'temp';
+    $('pwTitle').textContent = temp ? '새 비밀번호를 설정해 주세요' : '비밀번호를 변경해 주세요';
+    $('pwSub').textContent = temp
+      ? '임시 비밀번호로 로그인하셨습니다. 안전을 위해 새 비밀번호로 변경한 뒤 이용해 주세요.'
+      : `비밀번호를 변경한 지 ${A.PW_EXPIRE_DAYS}일이 지났습니다${changedAt ? ` (최근 변경 ${String(changedAt).slice(0, 10)})` : ''}. 개인정보 보호를 위해 비밀번호를 변경해 주세요.`;
+    $('pwLater').hidden = temp;
+    $('pwLater').textContent = `다음에 변경하기 (${A.PW_SNOOZE_DAYS}일 뒤 다시 안내)`;
+    ['pNew', 'pNew2'].forEach(id => { $(id).value = ''; markInvalid(id, false); });
+    setMsg('mPNew', ''); setMsg('mPNew2', '');
+    lgGo('pw');
+    $('pNew').focus();
+  }
+  $('pwForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = lg.pwMember, pw = $('pNew').value, pw2 = $('pNew2').value;
+    const local = String(m.userId.includes('@') ? m.userId : m.email).split('@')[0].toLowerCase();
+    let err = !pw ? '비밀번호를 입력해 주세요.' : /\s/.test(pw) ? '비밀번호에 공백을 넣을 수 없습니다.'
+      : !/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,20}$/.test(pw) ? '8~20자, 영문·숫자·특수문자를 모두 포함해 주세요.'
+      : local.length >= 4 && pw.toLowerCase().includes(local) ? '비밀번호에 아이디(이메일 앞부분)를 포함할 수 없습니다.'
+      : !m.userId.includes('@') && pw.toLowerCase().includes(m.userId.toLowerCase()) ? '비밀번호에 아이디를 포함할 수 없습니다.' : '';
+    if (!err && A.isSamePassword(m.no, pw)) err = lg.pwKind === 'temp' ? '임시 비밀번호와 다른 비밀번호를 입력해 주세요.' : '현재 비밀번호와 다른 비밀번호를 입력해 주세요.';
+    setMsg('mPNew', err); markInvalid('pNew', err);
+    const err2 = err ? '' : (!pw2 ? '새 비밀번호를 한 번 더 입력해 주세요.' : pw2 !== pw ? '비밀번호가 일치하지 않습니다.' : '');
+    setMsg('mPNew2', err2); markInvalid('pNew2', err2);
+    if (err || err2) { (err ? $('pNew') : $('pNew2')).focus(); return; }
+    A.setPassword(m.no, pw, { by: '회원', content: '패스워드 변경 (회원)' });
+    completeLogin(m, '비밀번호가 변경되었습니다. 로그인되었습니다.');
+  });
+  $('pwLater').addEventListener('click', () => { A.snoozePassword(lg.pwMember.no); completeLogin(lg.pwMember); });
+
+  // ===== 1) 진입 확인: 비밀번호 재확인 / 간편 로그인 회원은 SNS 계정으로 확인 =====
+  function openGate() {
+    const code = sns();
+    $('gateForm').hidden = !!code;
+    $('gateSns').hidden = !code;
+    $('gFindLink').hidden = !!code;
+    $('gErr').hidden = true;
+    $('gateTitle').textContent = code ? '본인 확인' : '비밀번호 확인';
+    if (code) {
+      $('gateSub').textContent = `${SNS_LABEL[code]} 간편 로그인 회원입니다. 개인정보 보호를 위해 ${SNS_LABEL[code]} 계정으로 한 번 더 확인해 주세요.`;
+      $('gSnsBtn').className = `btn btn-prov ${code}`;
+      $('gSnsBtn').innerHTML = `${SNS_LABEL[code]} 계정으로 확인`;
+    } else {
+      $('gateSub').textContent = '회원님의 개인정보를 안전하게 보호하기 위해 비밀번호를 한 번 더 입력해 주세요.';
+      $('gId').value = me.userId;
+      $('gPw').value = '';
+      markInvalid('gPw', false);
+    }
+    show('viewGate');
+    if (!code) $('gPw').focus();
+  }
+  $('gPwToggle').addEventListener('click', () => {
+    const on = $('gPw').type === 'password';
+    $('gPw').type = on ? 'text' : 'password';
+    $('gPwToggle').textContent = on ? '숨기기' : '보기';
+    $('gPwToggle').setAttribute('aria-pressed', String(on));
+  });
+  $('gPw').addEventListener('input', () => markInvalid('gPw', false));
+  const gateError = html => { $('gErr').innerHTML = html; $('gErr').hidden = false; markInvalid('gPw', true); };
+  $('gateForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const pw = $('gPw').value;
+    if (!pw) { gateError('비밀번호를 입력해 주세요.'); $('gPw').focus(); return; }
+    const r = A.verifyPassword(me.no, pw);
+    if (r.error === 'locked') { gateError(`비밀번호를 ${A.LOCK_FAILS}회 잘못 입력해 <b>${esc(r.until.slice(11))}</b>까지 확인이 제한됩니다.<small>비밀번호가 기억나지 않으면 로그인 화면의 비밀번호 찾기에서 임시 비밀번호를 받아 주세요.</small>`); return; }
+    if (r.error === 'unset') { gateError('비밀번호가 설정되지 않은 계정입니다.<small>로그인 화면의 비밀번호 찾기에서 임시 비밀번호를 받아 주세요.</small>'); return; }
+    if (r.error) { gateError(`비밀번호가 맞지 않습니다.${r.fails >= 2 ? ` (${r.fails}/${A.LOCK_FAILS}회)` : ''}<small>${A.LOCK_FAILS}회 틀리면 ${A.LOCK_MINUTES}분 동안 로그인과 확인이 제한됩니다.</small>`); $('gPw').select(); return; }
+    openEdit();
+  });
+  // TODO: 실서비스에서는 해당 SNS의 재인증(OAuth reauthenticate/prompt=login) 후 콜백에서 본인 여부 확인
+  $('gSnsBtn').addEventListener('click', () => { toast(`${SNS_LABEL[sns()]} 계정 확인이 완료되었습니다.`); openEdit(); });
+
+  // ===== 2) 회원정보 수정 =====
+  // 광고성 정보 수신 동의는 마케팅 목적 개인정보 수집·이용 동의가 있어야 함 (가입 화면과 같은 규칙)
+  // 샘플 회원은 마케팅 활용 동의 값이 없어 수신 동의 여부로 추정
+  const marketingUseOf = m => m.marketingUse || (m.marketingSms === 'Y' || m.marketingEmail === 'Y' ? 'Y' : 'N');
+  const mkText = v => (v === 'Y' ? '동의' : '거부');
+
+  function openEdit() {
+    fillForm();
+    show('editForm');
+    $('pageSub').textContent = '변경할 항목을 수정한 뒤 저장해 주세요.';
+    window.scrollTo(0, 0);
+  }
+
+  function fillForm() {
+    const m = me, code = sns();
+    const loginText = code ? `${SNS_LABEL[code]} 간편 로그인` : m.userId;
+    $('loginInfo').innerHTML = [
+      ['로그인', `${badge(code)}${esc(loginText)}${!code && m.userId.toLowerCase() === String(m.email).toLowerCase() ? ' <small>(이메일 로그인)</small>' : ''}`],
+      ['가입유형', esc(m.memberType)],
+      ['회원등급', `${esc(m.grade)} <small>· ${esc(m.category || '일반')}</small>`],
+      ['가입일', esc(m.joinDate)]
+    ].map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('');
+
+    $('eName').value = m.name;
+    $('eBirth').value = m.birth || '';
+    $('birthReq').hidden = !!code; $('birthOpt').hidden = !code;
+    $('eNick').value = m.nickname || '';
+    (document.querySelector(`input[name=eGender][value="${m.gender || ''}"]`) || document.querySelector('input[name=eGender][value=""]')).checked = true;
+    fillAddress(m);
+    fillInterests(m);
+    $('pwCard').hidden = !!code;
+    $('ePw').value = ''; $('ePw2').value = '';
+    $('mkUse').checked = marketingUseOf(m) === 'Y';
+    $('mkSms').checked = m.marketingSms === 'Y';
+    $('mkEmail').checked = m.marketingEmail === 'Y';
+    syncConsent();
+    ['mName', 'mBirth', 'mNick', 'mPw', 'mPw2'].forEach(id => setMsg(id, ''));
+    document.querySelectorAll('#editForm input').forEach(i => { i.classList.remove('invalid'); i.removeAttribute('aria-invalid'); });
+    $('formError').hidden = true;
+    lockSensitive();
+  }
+
+  // ----- 인증번호 (회원가입 휴대폰 인증과 같은 규칙: 6자리 · 3분 · 5회 틀리면 다시 받기) -----
+  // TODO: 실서비스에서는 본인인증/문자 발송 API. 화면에는 테스트 인증번호를 표시
+  function makeOtp(p) {
+    const st = { code: '', expireAt: 0, tries: 0, timer: 0 };
+    const stop = () => { clearInterval(st.timer); st.timer = 0; $(p.timer).textContent = ''; };
+    const tick = () => {
+      const left = Math.max(0, Math.round((st.expireAt - Date.now()) / 1000));
+      $(p.timer).textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+      if (!left) { stop(); st.code = ''; setMsg(p.msg, '인증 시간이 지났습니다. 인증번호를 다시 받아 주세요.'); }
+    };
+    const reset = () => { stop(); Object.assign(st, { code: '', tries: 0 }); $(p.area).hidden = true; $(p.dev).hidden = true; $(p.input).value = ''; $(p.send).textContent = '인증번호 받기'; $(p.send).disabled = false; };
+    $(p.send).addEventListener('click', () => {
+      if (p.before && !p.before()) return;
+      Object.assign(st, { code: String(Math.floor(100000 + Math.random() * 900000)), tries: 0, expireAt: Date.now() + 180000 });
+      $(p.area).hidden = false; $(p.input).value = ''; $(p.input).focus();
+      $(p.dev).hidden = false; $(p.dev).textContent = `테스트 인증번호: ${st.code}`;
+      $(p.send).textContent = '다시 받기';
+      setMsg(p.msg, `${p.target()}(으)로 인증번호를 보냈습니다. 3분 안에 입력해 주세요.`, 'info');
+      stop(); tick(); st.timer = setInterval(tick, 1000);
+    });
+    const verify = () => {
+      if (!st.code) { setMsg(p.msg, '인증번호를 먼저 받아 주세요.'); return; }
+      if ($(p.input).value !== st.code) {
+        st.tries += 1;
+        if (st.tries >= 5) { stop(); st.code = ''; setMsg(p.msg, '인증번호를 5회 틀렸습니다. 인증번호를 다시 받아 주세요.'); return; }
+        setMsg(p.msg, `인증번호가 맞지 않습니다. (${st.tries}/5)`); return;
+      }
+      stop(); st.code = '';
+      $(p.area).hidden = true; $(p.dev).hidden = true;
+      p.done();
+    };
+    $(p.check).addEventListener('click', verify);
+    $(p.input).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); verify(); } });
+    $(p.input).addEventListener('input', e => { e.target.value = digits(e.target.value).slice(0, 6); });
+    return { reset };
+  }
+
+  // ----- 민감정보: 가입한 휴대폰 번호로 본인 인증 → 이메일·휴대폰 번호 입력 가능 -----
+  const sens = { open: false, emailChecked: '', phoneVerified: '' };
+  const idOtp = makeOtp({ send: 'idSend', area: 'idCodeArea', input: 'idCode', check: 'idCheck', timer: 'idTimer', dev: 'idDev', msg: 'mId',
+    target: () => maskPhone(me.phone), done: unlockSensitive });
+  function lockSensitive() {
+    Object.assign(sens, { open: false, emailChecked: '', phoneVerified: '' });
+    idOtp.reset(); phOtp.reset();
+    $('cEmail').value = me.email;
+    $('cPhone').value = maskPhone(me.phone);
+    $('idPhoneText').textContent = `가입한 휴대폰 번호 ${maskPhone(me.phone)}로 인증번호를 보내 드립니다.`;
+    setMsg('mId', '');
+    $('sensLocked').hidden = false; $('sensOpen').hidden = true;
+  }
+  function unlockSensitive() {
+    sens.open = true;
+    const m = me, code = sns();
+    $('eEmail').value = m.email;
+    $('ePhone').value = fmtPhone(m.phone);
+    ['eEmail', 'ePhone'].forEach(id => markInvalid(id, false));
+    setMsg('mEmail', ''); setMsg('mPhone', '');
+    // 간편 로그인 회원의 이메일은 SNS에서 받은 정보 (간편 로그인 확인에 쓰므로 여기서는 변경 불가)
+    $('eEmail').readOnly = !!code;
+    $('checkEmail').hidden = !!code;
+    const emailLogin = !code && m.userId.toLowerCase() === String(m.email).toLowerCase();
+    $('emailHint').textContent = code ? `${SNS_LABEL[code]} 간편 로그인 계정의 이메일은 ${SNS_LABEL[code]}에서 받은 정보라 변경할 수 없습니다.`
+      : emailLogin ? '이메일로 로그인하는 계정입니다. 이메일을 바꾸면 로그인 아이디도 새 이메일로 바뀝니다.'
+      : `로그인 아이디(${m.userId})는 바뀌지 않습니다.`;
+    $('sensLocked').hidden = true; $('sensOpen').hidden = false;
+    toast('본인 인증이 완료되었습니다.');
+    (code ? $('ePhone') : $('eEmail')).focus();
+  }
+
+  // 이메일: 바꾸면 중복 확인 필요
+  $('eEmail').addEventListener('input', () => {
+    markInvalid('eEmail', false);
+    if (sens.emailChecked && $('eEmail').value.trim().toLowerCase() !== sens.emailChecked) { sens.emailChecked = ''; setMsg('mEmail', '이메일이 바뀌어 다시 중복 확인이 필요합니다.', 'info'); }
+    else if (!sens.emailChecked) setMsg('mEmail', '');
+  });
+  $('checkEmail').addEventListener('click', () => {
+    const v = $('eEmail').value.trim();
+    if (!validEmail(v)) { setMsg('mEmail', '이메일 주소를 정확히 입력해 주세요.'); markInvalid('eEmail', true); return; }
+    if (v.toLowerCase() === String(me.email).toLowerCase()) { setMsg('mEmail', '현재 사용 중인 이메일입니다.', 'info'); return; }
+    if (MD.findDuplicate({ email: v }, me.no)) { sens.emailChecked = ''; setMsg('mEmail', '이미 사용 중인 이메일입니다. 다른 이메일을 입력해 주세요.'); markInvalid('eEmail', true); return; }
+    sens.emailChecked = v.toLowerCase();
+    markInvalid('eEmail', false);
+    setMsg('mEmail', '사용할 수 있는 이메일입니다.', 'ok');
+  });
+
+  // 휴대폰 번호: 새 번호면 그 번호로 인증 후 중복 확인 (본인 확인 전에는 가입 여부를 알려주지 않음)
+  const phOtp = makeOtp({ send: 'phSend', area: 'phCodeRow', input: 'phCode', check: 'phCheck', timer: 'phTimer', dev: 'phDev', msg: 'mPhone',
+    target: () => $('ePhone').value,
+    before: () => {
+      const v = $('ePhone').value;
+      if (!validPhone(v)) { setMsg('mPhone', '휴대폰 번호를 정확히 입력해 주세요.'); markInvalid('ePhone', true); return false; }
+      if (digits(v) === digits(me.phone)) { setMsg('mPhone', '현재 등록된 번호입니다. 바꿀 번호를 입력해 주세요.', 'info'); return false; }
+      markInvalid('ePhone', false);
+      sens.phoneVerified = '';
+      return true;
+    },
+    done: () => {
+      if (MD.findDuplicate({ phone: $('ePhone').value }, me.no)) { setMsg('mPhone', '이미 다른 계정에 등록된 휴대폰 번호입니다. 고객센터(080-860-1119)로 문의해 주세요.'); markInvalid('ePhone', true); return; }
+      sens.phoneVerified = digits($('ePhone').value);
+      $('phSend').textContent = '인증 완료'; $('phSend').disabled = true;
+      setMsg('mPhone', '새 휴대폰 번호 인증이 완료되었습니다.', 'ok');
+    } });
+  $('ePhone').addEventListener('input', e => {
+    e.target.value = fmtPhone(e.target.value);
+    markInvalid('ePhone', false);
+    if (sens.phoneVerified && digits(e.target.value) !== sens.phoneVerified) { phOtp.reset(); sens.phoneVerified = ''; setMsg('mPhone', '휴대폰 번호가 바뀌어 다시 인증해야 합니다.', 'info'); }
+    else if (!sens.phoneVerified && $('phSend').disabled) { $('phSend').disabled = false; $('phSend').textContent = '인증번호 받기'; }
+  });
+
+  // ----- 생년월일 (YYYYMMDD → YYYY-MM-DD, 가입과 같은 규칙) -----
+  $('eBirth').addEventListener('input', e => {
+    const d = digits(e.target.value).slice(0, 8);
+    e.target.value = d.length > 6 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}` : d.length > 4 ? `${d.slice(0, 4)}-${d.slice(4)}` : d;
+  });
+
+  // ----- 주소 (선택): 우편번호 검색 → 우편번호·기본 주소 자동 입력, 상세 주소 직접 입력 -----
+  // 카카오 우편번호 서비스 embed 사용. 스크립트를 불러오지 못하면(오프라인 등) 직접 입력으로 전환
+  // TODO: 실서비스에서도 같은 서비스 사용 가능 (키 발급 불필요). 저장 시 서버에서 우편번호 형식 검증
+  function fillAddress(m) {
+    $('eZip').value = m.zipcode || '';
+    $('eAddr1').value = m.address1 || '';
+    $('eAddr2').value = m.address2 || '';
+    $('eZip').readOnly = $('eAddr1').readOnly = true;
+    $('eAddr1').placeholder = '우편번호를 검색하면 기본 주소가 입력됩니다';
+    setMsg('mAddr', '');
+    syncAddrClear();
+  }
+  const syncAddrClear = () => { $('btnAddrClear').hidden = !($('eZip').value || $('eAddr1').value || $('eAddr2').value); };
+  $('eAddr2').addEventListener('input', () => { markInvalid('eAddr2', false); setMsg('mAddr', ''); syncAddrClear(); });
+  $('btnAddrClear').addEventListener('click', () => {
+    $('eZip').value = ''; $('eAddr1').value = ''; $('eAddr2').value = '';
+    setMsg('mAddr', '저장하면 등록된 주소가 삭제됩니다.', 'info');
+    syncAddrClear();
+  });
+  const closeZip = () => { $('zipLayer').hidden = true; $('zipWrap').innerHTML = ''; };
+  $('zipClose').addEventListener('click', closeZip);
+  $('zipLayer').addEventListener('click', e => { if (e.target === $('zipLayer')) closeZip(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('zipLayer').hidden) closeZip(); });
+  // 직접 입력 전환 (우편번호 서비스를 쓸 수 없을 때)
+  const manualAddress = (msg, kind) => {
+    $('eZip').readOnly = $('eAddr1').readOnly = false;
+    $('eAddr1').placeholder = '기본 주소 (도로명 또는 지번)';
+    setMsg('mAddr', msg, kind);
+    $('eZip').focus();
+  };
+  $('btnZip').addEventListener('click', () => {
+    const Postcode = (window.kakao && kakao.Postcode) || (window.daum && daum.Postcode);
+    if (!Postcode) { manualAddress('우편번호 서비스를 불러오지 못했습니다. 우편번호와 주소를 직접 입력해 주세요.'); return; }
+    // 파일로 직접 연 화면(file://): 카카오 검색 화면이 결과를 이 페이지 주소(origin)로 보내는데 file://은 받을 수 없음 → 검색은 되지만 선택이 안 됨
+    //   웹 서버(깃허브 페이지 등 http/https)로 열면 정상 동작. 프로토타입을 파일로 열었을 때는 직접 입력으로 안내
+    if (location.protocol === 'file:') {
+      manualAddress('파일로 연 화면에서는 우편번호 검색 결과를 받을 수 없어 직접 입력으로 바꿨습니다. 웹 주소(http·https)로 열면 우편번호 검색을 사용할 수 있습니다.', 'info');
+      return;
+    }
+    $('zipLayer').hidden = false;
+    new Postcode({
+      width: '100%', height: '100%',
+      // 가이드 예제와 같은 방식: 사용자가 고른 주소 유형(도로명/지번) + 도로명이면 참고항목(법정동·건물명)
+      oncomplete(data) {
+        let addr = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
+        if (data.userSelectedType === 'R') {
+          const extra = [/[동|로|가]$/g.test(data.bname) ? data.bname : '', data.buildingName && data.apartment === 'Y' ? data.buildingName : ''].filter(Boolean).join(', ');
+          if (extra) addr += ` (${extra})`;
+        }
+        $('eZip').value = data.zonecode;
+        $('eAddr1').value = addr;
+        $('eAddr2').value = '';
+        closeZip();
+        setMsg('mAddr', '상세 주소를 입력해 주세요.', 'info');
+        syncAddrClear();
+        $('eAddr2').focus();
+      }
+    }).embed($('zipWrap'));
+  });
+  ['eZip', 'eAddr1'].forEach(id => $(id).addEventListener('input', syncAddrClear));
+  function checkAddress() {
+    const zip = $('eZip').value.trim(), a1 = $('eAddr1').value.trim(), a2 = $('eAddr2').value.trim();
+    let err = '';
+    if ((a2 || zip) && !a1) err = '우편번호 검색으로 기본 주소를 먼저 입력해 주세요.';
+    else if (a1 && !/^\d{5}$/.test(zip)) err = '우편번호 5자리를 확인해 주세요.';
+    setMsg('mAddr', err); markInvalid('eAddr1', err);
+    return !err;
+  }
+
+  // ----- 관심분야 (선택, 여러 개): 목록은 관리자와 공유(MemberData.INTERESTS) -----
+  const INTEREST_ETC = MD.INTEREST_ETC;
+  $('intChips').innerHTML = [...MD.INTERESTS, INTEREST_ETC].map(t => `<label class="chip-check"><input type="checkbox" value="${esc(t)}"><span>${esc(t)}</span></label>`).join('');
+  const intBoxes = () => [...$('intChips').querySelectorAll('input')];
+  const etcBox = () => intBoxes().find(b => b.value === INTEREST_ETC);
+  function fillInterests(m) {
+    intBoxes().forEach(b => { b.checked = b.value === INTEREST_ETC ? !!m.interestEtc : (m.interests || []).includes(b.value); });
+    $('eIntEtc').value = m.interestEtc || '';
+    $('eIntEtc').hidden = !m.interestEtc;
+    markInvalid('eIntEtc', false); setMsg('mInt', '');
+  }
+  $('intChips').addEventListener('change', e => {
+    if (e.target.value !== INTEREST_ETC) return;
+    $('eIntEtc').hidden = !e.target.checked;
+    if (e.target.checked) $('eIntEtc').focus(); else { markInvalid('eIntEtc', false); setMsg('mInt', ''); }
+  });
+  $('eIntEtc').addEventListener('input', () => { markInvalid('eIntEtc', false); setMsg('mInt', ''); });
+  function checkInterests() {
+    const err = etcBox().checked && !$('eIntEtc').value.trim() ? '직접 입력할 관심분야를 적어 주세요.' : '';
+    setMsg('mInt', err); markInvalid('eIntEtc', err);
+    return !err;
+  }
+
+  // ----- 마케팅 수신 동의 -----
+  const channels = () => [$('mkSms'), $('mkEmail')];
+  function syncConsent() {
+    const on = channels().filter(c => c.checked).length;
+    $('mkAd').checked = on > 0;
+    $('mkAd').indeterminate = on === 1;
+  }
+  $('mkAd').addEventListener('change', e => { channels().forEach(c => { c.checked = e.target.checked; }); if (e.target.checked) $('mkUse').checked = true; syncConsent(); });
+  channels().forEach(c => c.addEventListener('change', () => { if (c.checked) $('mkUse').checked = true; syncConsent(); }));
+  $('mkUse').addEventListener('change', e => { if (!e.target.checked) channels().forEach(c => { c.checked = false; }); syncConsent(); });
+
+  // ----- 검사 (회원가입과 같은 규칙) -----
+  function checkName() {
+    const v = $('eName').value.trim();
+    const err = !v ? '이름을 입력해 주세요.' : !/^[가-힣a-zA-Z]+( [가-힣a-zA-Z]+)*$/.test(v) || v.length < 2 ? '이름은 한글 또는 영문 2~20자로 입력해 주세요.' : '';
+    setMsg('mName', err); markInvalid('eName', err); return !err;
+  }
+  function checkBirth() {
+    const v = $('eBirth').value;
+    let err = '';
+    // 간편 로그인 회원은 선택. 스탑북 회원도 원래 비어 있던 경우(이전 가입 회원)는 비워 둘 수 있음
+    if (!v) err = sns() || !me.birth ? '' : '생년월일을 입력해 주세요.';
+    else {
+      const [y, mo, d] = v.split('-').map(Number), dt = new Date(y, mo - 1, d);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d || y < 1900) err = '생년월일 8자리를 정확히 입력해 주세요. 예) 19900101';
+      else if (dt > new Date()) err = '오늘 이후 날짜는 입력할 수 없습니다.';
+      else if (MD.ageOf(v) < 14) err = '만 14세 미만은 이용할 수 없습니다.';
+    }
+    setMsg('mBirth', err); markInvalid('eBirth', err); return !err;
+  }
+  function checkNick() {
+    const v = $('eNick').value.trim();
+    const err = v && !/^[가-힣a-zA-Z0-9]{2,12}$/.test(v) ? '닉네임은 한글·영문·숫자 2~12자로 입력해 주세요.' : '';
+    setMsg('mNick', err); markInvalid('eNick', err); return !err;
+  }
+  // 비밀번호 (가입·로그인 화면 비밀번호 변경과 같은 규칙 + 현재 비밀번호와 달라야 함). 비워 두면 변경 안 함
+  function checkPw(loginEmail) {
+    if (sns()) return true;
+    const pw = $('ePw').value, pw2 = $('ePw2').value;
+    if (!pw && !pw2) { setMsg('mPw', ''); setMsg('mPw2', ''); markInvalid('ePw', false); markInvalid('ePw2', false); return true; }
+    const local = String(loginEmail).split('@')[0].toLowerCase(), id = me.userId.includes('@') ? '' : me.userId.toLowerCase();
+    let err = '';
+    if (!pw) err = '새 비밀번호를 입력해 주세요.';
+    else if (/\s/.test(pw)) err = '비밀번호에 공백을 넣을 수 없습니다.';
+    else if (!/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,20}$/.test(pw)) err = '8~20자, 영문·숫자·특수문자를 모두 포함해 주세요.';
+    else if (local.length >= 4 && pw.toLowerCase().includes(local)) err = '비밀번호에 이메일 아이디를 포함할 수 없습니다.';
+    else if (id && pw.toLowerCase().includes(id)) err = '비밀번호에 아이디를 포함할 수 없습니다.';
+    else if (A.isSamePassword(me.no, pw)) err = '현재 비밀번호와 다른 비밀번호를 입력해 주세요.';
+    setMsg('mPw', err); markInvalid('ePw', err);
+    const err2 = err ? '' : !pw2 ? '새 비밀번호를 한 번 더 입력해 주세요.' : pw2 !== pw ? '비밀번호가 일치하지 않습니다.' : '';
+    setMsg('mPw2', err2); markInvalid('ePw2', err2);
+    return !err && !err2;
+  }
+  $('eName').addEventListener('blur', checkName);
+  $('eBirth').addEventListener('blur', checkBirth);
+  $('eNick').addEventListener('blur', checkNick);
+
+  // ----- 저장 -----
+  $('editForm').addEventListener('submit', e => {
+    e.preventDefault();
+    $('formError').hidden = true;
+    const m = me, code = sns();
+    const fields = {}, logs = [], told = [];
+    const ok = [checkName(), checkBirth(), checkNick(), checkAddress(), checkInterests()];
+
+    // 민감정보 (본인 인증을 마친 경우에만)
+    let email = m.email;
+    if (sens.open && !code) {
+      const v = $('eEmail').value.trim();
+      if (v.toLowerCase() !== String(m.email).toLowerCase()) {
+        if (!validEmail(v)) { setMsg('mEmail', '이메일 주소를 정확히 입력해 주세요.'); markInvalid('eEmail', true); ok.push(false); }
+        else if (sens.emailChecked !== v.toLowerCase()) { setMsg('mEmail', '이메일 중복 확인을 해 주세요.'); markInvalid('eEmail', true); ok.push(false); }
+        else email = v;
+      }
+    }
+    let phone = m.phone;
+    if (sens.open) {
+      const v = $('ePhone').value;
+      if (digits(v) !== digits(m.phone)) {
+        if (sens.phoneVerified !== digits(v)) { setMsg('mPhone', '새 휴대폰 번호 인증을 완료해 주세요.'); markInvalid('ePhone', true); ok.push(false); }
+        else phone = fmtPhone(v);
+      }
+    }
+    ok.push(checkPw(email));
+    if (ok.includes(false)) { (document.querySelector('#editForm .invalid') || $('eName')).focus(); return; }
+
+    const name = $('eName').value.trim(), birth = $('eBirth').value, nickname = $('eNick').value.trim();
+    const gender = (document.querySelector('input[name=eGender]:checked') || {}).value || '';
+    const add = (key, val, label, f = v => v || '미입력') => {
+      if ((m[key] || '') === (val || '')) return;
+      fields[key] = val;
+      logs.push(`${label} 변경: ${f(m[key])} → ${f(val)}`);
+      told.push(`${label}`);
+    };
+    add('name', name, '이름');
+    add('birth', birth, '생년월일');
+    if (email !== m.email) {
+      add('email', email, '이메일');
+      // 이메일로 로그인하는 계정은 로그인 아이디도 함께 변경
+      if (!code && m.userId.toLowerCase() === String(m.email).toLowerCase()) { fields.userId = email; logs.push(`로그인 아이디 변경: ${m.userId} → ${email} (이메일 변경)`); told[told.length - 1] = '이메일 (로그인 아이디 포함)'; }
+      logs[logs.findIndex(x => x.startsWith('이메일 변경'))] += ' (휴대폰 본인 인증)';
+    }
+    if (phone !== m.phone) { add('phone', phone, '휴대폰 번호'); logs[logs.length - 1] += ' (휴대폰 본인 인증)'; }
+    add('nickname', nickname, '닉네임');
+    add('gender', gender, '성별');
+
+    // 주소·관심분야 (관리자 회원 상세 > 패스워드 아래에 표시)
+    const addr = { zipcode: $('eZip').value.trim(), address1: $('eAddr1').value.trim(), address2: $('eAddr2').value.trim() };
+    const addrTxt = a => MD.addressText(a) || '미입력';
+    if (addrTxt(addr) !== addrTxt(m)) { Object.assign(fields, addr); logs.push(`주소 변경: ${addrTxt(m)} → ${addrTxt(addr)}`); told.push('주소'); }
+    const intr = { interests: intBoxes().filter(b => b.checked && b.value !== INTEREST_ETC).map(b => b.value), interestEtc: etcBox().checked ? $('eIntEtc').value.trim() : '' };
+    const intTxt = x => MD.interestText(x) || '미입력';
+    if (intTxt(intr) !== intTxt(m)) { Object.assign(fields, intr); logs.push(`관심분야 변경: ${intTxt(m)} → ${intTxt(intr)}`); told.push('관심분야'); }
+
+    // 마케팅 수신 동의 (관리자 회원 상세의 히스토리 문구와 같게: SMS 수신 / 메일 수신)
+    const mk = { marketingUse: $('mkUse').checked ? 'Y' : 'N', marketingSms: $('mkSms').checked ? 'Y' : 'N', marketingEmail: $('mkEmail').checked ? 'Y' : 'N' };
+    const mkBefore = { marketingUse: marketingUseOf(m), marketingSms: m.marketingSms, marketingEmail: m.marketingEmail };
+    const mkChanged = [['marketingUse', '마케팅 목적 개인정보 수집·이용'], ['marketingSms', 'SMS 수신'], ['marketingEmail', '메일 수신']].filter(([k]) => mkBefore[k] !== mk[k]);
+    mkChanged.forEach(([k, label]) => { fields[k] = mk[k]; logs.push(`${label} 변경: ${mkText(mkBefore[k])} → ${mkText(mk[k])}`); });
+    if (mkChanged.length) told.push('마케팅 정보 수신 동의');
+
+    const newPw = !code && $('ePw').value;
+    if (!logs.length && !newPw) { toast('변경된 내용이 없습니다.'); return; }
+
+    // TODO: 실서비스에서는 PUT /api/members/me (민감정보는 본인 인증 토큰 포함)
+    if (logs.length) {
+      const oldId = m.userId;
+      const res = MD.updateProfile(m.no, fields, logs, '회원');
+      if (res.error) { $('formError').textContent = res.error; $('formError').hidden = false; return; }
+      // 로그인 화면의 '이메일(아이디) 저장' 값도 새 아이디로
+      try { if (fields.userId && localStorage.getItem('stopbook.savedLoginId') === oldId) localStorage.setItem('stopbook.savedLoginId', fields.userId); } catch (err) { /* 무시 */ }
+    }
+    if (newPw) { A.setPassword(m.no, newPw, { by: '회원', content: '패스워드 변경 (회원정보 수정)' }); told.push('비밀번호'); }
+    renderUtil();
+    showResult(told, mkChanged.length ? mk : null);
+  });
+
+  // 저장 결과 + 광고성 정보 수신 동의 변경 결과 안내 (정보통신망법: 수신 동의·철회 처리 결과를 알림)
+  function showResult(told, mk) {
+    $('resultList').innerHTML = told.map(t => `<li>· ${esc(t)} 변경</li>`).join('');
+    $('consentResult').hidden = !mk;
+    if (mk) {
+      $('consentResult').innerHTML = `<b>수신 동의 변경 결과</b><br>처리 일시: ${esc(MD.fmtDateTime(new Date()))} · 전송자: 스탑북<br>
+        마케팅 목적 개인정보 수집·이용: ${mk.marketingUse === 'Y' ? '동의' : '미동의'}<br>
+        SMS ${mk.marketingSms === 'Y' ? '수신 동의' : '수신 거부'} · 이메일 ${mk.marketingEmail === 'Y' ? '수신 동의' : '수신 거부'}`;
+    }
+    $('resultDlg').showModal();
+  }
+  $('resultClose').addEventListener('click', () => $('resultDlg').close());
+  $('resultDlg').addEventListener('close', () => { fillForm(); window.scrollTo(0, 0); });   // 민감정보는 다시 잠금 (다음 변경 때 다시 인증)
+
+  $('btnReset').addEventListener('click', () => {
+    if (!confirm('입력한 내용을 취소하고 저장된 정보로 되돌릴까요?')) return;
+    fillForm(); window.scrollTo(0, 0);
+  });
+
+  // ===== 시작 =====
+  renderUtil();
+  if (!me) { show('viewNeedLogin'); openLogin(); } else openGate();   // 비로그인: 로그인 모달 (닫으면 '로그인이 필요합니다' 안내)
+})();
+</script>
+</body>
+</html>

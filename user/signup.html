@@ -21,7 +21,7 @@
     --field: #F6F4F2; --tonal: #F1EDEA; --tonal-hover: #E9E4E0;
     --brand: var(--main); --brand-dark: #4C221E; --brand-soft: #F5EDEB; --ring: rgba(99,48,43,.14); --gold: var(--accent2);
     --danger: #D64532; --danger-soft: #FDF1EF; --ok: #2F8A5B;
-    --radius: 20px; --radius-md: 12px; --radius-sm: 10px;
+    --radius: 12px; --radius-md: 8px; --radius-sm: 6px;   /* 모달·카드 / 버튼·박스 / 안내 박스 (너무 둥글지 않게) */
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -214,7 +214,7 @@
   .row { display: flex; gap: 8px; }
   .row > .input-wrap, .row > input { flex: 1; min-width: 0; }
   input[type=text], input[type=email], input[type=password], input[type=tel] {
-    width: 100%; height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: 10px; background: var(--field); outline: none; font-size: 14px; transition: border-color .15s, background .15s, box-shadow .15s;
+    width: 100%; height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--radius-md); background: var(--field); outline: none; font-size: 14px; transition: border-color .15s, background .15s, box-shadow .15s;
   }
   input::placeholder { color: #B9B2AC; }
   input:hover { background: #F2EFEC; }
@@ -284,7 +284,7 @@
   .dlg-sample { font-size: 12px; color: var(--accent2); margin-bottom: 12px; }
   .dlg-foot { padding: 12px 24px 24px; }
 
-  .toast { z-index: 10; position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 20px); background: rgba(31,27,25,.92); color: #fff; font-size: 13.5px; padding: 12px 18px; border-radius: 12px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 32px); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+  .toast { z-index: 10; position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 20px); background: rgba(31,27,25,.92); color: #fff; font-size: 13.5px; padding: 12px 18px; border-radius: var(--radius-md); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 32px); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
   /* 모바일: 모달을 전체 화면으로 */
@@ -307,10 +307,10 @@
 <div class="proto-band">PROTOTYPE - 회원가입/로그인</div>
 <nav class="util" aria-label="이용 메뉴">
   <ul>
-    <li><button type="button" data-todo="고객센터">고객센터</button></li>
     <li id="authMenu"><button type="button" id="openAuth" aria-haspopup="dialog">로그인/회원가입</button></li>
-    <li><button type="button" data-todo="마이페이지">마이페이지</button></li>
+    <li><button type="button" id="goMypage">마이페이지</button></li>
     <li><button type="button" data-todo="장바구니">장바구니 (0)</button></li>
+    <li><button type="button" data-todo="고객센터">고객센터</button></li>
   </ul>
 </nav>
 <main>
@@ -662,7 +662,10 @@
     $('authTitle').focus();   // 처음 포커스는 제목에 (닫기 버튼에 포커스 테두리가 생기지 않게)
   }
   $('authClose').addEventListener('click', () => authDlg.close());
-  authDlg.addEventListener('close', () => { stopTimer(); stopFindTimer(); });
+  authDlg.addEventListener('close', () => {
+    stopTimer(); stopFindTimer();
+    try { sessionStorage.removeItem('stopbook.afterLogin'); } catch (e) { /* 무시 */ }   // 로그인하지 않고 닫으면 마이페이지 이동 취소 (로그인 완료 시에는 completeLogin이 먼저 읽음)
+  });
   $('doneClose').addEventListener('click', () => authDlg.close());
 
   // ===== 로그인 상태 (상단 유틸 메뉴: 로그인/회원가입 ↔ OOO님 · 로그아웃) =====
@@ -684,7 +687,14 @@
     signedIn(m);
     authDlg.close();
     toast(msg || `${m.name}님, 반갑습니다.`);
+    // 마이페이지에서 로그인하러 온 경우: 로그인 후 그 화면으로 돌아감
+    let next = '';
+    try { next = sessionStorage.getItem(AFTER_LOGIN_KEY) || ''; sessionStorage.removeItem(AFTER_LOGIN_KEY); } catch (e) { /* 무시 */ }
+    if (/^[\w-]+\.html$/.test(next)) setTimeout(() => { location.href = next; }, 600);
   }
+  // 마이페이지: 로그인하지 않았으면 마이페이지에서 로그인 모달을 띄움
+  const AFTER_LOGIN_KEY = 'stopbook.afterLogin';
+  $('goMypage').addEventListener('click', () => { location.href = 'mypage.html'; });
   document.addEventListener('click', e => {
     if (e.target.closest('#openAuth')) openAuth();
     else if (e.target.closest('#logoutBtn')) logout();
@@ -1387,6 +1397,8 @@
   } catch (e) { /* 무시 */ }
   // 주소 끝이 #join이면 회원가입 모달을 바로 엶 (다른 화면에서 링크로 열 때)
   if (location.hash === '#join') openAuth();
+  else if (location.hash === '#login') openLogin('');   // 마이페이지 등에서 로그인이 필요할 때
+  else if (location.hash === '#find-id' || location.hash === '#find-pw') openFind(location.hash.slice(6), '');   // 마이페이지 로그인 모달의 찾기 링크
 })();
 </script>
 </body>
