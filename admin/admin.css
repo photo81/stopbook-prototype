@@ -1006,11 +1006,11 @@ td.cat-desc { max-width: 360px; overflow: hidden; text-overflow: ellipsis; color
 .fb-float:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-soft), 0 6px 18px rgba(0,0,0,.18); }
 .fb-meta { margin-top: 4px; text-align: right; font-size: 11px; }
 .fb-note { margin: 10px 0 0; font-size: 12px; }
-/* 사용자 화면(회원가입/로그인) 바로가기 플로팅 버튼 (통합 회원 관리, 피드백 입력 버튼 위) */
-.user-float { position: fixed; left: 16px; bottom: 64px; z-index: 90; display: inline-flex; align-items: center; height: 38px; padding: 0 16px; border-radius: 999px; background: #dc2626; color: #fff; font-size: 13px; font-weight: 600; text-decoration: none; box-shadow: 0 6px 18px rgba(0,0,0,.18); transition: transform .12s, background .12s; }
-.user-float:hover { background: #b91c1c; color: #fff; transform: translateY(-1px); }
-.user-float:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(220,38,38,.35), 0 6px 18px rgba(0,0,0,.18); }
-@media print { .fb-float, .user-float { display: none; } }
+/* 사용자 화면(회원가입/로그인) 바로가기 (통합 회원 관리: 브레드크럼 바로 아래 오른쪽, 직사각형·최소 크기) */
+.breadcrumb a.user-link { display: block; width: max-content; margin: 4px 0 0 auto; padding: 1px 6px; border: 1px solid #dc2626; border-radius: 0; background: #dc2626; color: #fff; font-size: 11px; font-weight: 600; line-height: 16px; text-decoration: none; }   /* .page-head .breadcrumb a 보다 뒤에 두어 흰 글자 유지 */
+.breadcrumb a.user-link:hover { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+.breadcrumb a.user-link:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(220,38,38,.35); }
+@media print { .fb-float, .user-link { display: none; } }
 /* 탭 + 오른쪽 버튼 한 줄 (예: 서류 발급 관리 > 처리 대기 탭 오른쪽 '서류 발급 등록') */
 .tabs-row { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
 .tabs-row > .tabs { flex: 1; min-width: 0; margin-bottom: 0; border-bottom: 0; }

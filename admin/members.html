@@ -98,7 +98,10 @@
 
   <div class="main">
     <header class="topbar">
-      <div class="breadcrumb">홈 &gt; 회원관리 &gt; <b>통합 회원 관리</b></div>
+      <div class="breadcrumb">홈 &gt; 회원관리 &gt; <b>통합 회원 관리</b>
+        <!-- 사용자 화면(회원가입/로그인) 바로가기: 브레드크럼 바로 아래 오른쪽 (initGnb가 브레드크럼을 제목 줄로 옮길 때 같이 이동) -->
+        <a class="user-link" href="../user/signup.html" target="_blank" rel="noopener">[사용자] 회원가입/로그인</a>
+      </div>
       <div><span class="proto-ver" data-proto-version>프로토타입 v2.75 (2026-10-13)</span> 관리자님 | <a href="#">로그아웃</a></div>
     </header>
 
@@ -594,9 +597,6 @@
 
 <div class="viz-tip" id="vizTip" role="tooltip" hidden></div>
 <div class="toast" id="toast"></div>
-
-<!-- 사용자 화면(회원가입/로그인) 바로가기: 피드백 입력 버튼 바로 위 -->
-<a class="user-float" href="../user/signup.html">회원가입/로그인보기</a>
 
 <script src="alimtalk.js?v=20261231"></script>
 <script src="board-store.js?v=20261231"></script>
