@@ -55,6 +55,32 @@
     m.birth = r() < 0.85 ? fmtDate(new Date(1962 + Math.floor(r() * 45), Math.floor(r() * 12), 1 + Math.floor(r() * 28))) : '';
   });
 
+  // ===== 주소·관심분야 샘플 (마이페이지 > 회원정보 수정에서 선택 입력) =====
+  //   zipcode(우편번호 5자리) · address1(우편번호 검색으로 채운 기본 주소) · address2(상세 주소)
+  //   interests: INTERESTS 중 고른 항목 배열 · interestEtc: '직접 입력'에 적은 내용
+  //   선택 입력이라 비어 있는 회원도 있음. 다른 샘플 값에 영향 없도록 회원별 별도 난수로 생성
+  const INTERESTS = ['여행', '베이비', '키즈', '커플/웨딩', '일상', '졸업', '행사', '작품', '굿즈', '종교', '셀프디자인'];
+  const INTEREST_ETC = '직접 입력';
+  const SAMPLE_ADDR = [
+    ['04001', '서울 마포구 월드컵북로 12', '3층 302호'], ['13487', '경기 성남시 분당구 판교로 45', '101동 1203호'],
+    ['48058', '부산 해운대구 센텀중앙로 8', '센텀파크 1502호'], ['34141', '대전 유성구 대학로 99', '공학관 2층'],
+    ['21984', '인천 연수구 송도과학로 31', '204동 807호'], ['06236', '서울 강남구 테헤란로 152', '12층'],
+    ['61475', '광주 동구 금남로 245', '5층 501호'], ['41940', '대구 중구 동성로 32', '2층'],
+    ['16514', '경기 수원시 영통구 광교중앙로 140', '1101동 1904호'], ['63122', '제주특별자치도 제주시 중앙로 217', '']
+  ];
+  const ETC_SAMPLES = ['반려동물', '캠핑', '등산 모임'];
+  members.forEach(m => {
+    let s = (m.no * 7919 + 13) % 233280;
+    const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    if (r() < 0.6) { const a = SAMPLE_ADDR[Math.floor(r() * SAMPLE_ADDR.length)]; Object.assign(m, { zipcode: a[0], address1: a[1], address2: a[2] }); }
+    else Object.assign(m, { zipcode: '', address1: '', address2: '' });
+    m.interests = r() < 0.65 ? [...new Set(Array.from({ length: 1 + Math.floor(r() * 3) }, () => INTERESTS[Math.floor(r() * INTERESTS.length)]))] : [];
+    m.interestEtc = r() < 0.06 ? ETC_SAMPLES[Math.floor(r() * ETC_SAMPLES.length)] : '';
+  });
+  // 표시용: '여행 · 키즈 · 반려동물(직접 입력)' / 주소: '(04001) 기본 주소 상세 주소'
+  const interestText = m => [...(m.interests || []), ...(m.interestEtc ? [`${m.interestEtc}(${INTEREST_ETC})`] : [])].join(' · ');
+  const addressText = m => (m.address1 ? `(${m.zipcode}) ${m.address1}${m.address2 ? ' ' + m.address2 : ''}` : '');
+
   // 가입 기기 / 최근 접속 기기: PC / MO(모바일). 회원 번호로 정함 (다른 샘플 값에 영향 없음)
   // TODO: 실서비스에서는 가입·로그인 시 기록한 접속 환경(User-Agent 기준)
   members.forEach(m => {
@@ -728,6 +754,20 @@
     return members.find(m => String(m.userId).toLowerCase() === v) || members.find(m => String(m.email).toLowerCase() === v) || null;
   }
 
+  // 비밀번호 틀림: 연속 실패 횟수 증가, 5회면 10분 잠금 (로그인·마이페이지 비밀번호 확인이 같은 횟수를 셈)
+  function failAttempt(m, a, now, what) {
+    a.fail = (a.fail || 0) + 1;
+    if (a.fail >= LOCK_FAILS) {
+      a.lockedUntil = fmtDateTime(new Date(now.getTime() + LOCK_MINUTES * 60000));
+      a.fail = 0;
+      authLog(m, a, `${what} ${LOCK_FAILS}회 연속 실패로 ${LOCK_MINUTES}분간 로그인 제한`, '시스템');
+      saveAuth(m, a);
+      return { error: 'locked', until: a.lockedUntil };
+    }
+    saveAuth(m, a);
+    return { error: 'mismatch', fails: a.fail, remain: LOCK_FAILS - a.fail };
+  }
+
   // 로그인. 반환: { member, change: 'temp'|'expired'|'' } 또는 { error: 'mismatch'|'locked', fails, until }
   //   없는 계정·간편 로그인 계정·비밀번호 틀림은 모두 'mismatch' (가입 여부가 드러나지 않게)
   //   비밀번호 5회 연속 실패 시 10분 잠금 (관리자 회원 상세에서 잠금 해제 가능)
@@ -739,18 +779,7 @@
       if (parseAt(a.lockedUntil) > now) return { error: 'locked', until: a.lockedUntil };
       a.lockedUntil = ''; a.fail = 0;
     }
-    if (a.hash !== pwHash(m.no, pw)) {
-      a.fail = (a.fail || 0) + 1;
-      if (a.fail >= LOCK_FAILS) {
-        a.lockedUntil = fmtDateTime(new Date(now.getTime() + LOCK_MINUTES * 60000));
-        a.fail = 0;
-        authLog(m, a, `로그인 ${LOCK_FAILS}회 연속 실패로 ${LOCK_MINUTES}분간 로그인 제한`, '시스템');
-        saveAuth(m, a);
-        return { error: 'locked', until: a.lockedUntil };
-      }
-      saveAuth(m, a);
-      return { error: 'mismatch', fails: a.fail, remain: LOCK_FAILS - a.fail };
-    }
+    if (a.hash !== pwHash(m.no, pw)) return failAttempt(m, a, now, '로그인');
     a.fail = 0;
     const today = fmtDate(now);
     const expired = daysBetween(String(a.changedAt).slice(0, 10), today) >= PW_EXPIRE_DAYS && !(a.snoozeUntil && a.snoozeUntil > today);
@@ -779,6 +808,21 @@
     return saveAuth(m, a);
   }
   const isSamePassword = (no, pw) => { const m = members.find(x => x.no === no), a = m && authOf(m); return !!a && a.hash === pwHash(no, pw); };
+  // 로그인한 회원의 비밀번호 재확인 (마이페이지 > 회원정보 수정 진입, 요구사항 PRD_MEM_009)
+  //   반환: { ok: true } 또는 { error: 'mismatch'|'locked'|'unset', fails, until }. 틀린 횟수는 로그인과 함께 셈
+  function verifyPassword(no, pw) {
+    const m = members.find(x => x.no === no), a = m && authOf(m);
+    if (!a) return { error: 'unset' };
+    const now = new Date();
+    if (a.lockedUntil) {
+      if (parseAt(a.lockedUntil) > now) return { error: 'locked', until: a.lockedUntil };
+      a.lockedUntil = ''; a.fail = 0;
+    }
+    if (a.hash !== pwHash(no, pw)) return failAttempt(m, a, now, '비밀번호 확인');
+    a.fail = 0;
+    if (!a.sample) saveAuth(m, a);
+    return { ok: true };
+  }
   // 90일 변경 안내에서 '다음에 변경': 30일 뒤 다시 안내
   function snoozePassword(no) {
     const m = members.find(x => x.no === no), a = m && authOf(m);
@@ -810,16 +854,52 @@
     return { changedAt, temp: !!a.temp, locked, lockedUntil: locked ? a.lockedUntil : '', fail: a.fail || 0, sample: !!a.sample,
       expired: daysBetween(String(a.changedAt).slice(0, 10), fmtDate(new Date())) >= PW_EXPIRE_DAYS };
   }
-  const Auth = { SAMPLE_PASSWORD, PW_EXPIRE_DAYS, PW_SNOOZE_DAYS, LOCK_FAILS, LOCK_MINUTES, hasPassword, findLoginMember, login, recordLogin, setPassword, isSamePassword, snoozePassword, unlockLogin, authInfo };
+  const Auth = { SAMPLE_PASSWORD, PW_EXPIRE_DAYS, PW_SNOOZE_DAYS, LOCK_FAILS, LOCK_MINUTES, hasPassword, findLoginMember, login, recordLogin, setPassword, isSamePassword, verifyPassword, snoozePassword, unlockLogin, authInfo };
 
   // 가입 중복 확인: 이메일(대소문자 무시) 또는 휴대폰 번호(숫자만 비교)가 같은 회원. 반환: { field: 'email'|'phone', member } 또는 null
   //   기존 다계정 보유자도 휴대폰 번호가 같으면 추가 가입 불가 (요구사항 PRD_MEM_001)
-  function findDuplicate({ email, phone }) {
+  //   exceptNo: 회원정보 수정에서 본인은 빼고 확인
+  function findDuplicate({ email, phone }, exceptNo) {
     const e = String(email || '').trim().toLowerCase(), p = digits(phone);
-    const byPhone = p && members.find(m => digits(m.phone) === p);
+    const others = members.filter(m => m.no !== exceptNo);
+    const byPhone = p && others.find(m => digits(m.phone) === p);
     if (byPhone) return { field: 'phone', member: byPhone };
-    const byEmail = e && members.find(m => String(m.email).toLowerCase() === e);
+    const byEmail = e && others.find(m => String(m.email).toLowerCase() === e);
     return byEmail ? { field: 'email', member: byEmail } : null;
+  }
+
+  // ===== 회원정보 수정 (user/mypage.html, 요구사항 PRD_MEM_009) =====
+  // 회원이 마이페이지에서 고친 정보를 localStorage에 보관하고 페이지를 열 때 회원 데이터에 덮어씀
+  //   → 관리자 통합 회원 관리(목록·상세·변경 히스토리)에도 같은 값이 보임 (샘플 회원·가입 회원 공통)
+  //   PROFILE_KEY: { [회원 no]: { fields: { name, email, userId, phone, ... }, log: [{ at, content, by }] } }
+  // TODO: 실서비스에서는 PUT /api/members/me (이메일·휴대폰 번호는 서버에서 본인 인증 토큰 확인 후 변경)
+  const PROFILE_KEY = 'stopbook.memberProfile.v1';
+  const PROFILE_FIELDS = ['name', 'email', 'userId', 'phone', 'birth', 'nickname', 'gender', 'zipcode', 'address1', 'address2', 'interests', 'interestEtc', 'marketingUse', 'marketingSms', 'marketingEmail'];
+  const PROFILES = readJson(PROFILE_KEY);
+  members.forEach(m => {
+    const p = PROFILES[m.no];
+    if (!p) return;
+    Object.assign(m, p.fields);
+    (p.log || []).forEach(h => m.history.push(Object.assign({}, h)));
+  });
+  // fields: 바뀐 값만, contents: 히스토리 문구 목록. 반환: { member } 또는 { error }
+  function updateProfile(no, fields, contents, by) {
+    const m = members.find(x => x.no === no);
+    if (!m) return { error: '회원 정보를 찾을 수 없습니다.' };
+    const dup = (fields.email || fields.phone) && findDuplicate({ email: fields.email, phone: fields.phone }, no);
+    if (dup) return { error: dup.field === 'phone' ? '이미 가입된 휴대폰 번호입니다.' : '이미 사용 중인 이메일입니다.' };
+    const p = PROFILES[no] || { fields: {}, log: [] };
+    const at = fmtDateTime(new Date());
+    const logs = (contents || []).map(content => ({ at, content, by: by || '회원' }));
+    const next = {};
+    PROFILE_FIELDS.forEach(k => { if (k in fields) next[k] = fields[k]; });
+    Object.assign(p.fields, next);
+    p.log = (p.log || []).concat(logs);
+    PROFILES[no] = p;
+    if (!writeJson(PROFILE_KEY, PROFILES)) return { error: '회원 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.' };
+    Object.assign(m, next);
+    logs.forEach(h => m.history.push(h));
+    return { member: m };
   }
 
   // 가입 저장. rec = 위 저장 형식에서 no·grade·joinDate 등을 뺀 입력값. 반환: { member } 또는 { error }
@@ -841,6 +921,7 @@
   window.MemberData = {
     members, GRADE_ORDER, BENEFITS, COUPONS, PRODUCTS, PROJECT_NAMES, VIEWER_SAMPLE, viewerUrl, pad, fmtDate, fmtDateTime, pushEntry, heldCoupons, orderStats, validOrders, statusClass, ageOf, addMileage, mileageHistory,
     applications, saveApplication, applyApproval, revokeBusiness, GROUP_TYPES: groupKinds,
-    findDuplicate, registerMember, SIGNUP_KEY, Auth
+    findDuplicate, registerMember, SIGNUP_KEY, Auth, updateProfile, PROFILE_KEY,
+    INTERESTS, INTEREST_ETC, interestText, addressText
   };
 })();

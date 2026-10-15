@@ -1010,6 +1010,9 @@ td.cat-desc { max-width: 360px; overflow: hidden; text-overflow: ellipsis; color
 .breadcrumb a.user-link { display: block; width: max-content; margin: 4px 0 0 auto; padding: 1px 6px; border: 1px solid #dc2626; border-radius: 0; background: #dc2626; color: #fff; font-size: 11px; font-weight: 600; line-height: 16px; text-decoration: none; }   /* .page-head .breadcrumb a 보다 뒤에 두어 흰 글자 유지 */
 .breadcrumb a.user-link:hover { background: #b91c1c; border-color: #b91c1c; color: #fff; }
 .breadcrumb a.user-link:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(220,38,38,.35); }
+/* 바로가기가 여러 개면 세로로 쌓고 가장 긴 버튼 폭에 맞춰 같은 크기로 */
+.breadcrumb .user-links { display: grid; gap: 4px; width: max-content; margin: 4px 0 0 auto; }
+.breadcrumb .user-links a.user-link { width: auto; margin: 0; text-align: left; }
 @media print { .fb-float, .user-link { display: none; } }
 /* 탭 + 오른쪽 버튼 한 줄 (예: 서류 발급 관리 > 처리 대기 탭 오른쪽 '서류 발급 등록') */
 .tabs-row { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }

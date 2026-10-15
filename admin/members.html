@@ -100,7 +100,10 @@
     <header class="topbar">
       <div class="breadcrumb">홈 &gt; 회원관리 &gt; <b>통합 회원 관리</b>
         <!-- 사용자 화면(회원가입/로그인) 바로가기: 브레드크럼 바로 아래 오른쪽 (initGnb가 브레드크럼을 제목 줄로 옮길 때 같이 이동) -->
-        <a class="user-link" href="../user/signup.html" target="_blank" rel="noopener">[사용자] 회원가입/로그인</a>
+        <span class="user-links">
+          <a class="user-link" href="../user/signup.html" target="_blank" rel="noopener">[사용자] 회원가입/로그인</a>
+          <a class="user-link" href="../user/mypage.html" target="_blank" rel="noopener">[사용자] 회원정보수정</a>
+        </span>
       </div>
       <div><span class="proto-ver" data-proto-version>프로토타입 v2.75 (2026-10-13)</span> 관리자님 | <a href="#">로그아웃</a></div>
     </header>
@@ -326,6 +329,9 @@
             </div>
           </div>
         </td></tr>
+        <!-- 주소·관심분야: 회원이 마이페이지에서 입력한 경우에만 표시 -->
+        <tr id="addrRow" hidden><th>주소</th><td class="readonly" id="fAddress" colspan="7" style="word-break:break-all"></td></tr>
+        <tr id="interestRow" hidden><th>관심분야</th><td id="fInterests" colspan="7"></td></tr>
       </table>
 
       <!-- 단체 회원 승인 시 표시 (단체회원 신청에서 승인한 사업자 정보) -->
@@ -923,6 +929,13 @@
     $('fGender').value = m.gender || '';   // 관리자 수정 가능 (저장 시 변경 히스토리 기록)
     fillOpt('fBirth', m.birth);
     fillOpt('fAge', ageText(m));
+    // 주소·관심분야 (마이페이지 선택 입력, 입력한 경우에만 행 표시)
+    const addr = MemberData.addressText(m);
+    $('addrRow').hidden = !addr;
+    $('fAddress').textContent = addr;
+    const interests = [...(m.interests || []), ...(m.interestEtc ? [`${m.interestEtc} (${MemberData.INTEREST_ETC})`] : [])];
+    $('interestRow').hidden = !interests.length;
+    $('fInterests').innerHTML = interests.map(t => `<span class="chip-sm">${esc(t)}</span>`).join('');
     const isSns = m.memberType !== '스탑북회원';
     $('pwSns').hidden = !isSns;
     $('pwSns').textContent = `${m.memberType.replace('회원', '')} 간편 로그인 회원은 패스워드가 없습니다.`;
