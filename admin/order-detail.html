@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 주문 상세</title>
-<link rel="stylesheet" href="admin.css?v=20261015-2">
+<link rel="stylesheet" href="admin.css?v=20261019-1">
 </head>
 <body>
 <div class="layout">
@@ -537,19 +537,19 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="alimtalk.js?v=20261015-2"></script>
-<script src="board-store.js?v=20261015-2"></script>
-<script src="member-type-store.js?v=20261015-2"></script>
-<script src="feedback.js?v=20261015-2"></script>
-<script src="member-data.js?v=20261015-2"></script>
-<script src="order-data.js?v=20261015-2"></script>
-<script src="claim-data.js?v=20261015-2"></script>
-<script src="document-data.js?v=20261015-2"></script>
-<script src="inquiry-settings.js?v=20261015-2"></script>
-<script src="inquiry-data.js?v=20261015-2"></script>
-<script src="deposit-modal.js?v=20261015-2"></script>
-<script src="make-modal.js?v=20261015-2"></script>
-<script src="item-detail.js?v=20261015-2"></script>
+<script src="alimtalk.js?v=20261019-1"></script>
+<script src="board-store.js?v=20261019-1"></script>
+<script src="member-type-store.js?v=20261019-1"></script>
+<script src="feedback.js?v=20261019-1"></script>
+<script src="member-data.js?v=20261019-1"></script>
+<script src="order-data.js?v=20261019-1"></script>
+<script src="claim-data.js?v=20261019-1"></script>
+<script src="document-data.js?v=20261019-1"></script>
+<script src="inquiry-settings.js?v=20261019-1"></script>
+<script src="inquiry-data.js?v=20261019-1"></script>
+<script src="deposit-modal.js?v=20261019-1"></script>
+<script src="make-modal.js?v=20261019-1"></script>
+<script src="item-detail.js?v=20261019-1"></script>
 <script>
 (function () {
   'use strict';
@@ -941,16 +941,17 @@
     const multi = dv.addresses.length > 1;
     $('addrList').innerHTML = dv.addresses.map(ad => `<div class="addr-card" data-addr="${esc(ad.id)}">
         <div class="addr-head"><b>${esc(ad.label)}</b>
-          <span class="addr-btns"><button type="button" class="btn btn-xs" data-addr-edit>수정</button>${ad.id !== 'base' ? '<button type="button" class="btn btn-xs btn-danger" data-addr-del>삭제</button>' : ''}</span></div>
+          ${o.withdrawn ? '' : `<span class="addr-btns"><button type="button" class="btn btn-xs" data-addr-edit>수정</button>${ad.id !== 'base' ? '<button type="button" class="btn btn-xs btn-danger" data-addr-del>삭제</button>' : ''}</span>`}</div>
         <table class="form-table pay-method-table"><tbody>
           ${shipRow('수취인명', esc(ad.recipient) + (ad.recipient !== o.name ? ` <span class="muted">(주문자 ${esc(o.name)})</span>` : ''))}
           ${shipRow('연락처', dash2(ad.phone))}
-          ${shipRow('주소', dv.method === '방문수령' && ad.id === 'base' ? '<span class="muted">방문수령 (배송지 없음)</span>' : `[${esc(ad.zip)}] ${esc(ad.address)}<br>${esc(ad.detail)}`)}
+          ${shipRow('주소', dv.method === '방문수령' && ad.id === 'base' ? '<span class="muted">방문수령 (배송지 없음)</span>'
+            : o.withdrawn ? `<span class="muted">${esc(ad.address)} (탈퇴 회원 · 법정 보관 정보)</span>` : `[${esc(ad.zip)}] ${esc(ad.address)}<br>${esc(ad.detail)}`)}
           ${shipRow('배송 요청사항', dash2(ad.request))}
           ${multi ? shipRow('배송 상품', ad.items.length ? ad.items.map(i => `<span class="addon-chip">${esc(o.items[i].name)} <b>${o.items[i].qty}부</b></span>`).join(' ') : '<span class="muted">없음</span>') : ''}
         </tbody></table>
       </div>`).join('');
-    $('btnAddAddr').hidden = dv.method === '방문수령';   // 방문수령은 배송지 추가 없음
+    $('btnAddAddr').hidden = dv.method === '방문수령' || !!o.withdrawn;   // 방문수령은 배송지 추가 없음 · 탈퇴 회원 주문은 배송지 수정·추가 불가 (법정 보관 기록)
 
     // ----- 배송지 수정·추가 모달 -----
     let addrEditing = null;   // 'base' / 'new' / 추가 배송지 id

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 회원 유형 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261015-2">
+<link rel="stylesheet" href="admin.css?v=20261019-1">
 </head>
 <body>
 <div class="layout">
@@ -326,10 +326,10 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261015-2"></script>
-<script src="member-type-store.js?v=20261015-2"></script>
-<script src="feedback.js?v=20261015-2"></script>
-<script src="member-data.js?v=20261015-2"></script>
+<script src="board-store.js?v=20261019-1"></script>
+<script src="member-type-store.js?v=20261019-1"></script>
+<script src="feedback.js?v=20261019-1"></script>
+<script src="member-data.js?v=20261019-1"></script>
 <script>
 (function () {
   'use strict';
@@ -464,7 +464,9 @@
 
   // ----- 등급 자동 산정 상태 / 수동 실행 -----
   // 산정 예정일이 지났으면 이 화면을 열 때도 실행 (통합 회원 관리와 동일). TODO: 실서비스에서는 서버 배치
-  GradeEvaluator.run(MemberData.members, gradeGroup, MemberData.orderStats);
+  //   탈퇴 회원은 탈퇴 시점 등급을 유지하므로 산정 대상에서 제외 (통합 회원 관리와 동일)
+  const gradeTargets = () => MemberData.members.filter(m => !m.withdrawn);
+  GradeEvaluator.run(gradeTargets(), gradeGroup, MemberData.orderStats);
 
   function renderRunStatus() {
     const pol = gradeGroup.policy, run = GradeEvaluator.lastRun();
@@ -476,7 +478,7 @@
 
   $('btnRunNow').addEventListener('click', () => {
     if (!confirm('저장된 평가 조건으로 전체 회원의 등급을 지금 산정하시겠습니까?\n조건을 수정했다면 먼저 저장해 주세요.')) return;
-    const res = GradeEvaluator.run(MemberData.members, gradeGroup, MemberData.orderStats, { force: true });
+    const res = GradeEvaluator.run(gradeTargets(), gradeGroup, MemberData.orderStats, { force: true });
     renderRunStatus();
     toast(`등급 산정 완료: ${res.changes.length}명 변경 (평가 기간 ${res.range.from} ~ ${res.range.to})`);
   });

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 탈퇴 회원 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261015-2">
+<link rel="stylesheet" href="admin.css?v=20261019-1">
 </head>
 <body>
 <div class="layout">
@@ -98,7 +98,12 @@
 
   <div class="main">
     <header class="topbar">
-      <div class="breadcrumb">홈 &gt; 회원관리 &gt; <b>탈퇴 회원 관리</b></div>
+      <div class="breadcrumb">홈 &gt; 회원관리 &gt; <b>탈퇴 회원 관리</b>
+        <!-- 사용자 화면(마이페이지 > 회원 탈퇴) 바로가기: 브레드크럼 바로 아래 오른쪽 (통합 회원 관리의 [사용자] 버튼과 같은 모양) -->
+        <span class="user-links">
+          <a class="user-link" href="../user/mypage.html#withdraw" target="_blank" rel="noopener">[사용자] 회원 탈퇴</a>
+        </span>
+      </div>
       <div><span class="proto-ver" data-proto-version>프로토타입 v2.75 (2026-10-13)</span> 관리자님 | <a href="#">로그아웃</a></div>
     </header>
 
@@ -274,9 +279,9 @@
 <div class="viz-tip" id="vizTip" role="tooltip" hidden></div>
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261015-2"></script>
-<script src="member-type-store.js?v=20261015-2"></script>
-<script src="feedback.js?v=20261015-2"></script>
+<script src="board-store.js?v=20261019-1"></script>
+<script src="member-type-store.js?v=20261019-1"></script>
+<script src="feedback.js?v=20261019-1"></script>
 <script>
 (function () {
   'use strict';
@@ -458,6 +463,27 @@
   }
   items.forEach(m => { if (m.rejoinDate && m.rejoinDate > fmtDate(new Date(base))) { m.rejoined = false; m.rejoinDate = ''; } });
 
+  // ===== 실제 탈퇴 기록 (쇼핑몰 마이페이지 > 회원 탈퇴, member-data.js withdraw) =====
+  // 탈퇴 시점에 저장한 스냅샷(식별 정보 없음)을 샘플 뒤에 이어 붙임. 저장 형식은 member-data.js 회원 탈퇴 주석 참고
+  // TODO: 실서비스에서는 GET /api/admin/withdrawals 결과에 함께 포함
+  let realRecords = {};
+  try { realRecords = JSON.parse(localStorage.getItem('stopbook.memberWithdrawals.v1')) || {}; } catch (e) { /* 저장소 사용 불가 시 샘플만 */ }
+  Object.entries(realRecords).forEach(([memberNo, r]) => {
+    const s = r.snapshot || {};
+    items.push(Object.assign({
+      category: '', kind: '', memberType: '', grade: '', marketing: 'N', joinDate: '', tenureDays: 0, lastLoginDate: '', inactiveDays: 0,
+      orderCount: 0, orderAmount: 0, avgOrder: 0, orders12m: 0, lastOrderDate: '', mainProduct: '',
+      inquiryCount: 0, openInquiry: false, lastInquiryType: '', claimCount: 0, savedProjects: 0, cartAmount: 0,
+      lostMileage: 0, lostCoupons: 0, lostGiftCard: 0, orderRecordPurgeDate: ''
+    }, s, {
+      no: items.length + 1, memberNo: Number(memberNo), real: true,
+      userId: r.userIdMasked || '', emailMasked: r.emailMasked || '', emailHash: r.emailHash || '',
+      withdrawDate: r.withdrawDate, reasonType: r.reasonType || '자진탈퇴', reasonCodes: r.reasonCodes || [], savedLabels: r.reasonLabels || [],
+      reasonEtc: r.reasonEtc || '', channel: r.channel || '', processedBy: r.processedBy || '본인', processNote: r.processNote || '',
+      rejoined: false, rejoinDate: '', rejoinUntil: r.rejoinUntil || ''
+    }));
+  });
+
   // ===== 공통 =====
   const state = { filtered: [], page: 1, size: 10, sortKey: 'withdrawDate', sortDir: 'desc' };
   const $ = id => document.getElementById(id);
@@ -465,7 +491,8 @@
   const won = n => n.toLocaleString() + '원';
   const tenureText = d => (d < 30 ? `${d}일` : d < 365 ? `${Math.floor(d / 30)}개월` : `${Math.floor(d / 365)}년 ${Math.floor((d % 365) / 30)}개월`);
   const catText = m => (m.kind ? `${m.category} > ${m.kind}` : m.category);
-  const reasonLabels = m => m.reasonCodes.map(c => REASON[c].label);
+  // 설정에 없는 사유 코드(실제 탈퇴 기록 이후 삭제된 사유)는 탈퇴 시점에 저장한 이름으로 표시
+  const reasonLabels = m => m.reasonCodes.map((c, i) => (REASON[c] ? REASON[c].label : `${(m.savedLabels || [])[i] || c} (삭제됨)`));
   const yn = (v, on, off) => (v ? on : off);
 
   // 검색 선택지
@@ -542,8 +569,10 @@
     ];
     $('kpis').innerHTML = tiles.map(([k, v, s]) => `<div class="kpi"><div class="kpi-label">${k}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
 
-    // 월별 추이: 최근 12개월 (2025-10 ~ 2026-09)
-    const months = Array.from({ length: 12 }, (_, i) => { const d = new Date(2026, 9 - 12 + i, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; });
+    // 월별 추이: 최근 12개월. 샘플은 2025-10 ~ 2026-09, 이후 실제 탈퇴 기록이 있으면 그 달까지 포함
+    const lastYm = items.reduce((mx, m) => (m.withdrawDate > mx ? m.withdrawDate : mx), '2026-09').slice(0, 7);
+    const [ly, lm] = lastYm.split('-').map(Number);
+    const months = Array.from({ length: 12 }, (_, i) => { const d = new Date(ly, lm - 12 + i, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; });
     const monthly = months.map(ym => ({ key: ym, label: `${Number(ym.slice(5))}월`, value: list.filter(m => m.withdrawDate.startsWith(ym)).length, tip: `${ym.replace('-', '년 ')}월 · ${list.filter(m => m.withdrawDate.startsWith(ym)).length}명` }));
     renderColumns($('chartMonthly'), monthly, { labelIdx: [monthly.length - 1, maxIdx(monthly)] });
 
@@ -646,7 +675,7 @@
         <td>${m.joinDate}</td>
         <td>${m.withdrawDate}</td>
         <td><span class="badge wd-${m.reasonType}">${m.reasonType}</span>${m.rejoined ? ` <span class="tag-rejoin" title="재가입 ${m.rejoinDate}">재가입</span>` : ''}</td>
-        <td class="reason"><a class="name-link" data-no="${m.no}" title="${esc(labels.join(', '))}${m.reasonEtc ? ` / ${esc(m.reasonEtc)}` : ''}">${esc(labels[0])}${labels.length > 1 ? ` <span class="muted">외 ${labels.length - 1}</span>` : ''}</a></td>
+        <td class="reason"><a class="name-link" data-no="${m.no}" title="${esc(labels.join(', '))}${m.reasonEtc ? ` / ${esc(m.reasonEtc)}` : ''}">${esc(labels[0] || '선택 안 함')}${labels.length > 1 ? ` <span class="muted">외 ${labels.length - 1}</span>` : ''}</a></td>
       </tr>`;
     }).join('') : '<tr><td colspan="12" class="empty">검색 결과가 없습니다.</td></tr>';
     $('tabListCount').textContent = total.toLocaleString();
@@ -685,7 +714,9 @@
     $('mBody').innerHTML = `
       <div class="section-title">기본 정보</div>
       ${table([
-        row([['이메일', `<span class="mono">${esc(m.emailMasked)}</span> <span class="readonly">마스킹 저장</span>`, 3]])
+        row([['이메일', `<span class="mono">${esc(m.emailMasked || '-')}</span> <span class="readonly">마스킹 저장</span>`, 3]]),
+        // 실제 탈퇴 기록: 통합 회원 관리에 '탈퇴' 상태로 남아 있는 회원번호와 재가입 제한 기간
+        ...(m.real ? [row([['회원번호', `No.${m.memberNo} <span class="readonly">(통합 회원 관리 '탈퇴' 상태)</span>`], ['재가입 제한', m.rejoinUntil ? `${esc(m.rejoinUntil)}까지` : '제한 없음']])] : [])
       ])}
       <div class="section-title">탈퇴 처리</div>
       ${table([

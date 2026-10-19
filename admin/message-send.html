@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 메시지 전송</title>
-<link rel="stylesheet" href="admin.css?v=20261015-2">
+<link rel="stylesheet" href="admin.css?v=20261019-1">
 </head>
 <body>
 <div class="layout">
@@ -281,12 +281,12 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261015-2"></script>
-<script src="member-type-store.js?v=20261015-2"></script>
-<script src="member-data.js?v=20261015-2"></script>
-<script src="alimtalk.js?v=20261015-2"></script>
-<script src="message-store.js?v=20261015-2"></script>
-<script src="feedback.js?v=20261015-2"></script>
+<script src="board-store.js?v=20261019-1"></script>
+<script src="member-type-store.js?v=20261019-1"></script>
+<script src="member-data.js?v=20261019-1"></script>
+<script src="alimtalk.js?v=20261019-1"></script>
+<script src="message-store.js?v=20261019-1"></script>
+<script src="feedback.js?v=20261019-1"></script>
 <script>
 (function () {
   'use strict';
@@ -298,7 +298,8 @@
   // 발송은 시뮬레이션 (수신 정보가 있으면 성공). TODO: 실서비스에서는 검색 GET /api/admin/members?{조건}, 발송 POST /api/admin/messages { channel, templateId, recipients, values, reserveAt }
   const { esc, toast, initSidebar, ADMIN_NAME } = AdminUtil;
   const S = MessageStore;
-  const { members } = MemberData;
+  // 탈퇴 회원은 연락처가 파기되어 발송 대상에서 제외 (검색·전체 회원·필터 모두)
+  const members = MemberData.members.filter(m => !m.withdrawn);
   const $ = id => document.getElementById(id);
   MemberTypeStore.normalizeCategoryRefs(MemberData);
   const CAT_TREE = MemberTypeStore.categoryTree();

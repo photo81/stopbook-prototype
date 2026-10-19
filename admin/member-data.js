@@ -187,9 +187,10 @@
   members.forEach(m => (MILEAGE[m.no] || []).forEach(e => applyMileage(m, Object.assign({}, e))));
   // 마일리지 지급(delta > 0)·차감(delta < 0). opts = { delta, reason, by, item?, type?, source?, history?, orderNo? }. 회원 마일리지 내역·보유량·회원 히스토리에 반영. 반환: 저장 성공 여부
   //   source: 'manual'(관리자 직접 지급·차감, 회원 상세) / 'refund'(취소·반품 마일리지 환불 자동 지급). history: false면 회원 히스토리는 부르는 쪽에서 남김
+  //   탈퇴 회원은 보유 혜택이 소멸되어 지급·차감 불가 (취소·반품 마일리지 환불도 다른 환불 수단으로 처리)
   function addMileage(no, opts) {
     const m = members.find(x => x.no === no);
-    if (!m || !opts.delta) return false;
+    if (!m || !opts.delta || m.withdrawn) return false;
     const e = { at: fmtDateTime(new Date()), type: opts.type || (opts.delta > 0 ? '적립' : '사용'), item: opts.item || '', reason: opts.reason || '', by: opts.by || '관리자', delta: opts.delta, source: opts.source || (opts.item ? 'refund' : 'manual') };
     if (opts.orderNo) e.orderNo = opts.orderNo;   // 관련 주문 (마일리지 내역 > 지급/차감에서 고른 주문)
     applyMileage(m, e);
@@ -742,16 +743,24 @@
   //   쇼핑몰에서 가입한 회원(fromSignup)은 샘플 비밀번호를 쓰지 않음 → '패스워드 미설정' (로그인 기능 추가 전에 가입해 비밀번호가 저장되지 않은 경우)
   //   관리자 회원 상세에서 패스워드 초기화(임시 패스워드 발급)로 복구
   const authOf = m => AUTH[m.no] || (hasPassword(m) && !m.fromSignup ? { hash: pwHash(m.no, SAMPLE_PASSWORD), changedAt: (m.history[0] && m.history[0].at) || ` 00:00`, temp: false, fail: 0, lockedUntil: '', snoozeUntil: '', sample: true } : null);
-  const saveAuth = (m, a) => { delete a.sample; AUTH[m.no] = a; return writeJson(AUTH_KEY, AUTH); };
+  // 저장 직전에 저장소를 다시 읽어 이 회원 값만 바꿈 (다른 탭에서 지운 탈퇴 회원의 비밀번호 기록이 되살아나지 않게)
+  const saveAuth = (m, a) => {
+    delete a.sample; AUTH[m.no] = a;
+    if (m.withdrawn || readJson(WITHDRAW_STORE_KEY)[m.no]) return false;
+    const fresh = readJson(AUTH_KEY); fresh[m.no] = a;
+    return writeJson(AUTH_KEY, fresh);
+  };
+  const WITHDRAW_STORE_KEY = 'stopbook.memberWithdrawals.v1';   // 회원 탈퇴 기록 (아래 WITHDRAW_KEY와 같은 키)
   const authLog = (m, a, content, by) => { const h = { at: fmtDateTime(new Date()), content, by }; (a.log || (a.log = [])).push(h); m.history.push(h); };
   const daysBetween = (from, to) => Math.floor((new Date(to) - new Date(from)) / 86400000);
   const parseAt = s => new Date(String(s).replace(' ', 'T'));
 
-  // 아이디(기존 회원) 또는 이메일로 회원 찾기 (대소문자 무시)
+  // 아이디(기존 회원) 또는 이메일로 회원 찾기 (대소문자 무시). 탈퇴 회원은 로그인 불가
   function findLoginMember(id) {
     const v = String(id || '').trim().toLowerCase();
     if (!v) return null;
-    return members.find(m => String(m.userId).toLowerCase() === v) || members.find(m => String(m.email).toLowerCase() === v) || null;
+    const live = members.filter(m => !m.withdrawn);
+    return live.find(m => String(m.userId).toLowerCase() === v) || live.find(m => String(m.email).toLowerCase() === v) || null;
   }
 
   // 비밀번호 틀림: 연속 실패 횟수 증가, 5회면 10분 잠금 (로그인·마이페이지 비밀번호 확인이 같은 횟수를 셈)
@@ -791,11 +800,12 @@
   // 최근 접속일·접속 기기 기록 (간편 로그인도 사용)
   function recordLogin(no, env) {
     const m = members.find(x => x.no === no);
-    if (!m) return false;
+    if (!m || m.withdrawn) return false;
     m.lastLogin = fmtDate(new Date());
     if (env) m.loginEnv = env;
     LOGINS[no] = { lastLogin: m.lastLogin, loginEnv: m.loginEnv };
-    return writeJson(LOGIN_KEY, LOGINS);
+    const fresh = readJson(LOGIN_KEY); fresh[no] = LOGINS[no];
+    return writeJson(LOGIN_KEY, fresh);
   }
 
   // 비밀번호 설정. opts = { temp, by, log(기본 true), content }
@@ -859,9 +869,10 @@
   // 가입 중복 확인: 이메일(대소문자 무시) 또는 휴대폰 번호(숫자만 비교)가 같은 회원. 반환: { field: 'email'|'phone', member } 또는 null
   //   기존 다계정 보유자도 휴대폰 번호가 같으면 추가 가입 불가 (요구사항 PRD_MEM_001)
   //   exceptNo: 회원정보 수정에서 본인은 빼고 확인
+  //   탈퇴 회원은 개인정보가 파기되어 비교 대상이 아님 (재가입 제한 기간은 rejoinBlock으로 따로 확인)
   function findDuplicate({ email, phone }, exceptNo) {
     const e = String(email || '').trim().toLowerCase(), p = digits(phone);
-    const others = members.filter(m => m.no !== exceptNo);
+    const others = members.filter(m => m.no !== exceptNo && !m.withdrawn);
     const byPhone = p && others.find(m => digits(m.phone) === p);
     if (byPhone) return { field: 'phone', member: byPhone };
     const byEmail = e && others.find(m => String(m.email).toLowerCase() === e);
@@ -883,29 +894,310 @@
     (p.log || []).forEach(h => m.history.push(Object.assign({}, h)));
   });
   // fields: 바뀐 값만, contents: 히스토리 문구 목록. 반환: { member } 또는 { error }
+  //   다른 탭(창)에서 바뀐 저장값을 덮어쓰지 않도록 저장 직전에 저장소를 다시 읽어 이 회원 값만 바꿔 저장
+  //   탈퇴한 회원(다른 탭에서 탈퇴한 경우 포함)은 수정 불가 → 파기한 개인정보가 다시 저장되지 않게 함
   function updateProfile(no, fields, contents, by) {
     const m = members.find(x => x.no === no);
-    if (!m) return { error: '회원 정보를 찾을 수 없습니다.' };
+    if (!m || m.withdrawn || isWithdrawnStored(no)) return { error: '회원 정보를 찾을 수 없습니다.', withdrawn: !!m };
     const dup = (fields.email || fields.phone) && findDuplicate({ email: fields.email, phone: fields.phone }, no);
     if (dup) return { error: dup.field === 'phone' ? '이미 가입된 휴대폰 번호입니다.' : '이미 사용 중인 이메일입니다.' };
-    const p = PROFILES[no] || { fields: {}, log: [] };
+    const store = readJson(PROFILE_KEY);
+    const p = store[no] || PROFILES[no] || { fields: {}, log: [] };
     const at = fmtDateTime(new Date());
     const logs = (contents || []).map(content => ({ at, content, by: by || '회원' }));
     const next = {};
     PROFILE_FIELDS.forEach(k => { if (k in fields) next[k] = fields[k]; });
-    Object.assign(p.fields, next);
+    p.fields = Object.assign({}, p.fields, next);
     p.log = (p.log || []).concat(logs);
-    PROFILES[no] = p;
-    if (!writeJson(PROFILE_KEY, PROFILES)) return { error: '회원 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.' };
+    store[no] = p; PROFILES[no] = p;
+    if (!writeJson(PROFILE_KEY, store)) return { error: '회원 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.' };
     Object.assign(m, next);
     logs.forEach(h => m.history.push(h));
     return { member: m };
   }
 
+  // ===== 회원 탈퇴 (user/mypage.html#withdraw, 요구사항 PRD_MEM_010) =====
+  // 탈퇴 신청 즉시 개인정보를 파기하고, 회원 목록에는 남겨 두되 상태값만 '탈퇴'로 바꿈
+  //   (회원번호·가입일·가입유형·회원구분·회원등급(탈퇴 시점)은 유지 → 관리자 통합 회원 관리에서 '탈퇴' 상태로 조회)
+  //
+  // [정보 폐기 기준]
+  //   즉시 파기       이름·이메일·휴대폰·생년월일·성별·닉네임·주소·관심분야, 비밀번호·로그인 기록·접속 기기,
+  //                   마케팅 수신 동의(철회 처리), 장바구니·작업물, 보유 혜택(마일리지·쿠폰·상품권 소멸),
+  //                   정보 변경 히스토리 중 개인정보 변경 전·후 값, 사업자 정보의 담당자 연락처
+  //   법정 보관       주문·결제·배송 기록 5년, 소비자 불만·분쟁 처리(문의) 기록 3년 — 전자상거래법 제6조
+  //                   → 분리 보관하고 관리자 일반 화면에서는 개인정보 부분을 '열람 제한'으로 가림 (거래 내역·금액·상태는 표시)
+  //   식별 불가 보관  탈퇴 기록(탈퇴 회원 관리의 통계용 스냅샷), 마스킹한 아이디·이메일,
+  //                   재가입 제한 확인용 이메일·휴대폰 해시(원본 복원 불가, 재가입 제한 기간이 지나면 의미 없음)
+  //
+  // [삭제된 정보 표기 기준] 관리자·쇼핑몰 모든 화면 공통 → WITHDRAWN_LABEL 사용
+  //   이름(주문자·수취인·예금주·담당자 포함) → '탈퇴회원'
+  //   아이디·이메일 → 앞 2자만 남긴 마스킹 (예: us***, ab***@naver.com)
+  //   파기한 항목(휴대폰·생일·주소 등) → '파기됨'
+  //   법정 보관 중이라 가린 항목(주문 연락처·배송지·증빙 정보 등) → '열람 제한'
+  //
+  // 저장 형식 WITHDRAW_KEY: { [회원 no]: { at, withdrawDate, typeCode, reasonType, reasonCodes, reasonEtc, channel, processedBy, processNote,
+  //   userIdMasked, emailMasked, emailHash, phoneHash, rejoinUntil, snapshot: {탈퇴 회원 관리 목록 항목} } }
+  // TODO: 실서비스에서는 POST /api/members/me/withdraw — 서버가 개인정보 컬럼을 삭제(NULL)하고 법정 보관 데이터는 별도 저장소로 분리 이관
+  const WITHDRAW_KEY = WITHDRAW_STORE_KEY;
+  const WITHDRAWN_LABEL = { name: '탈퇴회원', purged: '파기됨', restricted: '열람 제한', status: '탈퇴' };
+  const WITHDRAWALS = readJson(WITHDRAW_KEY);
+  // 탈퇴 불가: 출고 전 주문(입금대기·주문완료·제작중)과 결제가 끝나지 않은 주문(후결제 미정산 포함) → 취소하거나 배송이 시작된 뒤 탈퇴
+  const WD_BLOCK_STATUS = ['주문대기', '주문완료', '제작중'];
+  const WD_BLOCK_PAY = ['입금대기', '후결제대기', '부분결제'];
+  // 마스킹: 앞 2자(2자 이하면 1자)만 남김. 이메일은 도메인 유지 (탈퇴 회원 관리 withdrawn.html과 같은 규칙)
+  const maskLocal = s => { const keep = s.length > 2 ? 2 : 1; return `${s.slice(0, keep)}${'*'.repeat(Math.max(3, s.length - keep))}`; };
+  const maskEmail = email => { const [l, d] = String(email || '').split('@'); return d ? `${maskLocal(l)}@${d}` : ''; };
+  const maskUserId = id => (String(id).includes('@') ? maskEmail(id) : maskLocal(String(id || '')));
+  // 검색·재가입 확인용 해시 (withdrawn.html hashEmail과 같은 값). TODO: 실서비스에서는 서버 비밀 키를 쓰는 HMAC-SHA256
+  const hashOf = s => cyrb53(String(s).trim().toLowerCase()).toString(36);
+  const daysAfter = (d, n) => fmtDate(new Date(new Date(d).getFullYear(), new Date(d).getMonth(), new Date(d).getDate() + n));
+  // 히스토리 중 개인정보 값이 들어 있는 기록 → 내용만 파기 표시 (변경 사실과 일시는 남김)
+  const PERSONAL_LOG = /^(이름|생년월일|이메일|휴대폰 번호|닉네임|성별|주소|관심분야|로그인 아이디) 변경/;
+
+  const withdrawType = () => {
+    const WS = window.MemberTypeStore && MemberTypeStore.WithdrawStore;
+    const data = WS ? WS.load() : null;
+    const type = data && WS.typeByCode(data, 'voluntary');
+    return { data, type: type || { code: 'voluntary', name: '자진탈퇴', cond: { reasonMode: 'optional', multi: true, rejoinDays: 0 } } };
+  };
+
+  // 저장소 기준 탈퇴 여부 (다른 탭에서 탈퇴한 경우도 확인)
+  function isWithdrawnStored(no) { return !!readJson(WITHDRAW_KEY)[no]; }
+
+  // 주문의 현재 결제·진행 상태: 관리자 처리(order-data.js의 주문취소·입금 내역)를 반영
+  //   마이페이지는 주문 데이터(order-data.js)를 불러오지 않으므로 같은 저장값을 직접 읽어 판단
+  //   - 관리자가 모든 상품을 취소한 주문 → 전체취소 (탈퇴를 막지 않음)
+  //   - 입금 내역이 결제금액 이상인 주문 → 결제완료 (무통장입금은 주문 접수 → 주문완료)
+  // TODO: 실서비스에서는 서버가 주문의 현재 상태로 판단 (GET /api/members/me/withdraw-check)
+  const CANCEL_STORE = 'stopbook.orderCancels.v1', DEPOSIT_STORE = 'stopbook.orderDeposits.v2';
+  function effectiveOrders(m) {
+    const cancels = readJson(CANCEL_STORE), deposits = readJson(DEPOSIT_STORE);
+    return validOrders(m).map(o => {
+      const kinds = 1 + Number((String(o.title || '').match(/외 (\d+)종/) || [0, 0])[1]);
+      const canceled = Object.keys(((cancels[o.orderNo] || {}).items) || {}).length;
+      if (canceled >= kinds) return Object.assign({}, o, { payStatus: '전체취소', status: '' });
+      const paid = (((deposits[o.orderNo] || {}).payments) || []).reduce((s, p) => s + (Number(p.amount) || 0), 0);
+      if (paid && WD_BLOCK_PAY.includes(o.payStatus)) {
+        const full = o.payStatus === '입금대기' || paid >= (o.amount || 0);
+        return Object.assign({}, o, { payStatus: full ? '결제완료' : '부분결제', status: o.status === '주문대기' && full ? '주문완료' : o.status });
+      }
+      return o;
+    }).filter(o => o.payStatus !== '전체취소');
+  }
+
+  // 탈퇴 전 확인: 막는 주문 / 안내할 항목. 마이페이지 탈퇴 화면과 withdraw()가 같은 기준을 씀
+  function withdrawCheck(m) {
+    const orders = effectiveOrders(m);
+    const blocking = orders.filter(o => WD_BLOCK_STATUS.includes(o.status) || WD_BLOCK_PAY.includes(o.payStatus));
+    const shipping = orders.filter(o => /^배송중/.test(o.status || '') && !blocking.includes(o));
+    const coupons = heldCoupons((m.ledger || {}).coupon || []).reduce((s, [, n]) => s + n, 0);
+    return {
+      blocking, shipping,
+      waitingInquiries: (m.inquiries || []).filter(q => q.status === '답변대기'),
+      cart: m.cart || [],
+      mileage: m.mileage || 0, giftCard: m.giftCard || 0, coupons
+    };
+  }
+
+  // 탈퇴 상태 적용 (탈퇴 처리 직후 + 페이지를 열 때마다 저장된 탈퇴 기록으로 다시 적용)
+  //   샘플 회원은 화면을 열 때마다 원래 값으로 다시 만들어지므로 매번 덮어써서 개인정보가 보이지 않게 함
+  //   fromStore: 페이지를 열 때 저장된 기록으로 적용 (탈퇴 때 지운 회원정보 수정·비밀번호 기록은 rec.history의 파기 표시 사본으로 다시 붙임)
+  function applyWithdrawal(m, rec, fromStore) {
+    if (m.withdrawn) return;
+    const oldName = m.name, oldId = m.userId;
+    const L = WITHDRAWN_LABEL;
+    const snap = rec.snapshot || {};
+    if (snap.grade) m.grade = snap.grade;   // 탈퇴 시점 등급 유지 (등급 자동 산정 대상에서 빠지므로 저장된 값으로)
+    // 보유 혜택 소멸: 내역에 소멸 기록을 남기고 보유량 0
+    const at = rec.at;
+    if (m.ledger) {
+      if (m.mileage > 0) pushEntry(m.ledger.mileage, { at, type: '소멸', item: '', reason: '회원 탈퇴로 소멸', by: '시스템', delta: -m.mileage, source: 'system' });
+      if (m.giftCard > 0) pushEntry(m.ledger.giftCard, { at, type: '소멸', item: '', reason: '회원 탈퇴로 소멸', by: '시스템', delta: -m.giftCard });
+      heldCoupons(m.ledger.coupon || []).forEach(([item, n]) => pushEntry(m.ledger.coupon, { at, type: '소멸', item, reason: '회원 탈퇴로 소멸', by: '시스템', delta: -n }));
+    }
+    Object.assign(m, {
+      withdrawn: true, status: L.status, withdrawnAt: rec.at, withdrawDate: rec.withdrawDate, withdrawType: rec.reasonType,
+      withdrawReasons: rec.reasonLabels || [], withdrawEtc: rec.reasonEtc || '', rejoinUntil: rec.rejoinUntil || '',
+      name: L.name, userId: rec.userIdMasked, email: rec.emailMasked, phone: L.purged,
+      birth: '', nickname: '', gender: '', zipcode: '', address1: '', address2: '', interests: [], interestEtc: '',
+      marketingUse: 'N', marketingSms: 'N', marketingEmail: 'N', loginEnv: '', lastLogin: '',
+      mileage: 0, giftCard: 0, coupon: 0, cart: [], postpay: 'N', postpayFrom: '', postpayTo: ''
+    });
+    // 문의(법정 보관): 답변 본문의 고객 이름도 가림 (관리자 처리 전 원래 답변 사본 q.sample 포함)
+    const hideName = s => (s && oldName ? String(s).split(oldName).join(L.name) : s);
+    (m.inquiries || []).forEach(q => {
+      q.answer = hideName(q.answer);
+      if (q.sample) q.sample.answer = hideName(q.sample.answer);
+    });
+    // 사업자 정보: 회사 정보는 거래 증빙이라 남기고 대표자·담당자 개인정보와 아이디가 들어간 파일명만 가림
+    const hideBiz = b => Object.assign(b, { ceo: L.name, managerName: L.name, managerPhone: L.restricted, managerEmail: L.restricted,
+      certFile: b.certFile ? String(b.certFile).split(oldId).join(rec.userIdMasked) : b.certFile });
+    if (m.business) hideBiz(m.business);
+    applications.filter(a => a.userId === oldId).forEach(a => {
+      a.userId = rec.userIdMasked;
+      if (a.business) hideBiz(a.business);
+    });
+    // 히스토리: 개인정보 변경 기록은 값만 파기
+    m.history.forEach(h => { h.content = scrubLog(h.content); });
+    if (fromStore) (rec.history || []).forEach(h => m.history.push(Object.assign({}, h)));
+    (rec.log || []).forEach(h => m.history.push(Object.assign({}, h)));
+  }
+  const scrubLog = c => (PERSONAL_LOG.test(c) ? `${c.match(PERSONAL_LOG)[1]} 변경 (탈퇴로 변경 내용 파기)` : c);
+  members.forEach(m => { if (WITHDRAWALS[m.no]) applyWithdrawal(m, WITHDRAWALS[m.no], true); });
+
+  // ===== 다른 화면이 따로 저장해 둔 개인정보 사본 파기 =====
+  // 주문 관리정보·입금 메모·취소 환불(예금주)·클레임·서류 신청·1:1 문의 답변·메시지 발송 기록 등은 각 화면이 localStorage에 따로 저장함
+  // 탈퇴 시 이 회원의 기록만 골라 개인정보를 표기 기준 값으로 바꿔 다시 저장 (원본 복원 불가)
+  //   이 회원의 기록 = 주문번호·문의번호로 저장된 항목, 또는 원래 아이디·이메일·휴대폰 번호가 들어 있는 항목
+  //   (이름만 같은 다른 회원의 기록은 건드리지 않음 — 샘플 회원 이름은 겹칠 수 있음)
+  //   배송지 수정 기록(orderAddresses)은 관리자가 직접 입력한 주소라 값 비교가 안 되므로 이 회원 주문분을 통째로 삭제
+  //   주문 관리정보의 '배송지' 변경 이력은 내용만 파기 표시
+  // TODO: 실서비스에서는 서버가 회원번호로 연결된 테이블의 개인정보 컬럼을 일괄 파기·분리 보관
+  const COPY_STORES = [
+    'stopbook.orderCancels.v1', 'stopbook.orderAdminLog.v1', 'stopbook.orderDeposits.v2', 'stopbook.orderExtraPayments.v1',
+    'stopbook.outsourceRequests.v1', 'stopbook.outsourceRequestMemos.v1', 'stopbook.voucherMemos.v1',
+    'stopbook.cancelRequests.v2', 'stopbook.exchangeRequests.v1', 'stopbook.docRequests.v1', 'stopbook.docIssues.v1',
+    'stopbook.inquiries.v1', 'stopbook.messageLogs.v1', 'stopbook.groupApplications.v4'
+  ];
+  const ADDRESS_STORE = 'stopbook.orderAddresses.v1', ORDER_LOG_STORE = 'stopbook.orderAdminLog.v1';
+  function purgeCopies(m, rec) {
+    const L = WITHDRAWN_LABEL;
+    const orderNos = new Set((m.orders || []).map(o => o.orderNo).filter(Boolean));
+    const inqNos = new Set((m.inquiries || []).map(q => String(q.no)));
+    const ph = String(m.phone || ''), phDigits = digits(ph);
+    // 바꿀 값: 고유한 값(아이디·이메일·휴대폰·주소)을 먼저, 이름은 마지막
+    const pairs = [
+      [m.userId, rec.userIdMasked], [m.email, rec.emailMasked],
+      [ph, L.restricted], [phDigits, L.restricted], [ph.replace(/-(\d{3,4})-/, '-****-'), L.restricted],
+      [m.address2, L.restricted], [m.address1, L.restricted], [m.name, L.name]
+    ].filter(([v]) => v && String(v).length >= 2 && v !== L.restricted && v !== L.name);
+    const ids = [m.userId, m.email, ph, phDigits].filter(v => v && String(v).length >= 4).map(v => String(v).toLowerCase());
+    const replaceIn = v => {
+      if (typeof v === 'string') return pairs.reduce((s, [from, to]) => s.split(from).join(to), v);
+      if (Array.isArray(v)) return v.map(replaceIn);
+      if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, replaceIn(x)]));
+      return v;
+    };
+    const mine = (key, entry) => {
+      if (orderNos.has(key) || inqNos.has(key)) return true;
+      const s = JSON.stringify(entry).toLowerCase();
+      return [...orderNos].some(no => s.includes(no.toLowerCase())) || ids.some(v => s.includes(v));
+    };
+    let changed = 0;
+    COPY_STORES.forEach(key => {
+      let data;
+      try { data = JSON.parse(localStorage.getItem(key)); } catch (e) { return; }
+      if (!data || typeof data !== 'object') return;
+      const fix = (entry, k) => {
+        if (!mine(k, entry)) return entry;
+        changed++;
+        const out = replaceIn(entry);
+        // 주문 관리정보: 배송지 변경 이력은 관리자가 입력한 주소·연락처가 들어 있어 내용만 파기 표시
+        if (key === ORDER_LOG_STORE && out && Array.isArray(out.history)) out.history.forEach(h => { if (h.type === '배송지') h.content = '배송지 변경 (탈퇴로 변경 내용 파기)'; });
+        return out;
+      };
+      const next = Array.isArray(data) ? data.map((x, i) => fix(x, String(i))) : Object.fromEntries(Object.entries(data).map(([k, x]) => [k, fix(x, k)]));
+      try { localStorage.setItem(key, JSON.stringify(next)); } catch (e) { /* 저장소 사용 불가 */ }
+    });
+    const addrs = readJson(ADDRESS_STORE);
+    const before = Object.keys(addrs).length;
+    orderNos.forEach(no => { delete addrs[no]; });
+    if (Object.keys(addrs).length !== before) { writeJson(ADDRESS_STORE, addrs); changed++; }
+    return changed;
+  }
+
+  // 회원 탈퇴 처리. opts = { reasonCodes, reasonLabels, reasonEtc, channel('PC'|'모바일'), by('회원') }. 반환: { record } 또는 { error, blocking }
+  function withdraw(no, opts = {}) {
+    const m = members.find(x => x.no === no);
+    if (!m || m.withdrawn) return { error: '회원 정보를 찾을 수 없습니다.' };
+    // 다른 탭(창)에서 이미 탈퇴한 경우
+    if (isWithdrawnStored(no)) return { error: '이미 탈퇴 처리된 계정입니다.', withdrawn: true };
+    const chk = withdrawCheck(m);
+    if (chk.blocking.length) return { error: `진행 중인 주문 ${chk.blocking.length}건이 있어 탈퇴할 수 없습니다.`, blocking: chk.blocking };
+    const { type } = withdrawType();
+    const now = new Date(), at = fmtDateTime(now), date = fmtDate(now);
+    const orders = effectiveOrders(m);
+    const tenureDays = Math.max(0, daysBetween(m.joinDate, date));
+    const lastLogin = m.lastLogin || date;
+    const products = orders.reduce((acc, o) => { if (o.productCategory) acc[o.productCategory] = (acc[o.productCategory] || 0) + 1; return acc; }, {});
+    const mainProduct = Object.keys(products).sort((a, b) => products[b] - products[a])[0] || '';
+    const inq = m.inquiries || [];
+    const rejoinDays = Number((type.cond || {}).rejoinDays) || 0;
+    const rejoinUntil = rejoinDays ? daysAfter(date, rejoinDays) : '';
+    const reasonCodes = (opts.reasonCodes || []).slice(), reasonLabels = (opts.reasonLabels || []).slice(), reasonEtc = String(opts.reasonEtc || '').trim();
+    const rec = {
+      at, withdrawDate: date, typeCode: type.code, reasonType: type.name, reasonCodes, reasonLabels, reasonEtc,
+      channel: opts.channel || 'PC', processedBy: '본인', processNote: '',
+      userIdMasked: maskUserId(m.userId), emailMasked: maskEmail(m.email),
+      emailHash: m.email ? hashOf(m.email) : '', phoneHash: digits(m.phone) ? hashOf(digits(m.phone)) : '',
+      rejoinUntil,
+      // 탈퇴 회원 관리(withdrawn.html) 목록·분석 항목과 같은 이름 (개인 식별 정보 없음)
+      snapshot: {
+        memberNo: m.no, category: m.category || '', kind: m.subCategory || '', memberType: m.memberType, grade: m.grade,
+        marketing: m.marketingSms === 'Y' || m.marketingEmail === 'Y' ? 'Y' : 'N',
+        joinDate: m.joinDate, tenureDays, lastLoginDate: lastLogin, inactiveDays: Math.max(0, daysBetween(lastLogin, date)),
+        orderCount: orders.length, orderAmount: orders.reduce((s, o) => s + (o.amount || 0), 0),
+        avgOrder: orders.length ? Math.round(orders.reduce((s, o) => s + (o.amount || 0), 0) / orders.length / 10) * 10 : 0,
+        orders12m: orders.filter(o => daysBetween(o.at, date) < 365).length,
+        lastOrderDate: orders.length ? orders[orders.length - 1].at : '', mainProduct,
+        inquiryCount: inq.length, openInquiry: chk.waitingInquiries.length > 0, lastInquiryType: inq.length ? inq[0].type || '' : '',
+        claimCount: 0, savedProjects: chk.cart.length, cartAmount: chk.cart.reduce((s, c) => s + (c.price || 0) * (c.qty || 1), 0),
+        lostMileage: chk.mileage, lostCoupons: chk.coupons, lostGiftCard: chk.giftCard,
+        orderRecordPurgeDate: orders.length ? daysAfter(date, 365 * 5 + 1) : ''
+      },
+      log: [
+        { at, content: `회원 탈퇴 (${type.name}${reasonLabels.length ? ` · 사유: ${reasonLabels.join(', ')}` : ''}${reasonEtc ? ` · 의견: ${reasonEtc}` : ''})`, by: opts.by || '회원' },
+        { at, content: `개인정보 파기 (이름·이메일·휴대폰·생일·주소 등) · 보유 혜택 소멸 (마일리지 ${chk.mileage.toLocaleString()}P · 쿠폰 ${chk.coupons}장 · 상품권 ${chk.giftCard.toLocaleString()}원)`, by: '시스템' }
+      ],
+      // 아래에서 지우는 회원정보 수정·비밀번호 기록의 사본 (일시·처리자는 남기고 개인정보 값만 파기 표시)
+      history: [].concat(((PROFILES[no] || {}).log) || [], ((AUTH[no] || {}).log) || []).map(h => Object.assign({}, h, { content: scrubLog(h.content) }))
+    };
+    // 다른 탭에서 저장한 값을 덮어쓰지 않도록 저장 직전에 다시 읽고 이 회원 값만 바꿔 저장
+    const stored = readJson(WITHDRAW_KEY);
+    stored[no] = rec;
+    if (!writeJson(WITHDRAW_KEY, stored)) return { error: '탈퇴 처리를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.' };
+    Object.assign(WITHDRAWALS, stored);
+
+    // 저장소에 남은 개인정보 파기 (회원정보 수정 값·비밀번호·로그인 기록·가입 정보)
+    [[PROFILE_KEY, PROFILES], [AUTH_KEY, AUTH], [LOGIN_KEY, LOGINS]].forEach(([key, mem]) => {
+      const fresh = readJson(key);
+      delete fresh[no]; delete mem[no];
+      writeJson(key, fresh);
+    });
+    if (m.fromSignup) {
+      const list = loadSignups().map(r => (r.no !== no ? r : Object.assign({}, r, {
+        name: WITHDRAWN_LABEL.name, userId: rec.userIdMasked, email: rec.emailMasked, phone: WITHDRAWN_LABEL.purged,
+        birth: '', nickname: '', gender: '', marketingUse: 'N', marketingSms: 'N', marketingEmail: 'N', lastLogin: '', loginEnv: '',
+        history: (r.history || []).map(h => Object.assign({}, h, { content: scrubLog(h.content) }))
+      })));
+      try { localStorage.setItem(SIGNUP_KEY, JSON.stringify(list)); } catch (e) { /* 화면에는 아래 적용으로 가려짐 */ }
+    }
+    purgeCopies(m, rec);   // 원래 값이 필요하므로 applyWithdrawal 전에
+    applyWithdrawal(m, rec);
+    return { record: rec };
+  }
+
+  // 재가입 제한: 탈퇴 후 rejoinUntil 전까지 같은 이메일·휴대폰 번호로 가입 불가 (회원 유형 관리 > 탈퇴회원 > 재가입 제한 기간)
+  //   반환: { until, field: 'email'|'phone' } 또는 null
+  function rejoinBlock({ email, phone }) {
+    const today = fmtDate(new Date());
+    const eh = email ? hashOf(email) : '', ph = digits(phone) ? hashOf(digits(phone)) : '';
+    for (const rec of Object.values(readJson(WITHDRAW_KEY))) {   // 다른 탭에서 탈퇴한 기록도 확인
+      if (!rec.rejoinUntil || rec.rejoinUntil <= today) continue;
+      if (ph && rec.phoneHash === ph) return { until: rec.rejoinUntil, field: 'phone' };
+      if (eh && rec.emailHash === eh) return { until: rec.rejoinUntil, field: 'email' };
+    }
+    return null;
+  }
+  // 탈퇴 회원 관리(withdrawn.html)용 실제 탈퇴 기록 목록
+  const withdrawals = () => Object.entries(WITHDRAWALS).map(([no, rec]) => Object.assign({ memberNo: Number(no) }, rec));
+
   // 가입 저장. rec = 위 저장 형식에서 no·grade·joinDate 등을 뺀 입력값. 반환: { member } 또는 { error }
   function registerMember(rec) {
     const dup = findDuplicate(rec);
     if (dup) return { error: dup.field === 'phone' ? '이미 가입된 휴대폰 번호입니다.' : '이미 사용 중인 이메일입니다.' };
+    const block = rejoinBlock(rec);
+    if (block) return { error: `탈퇴 후 재가입 제한 기간입니다. ${block.until}부터 다시 가입할 수 있습니다.` };
     const now = new Date(), at = fmtDateTime(now);
     const saved = Object.assign({}, rec, {
       no: members.reduce((n, m) => Math.max(n, m.no), 1000) + 1,
@@ -922,6 +1214,7 @@
     members, GRADE_ORDER, BENEFITS, COUPONS, PRODUCTS, PROJECT_NAMES, VIEWER_SAMPLE, viewerUrl, pad, fmtDate, fmtDateTime, pushEntry, heldCoupons, orderStats, validOrders, statusClass, ageOf, addMileage, mileageHistory,
     applications, saveApplication, applyApproval, revokeBusiness, GROUP_TYPES: groupKinds,
     findDuplicate, registerMember, SIGNUP_KEY, Auth, updateProfile, PROFILE_KEY,
-    INTERESTS, INTEREST_ETC, interestText, addressText
+    INTERESTS, INTEREST_ETC, interestText, addressText,
+    WITHDRAW_KEY, WITHDRAWN_LABEL, withdrawCheck, withdraw, withdrawType, rejoinBlock, withdrawals, isWithdrawnStored, maskEmail, maskUserId
   };
 })();

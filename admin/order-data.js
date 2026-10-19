@@ -864,10 +864,35 @@
     const pick = src => Object.fromEntries(ADDRESS_FIELDS.map(([k]) => [k, src[k] || '']));
     d.addresses = [Object.assign({ id: 'base', label: '기본 배송지', items: ord.items.map((_, i) => i).filter(i => !taken.has(i)) }, pick(d))]
       .concat(extras.map((x, n) => Object.assign({ id: x.id, label: `추가 배송지 ${n + 1}`, items: x.items }, pick(x))));
+    maskWithdrawn(ord);
+  }
+  // 탈퇴 회원의 주문: 주문·결제·배송 기록은 전자상거래법에 따라 5년 보관하되, 관리자 화면에는 개인정보를 표시하지 않음
+  //   표기 기준(member-data.js WITHDRAWN_LABEL): 주문자·수취인 → '탈퇴회원' / 연락처·주소·요청사항·증빙 개인정보 → '열람 제한'
+  //   주문번호·상품·금액·결제·제작·배송 상태는 그대로 표시
+  // TODO: 실서비스에서는 분리 보관 DB에서 조회하고, 분쟁·법령 요청 시에만 권한자가 열람(열람 기록 저장)
+  function maskWithdrawn(ord) {
+    const m = ord.member;
+    if (!m || !m.withdrawn) return;
+    const L = MemberData.WITHDRAWN_LABEL;
+    Object.assign(ord, { name: L.name, recipient: L.name, userId: m.userId, email: m.email, phone: L.restricted, withdrawn: true });
+    const d = ord.delivery;
+    if (d) {
+      const hide = a => Object.assign(a, { recipient: L.name, phone: L.restricted, zip: '', address: L.restricted, detail: '', request: a.request ? L.restricted : '' });
+      hide(d);
+      (d.addresses || []).forEach(hide);
+    }
+    const p = ord.payment;
+    if (p && Array.isArray(p.docInfo)) {
+      const PERSONAL = ['휴대폰', '주민번호', '대표자', '담당자명', '담당자 연락처', '이메일'];
+      p.docInfo = p.docInfo.map(([k, v]) => [k, PERSONAL.includes(k) ? (k === '대표자' || k === '담당자명' ? L.name : L.restricted) : v]);
+    }
   }
   // id = 'base' 이면 기본 배송지 수정, 'new' 이면 추가, 그 외는 추가 배송지 수정. data = ADDRESS_FIELDS 값 (+ 추가 배송지는 items)
   // 반환: { ok, id }
+  //   탈퇴 회원의 주문은 법정 보관 기록이라 배송지 수정·추가·삭제 불가 (새 개인정보를 받지 않음)
+  const withdrawnOrder = orderNo => { const o = ORDERS.find(x => x.orderNo === orderNo); return !!(o && o.member && o.member.withdrawn); };
   function saveAddress(orderNo, id, data) {
+    if (withdrawnOrder(orderNo)) return { ok: false, id, withdrawn: true };
     const rec = ADDRS[orderNo] || (ADDRS[orderNo] = { extras: [] });
     rec.extras = rec.extras || [];
     let savedId = id;
@@ -882,6 +907,7 @@
   }
   // 추가 배송지 삭제 → 그 배송지 상품은 기본 배송지로 돌아감
   function deleteAddress(orderNo, id) {
+    if (withdrawnOrder(orderNo)) return false;
     const rec = ADDRS[orderNo];
     if (!rec || !rec.extras) return true;
     rec.extras = rec.extras.filter(x => x.id !== id);
@@ -896,7 +922,11 @@
     const rec = LOGS[orderNo] || { memos: [], history: [] };
     // 구분·id가 없는 예전 메모 보정 (구분 '기타')
     rec.memos.forEach((mm, i) => { if (!mm.id) mm.id = `m${i}${mm.at.replace(/\D/g, '')}`; if (!mm.category) mm.category = '기타'; });
-    return { memos: rec.memos.slice(), history: rec.history.slice() };
+    // 탈퇴 회원 주문: 배송지 변경 이력에는 관리자가 입력한 주소·연락처가 들어 있어 내용을 가림 (탈퇴 때 저장값도 파기 — member-data.js purgeCopies)
+    const history = withdrawnOrder(orderNo)
+      ? rec.history.map(h => (h.type === '배송지' ? Object.assign({}, h, { content: '배송지 변경 (탈퇴로 변경 내용 파기)' }) : h))
+      : rec.history.slice();
+    return { memos: rec.memos.slice(), history };
   }
   // 주문에 등록된 관리자 메모의 구분 목록 (중복 제거, 구분 없는 예전 메모는 '기타'). 주문 리스트 상담여부 > 관리자 메모 검색용
   function memoCategories(orderNo) {

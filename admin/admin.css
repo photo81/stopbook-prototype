@@ -212,6 +212,12 @@ td a.name-link:hover { color: var(--accent); text-decoration: underline; text-un
 .wd-자진탈퇴 { --dot: #a1a1aa; }
 .wd-강제탈퇴 { --dot: #dc2626; }
 .wd-장기미이용 { --dot: #f59e0b; }
+/* 회원상태 (통합 회원 관리): 정상 / 탈퇴. 탈퇴 회원의 파기·열람 제한 항목은 흐린 글씨 (member-data.js WITHDRAWN_LABEL) */
+.ms-정상 { --dot: var(--success); }
+.ms-탈퇴 { --dot: var(--danger); }
+.purged { color: var(--faint); font-weight: 400; }
+tr.row-withdrawn td { color: var(--muted); }
+.status-banner.ms-탈퇴 { margin: 0 0 16px; }
 .yn-on { color: var(--text); font-weight: 600; }
 .yn-on::before { content: "●"; color: var(--success); font-size: 8px; margin-right: 4px; vertical-align: 1px; }
 .yn-off { color: var(--faint); }

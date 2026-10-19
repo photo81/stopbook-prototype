@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 통합 회원 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261015-2c">
+<link rel="stylesheet" href="admin.css?v=20261019-1c">
 </head>
 <body>
 <div class="layout">
@@ -181,6 +181,14 @@
             </select>
           </div>
           <div class="field">
+            <label for="sStatus">회원상태</label>
+            <select id="sStatus">
+              <option value="">전체</option>
+              <option value="정상">정상</option>
+              <option value="탈퇴">탈퇴</option>
+            </select>
+          </div>
+          <div class="field">
             <label for="sMkSms">SMS 수신</label>
             <select id="sMkSms">
               <option value="">전체</option>
@@ -219,6 +227,7 @@
             <thead>
               <tr>
                 <th class="sortable col-no" data-key="no">번호</th>
+                <th class="sortable" data-key="status">상태</th>
                 <th class="sortable" data-key="name">이름</th>
                 <th>이메일</th>
                 <th>휴대폰</th>
@@ -282,6 +291,8 @@
       <button type="button" class="close" data-close aria-label="닫기">&times;</button>
     </div>
     <form id="editForm" class="modal-body" novalidate>
+      <!-- 탈퇴 회원: 개인정보 파기 안내 (상세는 조회만 가능) -->
+      <div class="status-banner ms-탈퇴" id="wdBanner" hidden></div>
       <div class="section-title">기본 정보</div>
       <table class="form-table multi-col">
         <!-- 4칸(항목명+값) × 같은 폭. 이름·이메일 등 두 칸 행은 값이 3칸을 차지해 좌우 절반씩 -->
@@ -465,7 +476,7 @@
     </form>
     <div class="modal-footer">
       <button type="button" class="btn" data-close>닫기</button>
-      <button type="submit" form="editForm" class="btn btn-primary">저장</button>
+      <button type="submit" form="editForm" class="btn btn-primary" id="btnSave">저장</button>
     </div>
   </div>
 </div>
@@ -604,11 +615,11 @@
 <div class="viz-tip" id="vizTip" role="tooltip" hidden></div>
 <div class="toast" id="toast"></div>
 
-<script src="alimtalk.js?v=20261015-2"></script>
-<script src="board-store.js?v=20261015-2"></script>
-<script src="member-type-store.js?v=20261015-2"></script>
-<script src="feedback.js?v=20261015-2"></script>
-<script src="member-data.js?v=20261015-2"></script>
+<script src="alimtalk.js?v=20261019-1"></script>
+<script src="board-store.js?v=20261019-1"></script>
+<script src="member-type-store.js?v=20261019-1"></script>
+<script src="feedback.js?v=20261019-1"></script>
+<script src="member-data.js?v=20261019-1"></script>
 <script>
 (function () {
   'use strict';
@@ -623,7 +634,16 @@
   // ===== 등급 자동 산정 =====
   // 회원 유형 관리 > 등급 탭의 평가 조건에 따라, 산정 예정일이 지났으면 화면을 열 때 전체 회원 등급을 재산정
   // (이전 산정 결과는 localStorage에서 먼저 반영). TODO: 실서비스에서는 서버 배치가 처리
-  const gradeRun = MemberTypeStore.GradeEvaluator.run(members, MemberTypeStore.load().find(g => g.key === 'grade'), MemberData.orderStats);
+  //   탈퇴 회원은 탈퇴 시점 등급을 그대로 두므로 산정 대상에서 뺌
+  const gradeRun = MemberTypeStore.GradeEvaluator.run(members.filter(m => !m.withdrawn), MemberTypeStore.load().find(g => g.key === 'grade'), MemberData.orderStats);
+
+  // ===== 회원상태: 정상 / 탈퇴 (요구사항 PRD_MEM_010) =====
+  // 탈퇴 회원도 목록에 남기고 상태만 '탈퇴'로 표시. 개인정보는 member-data.js에서 탈퇴 시점에 파기되어 표기 기준(WITHDRAWN_LABEL) 값으로 보임
+  const WL = MemberData.WITHDRAWN_LABEL;
+  members.forEach(m => { if (!m.status) m.status = '정상'; });
+  const statusBadge = m => `<span class="badge ms-${m.status}"${m.withdrawn ? ` title="탈퇴일 ${esc(m.withdrawDate)} · ${esc(m.withdrawType)}"` : ''}>${m.status}</span>`;
+  // 파기·열람 제한 값은 흐린 글씨, 빈 값은 '-'
+  const pv = v => (v === WL.purged || v === WL.restricted ? `<span class="purged">${esc(v)}</span>` : v ? esc(v) : '<span class="purged">-</span>');
 
   // ===== 상태 =====
   const state = { filtered: [], page: 1, size: 10, sortKey: 'no', sortDir: 'desc', editing: null };
@@ -708,6 +728,7 @@
     const to = $('sTo').value;
     const mkSms = $('sMkSms').value;
     const mkEmail = $('sMkEmail').value;
+    const status = $('sStatus').value;
 
     if (from && to && from > to) { toast('기간 시작일이 종료일보다 늦습니다.'); return false; }
 
@@ -721,7 +742,8 @@
       (!from || dayOf(m) >= from) &&
       (!to || (dayOf(m) && dayOf(m) <= to)) &&
       (!mkSms || m.marketingSms === mkSms) &&
-      (!mkEmail || m.marketingEmail === mkEmail)
+      (!mkEmail || m.marketingEmail === mkEmail) &&
+      (!status || m.status === status)
     );
     sortData();
     return true;
@@ -748,20 +770,21 @@
     $('allCount').textContent = members.length.toLocaleString();
 
     $('memberBody').innerHTML = rows.length ? rows.map(m => `
-      <tr>
+      <tr${m.withdrawn ? ' class="row-withdrawn"' : ''}>
         <td>${m.no}</td>
+        <td>${statusBadge(m)}</td>
         <td><a class="name-link" data-no="${m.no}">${esc(m.name)}</a></td>
-        <td class="left email" title="${esc(m.email)}">${esc(m.email)}</td>
-        <td>${esc(m.phone)}</td>
+        <td class="left email" title="${esc(m.email)}">${pv(m.email)}</td>
+        <td>${pv(m.phone)}</td>
         <td>${esc(m.userId)}</td>
         <td>${catBadge(m)}</td>
         <td>${typeBadge(m.memberType)}</td>
         <td><span class="badge gr-${GRADE_ORDER.indexOf(m.grade)}">${m.grade}</span></td>
-        <td>${mkDot('SMS', m.marketingSms)} ${mkDot('메일', m.marketingEmail)}</td>
+        <td>${m.withdrawn ? '<span class="purged">-</span>' : `${mkDot('SMS', m.marketingSms)} ${mkDot('메일', m.marketingEmail)}`}</td>
         <td>${m.joinDate}</td>
-        <td>${m.lastLogin}</td>
+        <td>${m.withdrawn ? `<span class="purged" title="탈퇴 시 접속 기록 파기">탈퇴 ${esc(m.withdrawDate)}</span>` : m.lastLogin}</td>
       </tr>`).join('')
-      : '<tr><td colspan="11" class="empty">검색 결과가 없습니다.</td></tr>';
+      : '<tr><td colspan="12" class="empty">검색 결과가 없습니다.</td></tr>';
 
     document.querySelectorAll('th.sortable').forEach(th => {
       const active = th.dataset.key === state.sortKey;
@@ -782,9 +805,11 @@
   const LOGIN_BUCKETS = [['7일 이내', 0, 6], ['30일 이내', 7, 29], ['90일 이내', 30, 89], ['90일 초과', 90, Infinity]];
 
   function renderAnalysis() {
-    const list = state.filtered, n = list.length;
+    // 탈퇴 회원은 집계에서 제외 (탈퇴 분석은 탈퇴 회원 관리 > 분석)
+    const active = members.filter(m => !m.withdrawn);
+    const list = state.filtered.filter(m => !m.withdrawn), n = list.length;
     const sum = f => list.reduce((s, m) => s + f(m), 0);
-    $('analysisScope').textContent = `· ${n === members.length ? `전체 회원 ${n}명` : `검색 결과 ${n}명 / 전체 ${members.length}명`} · 가입유형·회원구분 막대를 누르면 리스트에서 해당 회원을 볼 수 있습니다`;
+    $('analysisScope').textContent = `· ${n === active.length ? `전체 회원 ${n}명` : `검색 결과 ${n}명 / 전체 ${active.length}명`} · 탈퇴 회원 제외 · 가입유형·회원구분 막대를 누르면 리스트에서 해당 회원을 볼 수 있습니다`;
 
     const groupN = list.filter(m => m.categoryCode !== 'normal').length;   // 사업자 구분(기관·학교·유치원·어린이집·회사·단체) 합계
     const newest30 = list.filter(m => daysSince(m.joinDate) < 30).length;
@@ -913,6 +938,7 @@
     const m = members.find(x => x.no === no);
     if (!m) return;
     state.editing = m;
+    unlockWithdrawnView();   // 이전에 연 탈퇴 회원 상세에서 잠근 항목 되돌림 (아래 채우기 전에)
     fillCategorySelects(m);
     $('fMemberType').innerHTML = typeBadge(m.memberType);
     fillPostpay(m);
@@ -957,8 +983,32 @@
     renderHistory(m);
     document.querySelectorAll('.err').forEach(e => e.classList.remove('show'));
     $('modalTitle').textContent = `회원 상세정보 - ${m.name} (No.${m.no})`;
+    applyWithdrawnView(m);
     $('modal').classList.add('open');
-    $('fCategory').focus();
+    if (m.withdrawn) $('modal').querySelector('.close').focus(); else $('fCategory').focus();
+  }
+
+  // 탈퇴 회원 상세: 조회만 가능 (저장·패스워드·알림톡·혜택 지급 불가, 관리자 메모만 기록 가능)
+  //   파기 항목은 '파기됨', 탈퇴 정보(일시·구분·사유)는 상단 안내에 표시
+  //   잠근 요소에만 표시(data-wd-lock)를 남겨, 다음 회원을 열 때 원래 상태로 되돌림 (종류·후불 결제 등 원래 비활성인 항목은 그대로)
+  const WD_LOCK = '#editForm select, #editForm input, #btnAlimtalk, #editForm .btn-adjust';   // 검색 영역의 기간 버튼(.btn-adjust)은 제외
+  function unlockWithdrawnView() {
+    document.querySelectorAll('[data-wd-lock]').forEach(el => { el.disabled = false; delete el.dataset.wdLock; });
+  }
+  function applyWithdrawnView(m) {
+    const wd = !!m.withdrawn;
+    $('wdBanner').hidden = !wd;
+    $('btnSave').hidden = wd;
+    if (!wd) return;
+    document.querySelectorAll(WD_LOCK).forEach(el => { if (!el.disabled) { el.disabled = true; el.dataset.wdLock = '1'; } });
+    $('wdBanner').innerHTML = `<b>탈퇴 회원</b>${esc(m.withdrawnAt)} · ${esc(m.withdrawType)}${m.withdrawReasons.length ? ` · 사유: ${esc(m.withdrawReasons.join(', '))}` : ''}
+      <div class="banner-sub">개인정보는 탈퇴 즉시 파기되어 조회·수정할 수 없습니다. 주문·결제·배송 기록은 전자상거래법에 따라 5년간 분리 보관되며, 주문 화면에서는 개인정보가 '${esc(WL.restricted)}'으로 표시됩니다.${m.rejoinUntil ? ` 재가입 제한: ${esc(m.rejoinUntil)}까지` : ''}</div>`;
+    $('fPhone').innerHTML = pv(m.phone);
+    ['fNickname', 'fBirth', 'fAge'].forEach(id => { $(id).innerHTML = pv(WL.purged); });
+    $('pwSns').hidden = false;
+    $('pwSns').textContent = '탈퇴로 패스워드·로그인 기록이 파기되었습니다.';
+    $('pwActions').hidden = true;
+    $('fLastLogin').innerHTML = pv(WL.purged);
   }
 
   // ===== 알림톡 발송 (alimtalk.js, 비즈엠 API v2.29.7) =====
@@ -1273,6 +1323,7 @@
   }
 
   function openAdjust() {
+    if (state.editing && state.editing.withdrawn) { toast('탈퇴 회원은 혜택을 지급·차감할 수 없습니다.'); return; }
     $('bForm').reset();
     if (bState.kind === 'coupon') { fillCouponSelect(); $('bAmount').value = '1'; }
     $('eBenefit').classList.remove('show');
@@ -1283,7 +1334,7 @@
 
   function closeAdjust() {
     $('bForm').hidden = true;
-    $('btnBAdjustOpen').hidden = false;
+    $('btnBAdjustOpen').hidden = !!(state.editing && state.editing.withdrawn);   // 탈퇴 회원은 내역 조회만
   }
 
   function closeBenefit() {
@@ -1293,6 +1344,7 @@
 
   function applyAdjust(e) {
     e.preventDefault();
+    if (state.editing && state.editing.withdrawn) { closeAdjust(); return; }   // 탈퇴 회원: 혜택 소멸, 지급·차감 불가
     const m = state.editing, kind = bState.kind, b = BENEFITS[kind];
     const minus = document.querySelector('input[name=bType]:checked').value === 'minus';
     const amountText = $('bAmount').value.replace(/,/g, '').trim();
@@ -1570,7 +1622,7 @@
   function downloadExcel() {
     if (!state.filtered.length) { toast('다운로드할 데이터가 없습니다.'); return; }
     const cols = [
-      ['no', '번호'], ['category', '회원구분'], ['subCategory', '종류'], ['memberType', '가입유형'], ['name', '이름'], ['email', '이메일'], ['phone', '휴대폰'], ['userId', '아이디'],
+      ['no', '번호'], ['status', '회원상태'], ['withdrawDate', '탈퇴일'], ['category', '회원구분'], ['subCategory', '종류'], ['memberType', '가입유형'], ['name', '이름'], ['email', '이메일'], ['phone', '휴대폰'], ['userId', '아이디'],
       ['nickname', '닉네임'], ['gender', '성별'], ['birth', '생일'], ['age', '나이(만)'],   // 미입력은 빈칸
       ['grade', '회원등급'], ['marketingSms', 'SMS수신'], ['marketingEmail', '메일수신'], ['joinDate', '가입일'],
       ['lastLogin', '최근접속일'],
@@ -1601,7 +1653,7 @@
       lines.push(cols.map(([k]) => {
         if (k in usage) return cell(usage[k]);
         if (k === 'marketingSms' || k === 'marketingEmail') return cell(m[k] === 'Y' ? '동의' : '거부');
-        if (k === 'phone') return cell('\t' + m[k]);  // 엑셀에서 앞자리 0 유지
+        if (k === 'phone') return cell(m.withdrawn ? m[k] : '\t' + m[k]);  // 엑셀에서 앞자리 0 유지 (탈퇴 회원은 '파기됨')
         if (k === 'memos') return cell(m.memos.map(x => `${x.text} (${x.at} ${x.by})`).join(' / '));
         if (k === 'age') return cell(ageOf(m.birth) ?? '');   // 숫자만 → 엑셀 정렬·필터 가능
         return cell(m[k]);
