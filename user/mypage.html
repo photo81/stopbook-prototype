@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 마이페이지 - 회원정보 수정</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="../admin/feedback.css?v=20261015-2"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
+<link rel="stylesheet" href="../admin/feedback.css?v=20261019-1"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
 <style>
   /* 쇼핑몰(고객) 화면 — 회원가입(signup.html)과 같은 톤앤매너·토큰·입력 요소 사용 */
   :root {
@@ -271,7 +271,20 @@
   .auth-body { flex: 1; overflow: auto; padding: 4px 32px 32px; scrollbar-width: thin; }
   .auth .view-title { font-size: 18px; font-weight: 700; margin: 0 0 4px; }
   .auth .view-sub { color: var(--ink-2); font-size: 13.5px; margin: 0 0 18px; }
+  #lvLogin { padding-top: 20px; }
   #lvLogin .field, #lvSns .field { margin-bottom: 8px; }
+  /* 모달 첫 화면 (signup.html과 같음) */
+  .auth-start { text-align: center; padding: 8px 0 4px; }
+  .auth-logo { margin: 4px 0 32px; line-height: 0; }
+  .auth-logo:focus { outline: none; }
+  .auth-logo img { display: inline-block; width: 132px; height: auto; }
+  .auth-main { display: grid; gap: 8px; }
+  .auth-main .btn-line { border-color: var(--line-2); color: var(--ink); }
+  .auth-main .btn-line:hover { border-color: var(--ink-3); background: #fff; }
+  .auth-start .divider { margin: 28px 0 24px; }
+  .auth-links { display: flex; justify-content: center; margin: 32px 0 0; font-size: 13px; }
+  .auth-links a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+  .auth-links a:hover { color: var(--ink); }
   .login-save { font-size: 13px; color: var(--ink-2); align-items: center; margin: 12px 0 16px; width: fit-content; }
   .login-save .box { width: 18px; height: 18px; border-radius: 5px; margin-top: 0; }
   .login-links { display: flex; justify-content: center; align-items: center; gap: 14px; margin: 18px 0 0; font-size: 13px; }
@@ -300,6 +313,39 @@
   @media (max-width: 560px) {
     .auth { width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0; }
     .auth-body { padding: 4px 20px 28px; }
+  }
+
+  /* ===== 회원 탈퇴 ===== */
+  .wd-tiles { margin: 0 0 16px; }
+  .wd-tiles .tile { background: var(--field); }
+  .wd-notes { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13px; color: var(--ink-2); line-height: 1.6; }
+  .wd-notes li { position: relative; padding-left: 12px; }
+  .wd-notes li::before { content: "·"; position: absolute; left: 2px; color: var(--ink-3); }
+  .wd-notes b { color: var(--danger); }
+  .wd-block { margin: 16px 0 0; }
+  .wd-policy { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .wd-policy th, .wd-policy td { padding: 10px 12px; border-top: 1px solid var(--line); text-align: left; vertical-align: top; line-height: 1.6; }
+  .wd-policy tr:last-child th, .wd-policy tr:last-child td { border-bottom: 1px solid var(--line); }
+  .wd-policy th { width: 120px; color: var(--ink-2); font-weight: 600; background: var(--field); }
+  .wd-policy .muted { color: var(--ink-3); font-size: 12.5px; }
+  .wd-reasons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; font-size: 13.5px; }
+  .wd-reasons .check input[type=radio] + .box { border-radius: 50%; }
+  .wd-etc { display: block; width: 100%; min-height: 88px; margin-top: 14px; padding: 10px 14px; border: 1px solid transparent; border-radius: var(--radius-md); background: var(--field); font: inherit; font-size: 13.5px; resize: vertical; outline: none; transition: border-color .15s, background .15s, box-shadow .15s; }
+  .wd-etc::placeholder { color: #B9B2AC; }
+  .wd-etc:focus { background: #fff; border-color: var(--brand); box-shadow: 0 0 0 3px var(--ring); }
+  .wd-etc.invalid { background: #fff; border-color: var(--danger); }
+  #wdEtcCount { text-align: right; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { background: #B83826; }
+  .btn-danger:disabled { background: var(--tonal); color: #BDB6B0; cursor: not-allowed; }
+  .actions .btn-danger { flex: 1; }
+  .actions a.btn-line { color: var(--ink); }
+  .wd-done { text-align: center; }
+  .wd-done .ico { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; margin: 4px auto 12px; background: var(--brand-soft); color: var(--brand); font-size: 22px; font-weight: 800; }
+  .wd-done > h2 { justify-content: center; }
+  @media (max-width: 480px) {
+    .wd-reasons { grid-template-columns: minmax(0, 1fr); }
+    .wd-policy th { width: 84px; }
   }
 
   .toast { z-index: 10; position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 20px); background: rgba(31,27,25,.92); color: #fff; font-size: 13.5px; padding: 12px 18px; border-radius: var(--radius-md); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 32px); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
@@ -408,6 +454,50 @@
         <button type="button" class="btn btn-prov" id="gSnsBtn"></button>
       </div>
       <div class="gate-links"><a class="btn-text" href="signup.html#find-pw" id="gFindLink" data-go-login hidden>비밀번호가 기억나지 않나요?</a></div>
+    </section>
+
+    <!-- 회원 탈퇴 (요구사항 PRD_MEM_010): 비밀번호 확인 → 안내 확인 · 사유 선택 · 동의 → 최종 확인 → 완료 -->
+    <div id="viewWithdraw" hidden>
+      <section class="card">
+        <h2>탈퇴 전 꼭 확인해 주세요</h2>
+        <p class="card-sub">탈퇴하면 보유한 혜택이 모두 소멸되며, 다시 가입해도 복구되지 않습니다.</p>
+        <div class="home-tiles wd-tiles" id="wdTiles"></div>
+        <ul class="wd-notes" id="wdNotes"></ul>
+        <div class="form-error wd-block" id="wdBlock" role="alert" hidden></div>
+      </section>
+      <section class="card">
+        <h2>개인정보 처리 안내</h2>
+        <table class="wd-policy">
+          <tr><th scope="row">즉시 파기</th><td>이름, 이메일, 휴대폰 번호, 생년월일, 성별, 닉네임, 주소, 관심분야, 비밀번호·로그인 기록, 마케팅 수신 동의, 장바구니·작업물, 보유 혜택</td></tr>
+          <tr><th scope="row">법령에 따라 보관</th><td>주문·결제·배송 기록 5년, 소비자 불만·분쟁 처리 기록 3년 (전자상거래법)<br><span class="muted">보관 기간 동안 분리 보관하며, 법령에서 정한 경우 외에는 열람·이용하지 않습니다.</span></td></tr>
+          <tr><th scope="row">재가입</th><td id="wdRejoin"></td></tr>
+        </table>
+      </section>
+      <section class="card">
+        <h2 id="wdReasonTitle">탈퇴 사유</h2>
+        <p class="card-sub" id="wdReasonSub"></p>
+        <div class="wd-reasons" id="wdReasons" role="group" aria-labelledby="wdReasonTitle"></div>
+        <textarea class="wd-etc" id="wdEtc" maxlength="200" aria-label="탈퇴 의견"></textarea>
+        <p class="hint" id="wdEtcCount">0 / 200</p>
+        <p class="msg" id="mWdReason" aria-live="polite"></p>
+      </section>
+      <section class="card">
+        <label class="check"><input type="checkbox" id="wdAgree"><span class="box" aria-hidden="true"></span><span>안내 사항을 모두 확인했으며, 회원 탈퇴에 동의합니다.</span></label>
+        <p class="msg" id="mWdAgree" aria-live="polite"></p>
+      </section>
+      <div class="form-error" id="wdError" role="alert" hidden style="margin-top:14px"></div>
+      <div class="actions">
+        <a class="btn btn-line" href="mypage.html">취소</a>
+        <button type="button" class="btn btn-danger" id="wdSubmit">탈퇴하기</button>
+      </div>
+    </div>
+
+    <!-- 탈퇴 완료 -->
+    <section class="card gate wd-done" id="viewWithdrawDone" hidden>
+      <div class="ico" aria-hidden="true">✓</div>
+      <h2>회원 탈퇴가 완료되었습니다</h2>
+      <p class="card-sub" id="wdDoneSub"></p>
+      <a class="btn btn-primary btn-block" href="signup.html">스탑북 홈으로</a>
     </section>
 
     <!-- 회원정보 수정 -->
@@ -565,7 +655,7 @@
       </div>
       <div class="leave">
         <span>더 이상 스탑북을 이용하지 않으시나요?</span>
-        <button type="button" class="btn-text" data-todo="회원 탈퇴">회원 탈퇴</button>
+        <a class="btn-text" href="#withdraw">회원 탈퇴</a>
       </div>
     </form>
   </main>
@@ -580,8 +670,19 @@
   </div>
   <div class="auth-body">
     <!-- 스탑북 회원 로그인 -->
-    <section id="lvLogin">
-      <p class="view-sub">마이페이지는 로그인 후 이용할 수 있습니다.</p>
+    <!-- 첫 화면: 회원가입 화면(signup.html)의 로그인/회원가입 모달 첫 화면과 같음 -->
+    <section class="auth-start" id="lvStart">
+      <h2 class="auth-logo" id="lgLogo" tabindex="-1"><img src="images/logo-stopbook.png" alt="STOPBOOK" width="376" height="54"></h2>
+      <div class="auth-main">
+        <button type="button" class="btn btn-primary btn-block" id="lgToLogin">스탑북 회원 로그인</button>
+        <a class="btn btn-line btn-block" href="signup.html#signup">스탑북 회원 가입</a>
+      </div>
+      <hr class="divider">
+      <div class="sns-row" data-sns-row></div>
+      <div class="auth-links"><a href="signup.html#find-id" data-go-login>내 로그인 정보 찾기</a></div>
+    </section>
+
+    <section id="lvLogin" hidden>
       <form id="loginForm" novalidate>
         <div class="field"><input type="text" id="lId" autocomplete="username" placeholder="이메일 또는 아이디" aria-label="이메일 또는 아이디"></div>
         <div class="field pw-field">
@@ -596,10 +697,10 @@
       <div class="login-links">
         <a href="signup.html#find-id" data-go-login>내 로그인 정보 찾기</a><span aria-hidden="true"></span>
         <a href="signup.html#find-pw" data-go-login>비밀번호 찾기</a><span aria-hidden="true"></span>
-        <a href="signup.html#join">회원가입</a>
+        <a href="signup.html#signup">회원가입</a>
       </div>
       <hr class="divider">
-      <div class="sns-row" id="lgSnsRow"></div>
+      <div class="sns-row" data-sns-row></div>
     </section>
 
     <!-- SNS 로그인 화면 (가상) -->
@@ -654,11 +755,11 @@
 
 <!-- 회원 데이터·로그인 정보는 관리자 화면(admin)과 같은 저장소(localStorage) 사용 → 수정 내용이 관리자 회원 상세·변경 히스토리에 반영
      TODO: 실서비스에서는 회원 API로 대체 -->
-<script src="../admin/member-type-store.js?v=20261015-2"></script>
-<script src="../admin/mileage-types.js?v=20261015-2"></script>
-<script src="../admin/message-store.js?v=20261015-2"></script>
-<script src="../admin/member-data.js?v=20261015-2"></script>
-<script src="../admin/feedback.js?v=20261015-2"></script>
+<script src="../admin/member-type-store.js?v=20261019-1"></script>
+<script src="../admin/mileage-types.js?v=20261019-1"></script>
+<script src="../admin/message-store.js?v=20261019-1"></script>
+<script src="../admin/member-data.js?v=20261019-1"></script>
+<script src="../admin/feedback.js?v=20261019-1"></script>
 <!-- 카카오 우편번호 서비스: https://postcode.map.kakao.com/guide (file://에서도 열리도록 https 사용)
      가이드 기준 현재 주소(t1.kakaocdn.net)·이름(kakao.Postcode) 사용 (예전 다음 주소 t1.daumcdn.net에서는 결과 선택이 되지 않는 문제가 있었음) -->
 <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
@@ -679,7 +780,7 @@
 
   const MD = window.MemberData;
   // 브라우저에 예전 공통 파일(member-data.js 등)이 캐시돼 있으면 필요한 기능이 없어 화면이 비어 버림 → 새로 고침 안내
-  if (!MD || !MD.Auth || !MD.Auth.verifyPassword || !MD.updateProfile || !MD.INTERESTS) {
+  if (!MD || !MD.Auth || !MD.Auth.verifyPassword || !MD.updateProfile || !MD.INTERESTS || !MD.withdraw || !window.MemberTypeStore || !MemberTypeStore.WithdrawStore) {
     const card = $('viewNeedLogin');
     card.innerHTML = '<h2>화면을 불러오지 못했습니다</h2><p class="card-sub">브라우저에 예전 파일이 남아 있습니다. <b>Ctrl+F5</b>(맥: <b>Cmd+Shift+R</b>)로 새로 고쳐 주세요.</p><button type="button" class="btn btn-primary btn-block" onclick="location.reload()">새로 고침</button>';
     card.hidden = false;
@@ -726,30 +827,44 @@
   const validPhone = v => /^01[016789]\d{7,8}$/.test(digits(v));
   const validEmail = v => /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(v);
   const maskPhone = p => String(p).replace(/^(\d{3})-?\d{3,4}-?(\d{4})$/, '$1-****-$2');
-  const show = view => ['viewNeedLogin', 'viewHome', 'viewGate', 'editForm'].forEach(id => { $(id).hidden = id !== view; });
+  const show = view => ['viewNeedLogin', 'viewHome', 'viewGate', 'editForm', 'viewWithdraw', 'viewWithdrawDone'].forEach(id => { $(id).hidden = id !== view; });
 
-  // ===== 화면 주소: mypage.html = 마이페이지 첫 화면(요약) / mypage.html#edit = 회원정보 수정 =====
-  const isEditRoute = () => location.hash === '#edit';
-  function setPage(edit) {
-    $('pageTitle').textContent = edit ? '회원정보 수정' : '마이페이지';
-    $('pageSub').textContent = edit ? '고객님의 정보를 확인하고 수정할 수 있습니다.' : '고객님의 혜택과 정보를 한눈에 확인할 수 있습니다.';
-    document.title = `스탑북 마이페이지${edit ? ' - 회원정보 수정' : ''}`;
-    if (edit) $('navEdit').setAttribute('aria-current', 'page'); else $('navEdit').removeAttribute('aria-current');
-    if (edit) $('navHome').removeAttribute('aria-current'); else $('navHome').setAttribute('aria-current', 'page');
+  // ===== 화면 주소: mypage.html = 마이페이지 첫 화면(요약) / #edit = 회원정보 수정 / #withdraw = 회원 탈퇴 =====
+  const routeOf = () => (location.hash === '#edit' ? 'edit' : location.hash === '#withdraw' ? 'withdraw' : 'home');
+  const isEditRoute = () => routeOf() === 'edit';
+  const PAGES = {
+    home: ['마이페이지', '고객님의 혜택과 정보를 한눈에 확인할 수 있습니다.'],
+    edit: ['회원정보 수정', '고객님의 정보를 확인하고 수정할 수 있습니다.'],
+    withdraw: ['회원 탈퇴', '탈퇴 전 안내 사항을 꼭 확인해 주세요.']
+  };
+  // 회원 탈퇴는 사이드 메뉴 없이 회원정보 수정 하단 링크로만 들어감 → 탈퇴 화면에서도 '회원정보 수정' 선택 표시
+  const NAV = { home: 'navHome', edit: 'navEdit', withdraw: 'navEdit' };
+  function setPage(r) {
+    $('pageTitle').textContent = PAGES[r][0];
+    $('pageSub').textContent = PAGES[r][1];
+    document.title = `스탑북 마이페이지${r === 'home' ? '' : ` - ${PAGES[r][0]}`}`;
+    ['navHome', 'navEdit'].forEach(id => { if (NAV[r] === id) $(id).setAttribute('aria-current', 'page'); else $(id).removeAttribute('aria-current'); });
   }
-  // 로그인 상태에서 주소에 맞는 화면 열기. 회원정보 수정은 들어올 때마다 비밀번호 확인(B9)
+  // 로그인 상태에서 주소에 맞는 화면 열기. 회원정보 수정·회원 탈퇴는 들어올 때마다 비밀번호 확인(B9)
   function route() {
-    const edit = isEditRoute();
-    setPage(edit);
+    const r = routeOf();
+    setPage(r);
+    if (me && MD.isWithdrawnStored(me.no)) { signOutWithdrawn(); return; }   // 다른 탭에서 탈퇴한 경우
     if (!me) { show('viewNeedLogin'); return; }
-    if (edit) openGate(); else renderHome();
+    if (r === 'home') renderHome(); else openGate();
     window.scrollTo(0, 0);
+  }
+  // 비밀번호(간편 로그인은 SNS 계정) 확인 뒤 주소에 맞는 화면으로
+  function afterGate() {
+    if (MD.isWithdrawnStored(me.no)) { signOutWithdrawn(); return; }
+    if (routeOf() === 'withdraw') openWithdraw(); else openEdit();
   }
   window.addEventListener('hashchange', () => { if (!loginDlg.open) route(); });
 
   // ===== 로그인 상태 (signup.html과 같은 sessionStorage 사용) =====
   let me = null;
-  try { const no = Number(sessionStorage.getItem(SESSION_KEY)); me = (no && MD.members.find(x => x.no === no)) || null; } catch (e) { /* 무시 */ }
+  // 탈퇴한 회원의 로그인 상태가 남아 있으면 로그아웃 처리
+  try { const no = Number(sessionStorage.getItem(SESSION_KEY)); me = (no && MD.members.find(x => x.no === no && !x.withdrawn)) || null; if (no && !me) sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* 무시 */ }
   const sns = () => snsCodeOf(me);
 
   function renderUtil() {
@@ -776,23 +891,35 @@
   const SAVED_ID_KEY = 'stopbook.savedLoginId';
   const loginDlg = $('loginDlg');
   const loginEnv = () => (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'MO' : 'PC');
-  const LG_VIEWS = { login: 'lvLogin', sns: 'lvSns', pw: 'lvPw' };
-  const LG_TITLE = { login: '스탑북 회원 로그인', sns: '', pw: '비밀번호 변경' };
+  // 화면: start(첫 화면, signup.html과 같음) → login(스탑북 회원 로그인) / sns(가상) → [임시·90일] pw
+  const LG_VIEWS = { start: 'lvStart', login: 'lvLogin', sns: 'lvSns', pw: 'lvPw' };
+  const LG_TITLE = { start: '', login: '스탑북 회원 로그인', sns: '', pw: '비밀번호 변경' };
   const PROV = {
     kakao: { title: '카카오계정으로 로그인', sub: '스탑북에서 카카오계정으로 로그인합니다.', idPh: '카카오메일 아이디, 이메일, 전화번호', domain: 'kakao.com' },
     naver: { title: '네이버 아이디로 로그인', sub: '네이버 아이디로 스탑북에 로그인합니다.', idPh: '아이디 또는 전화번호', domain: 'naver.com' },
     google: { title: 'Google 계정으로 로그인', sub: 'Stopbook(으)로 이동', idPh: '이메일 또는 휴대전화', domain: 'gmail.com' }
   };
-  const lg = { view: 'login', sns: '', pwMember: null, pwKind: '' };
+  const lg = { view: 'start', from: 'start', sns: '', pwMember: null, pwKind: '' };
   function lgGo(view) {
+    if (view === 'sns') lg.from = lg.view;   // SNS 화면에서 [‹]를 누르면 들어온 화면으로
     lg.view = view;
     Object.entries(LG_VIEWS).forEach(([k, id]) => { $(id).hidden = k !== view; });
-    $('lgBack').hidden = view !== 'sns';
+    $('lgBack').hidden = !['login', 'sns'].includes(view);
     $('lgTitle').textContent = LG_TITLE[view];
   }
-  $('lgSnsRow').innerHTML = Object.keys(PROV).map(c => `<button type="button" class="sns-item" data-lg-sns="${c}"><span class="sns-circle ${c}">${SNS_ICON[c]}</span>${SNS_LABEL[c]}</button>`).join('');
+  // 첫 화면·로그인 화면에 같은 SNS 아이콘
+  document.querySelectorAll('#loginDlg [data-sns-row]').forEach(row => {
+    row.innerHTML = Object.keys(PROV).map(c => `<button type="button" class="sns-item" data-lg-sns="${c}"><span class="sns-circle ${c}">${SNS_ICON[c]}</span>${SNS_LABEL[c]}</button>`).join('');
+  });
 
+  // 로그인/회원가입 모달: 회원가입 화면과 같이 첫 화면부터
   function openLogin() {
+    lgGo('start');
+    if (!loginDlg.open) loginDlg.showModal();
+    $('lgLogo').focus();   // 처음 포커스는 로고에 (닫기 버튼에 포커스 테두리가 생기지 않게)
+  }
+  // 첫 화면 > [스탑북 회원 로그인]
+  function openLoginForm() {
     let saved = '';
     try { saved = localStorage.getItem(SAVED_ID_KEY) || ''; } catch (e) { /* 저장 불가 */ }
     $('lId').value = saved; $('lSave').checked = !!saved; $('lPw').value = '';
@@ -800,11 +927,11 @@
     $('mLogin').hidden = true;
     ['lId', 'lPw'].forEach(id => markInvalid(id, false));
     lgGo('login');
-    if (!loginDlg.open) loginDlg.showModal();
     ($('lId').value ? $('lPw') : $('lId')).focus();
   }
+  $('lgToLogin').addEventListener('click', openLoginForm);
   $('lgClose').addEventListener('click', () => loginDlg.close());
-  $('lgBack').addEventListener('click', () => lgGo('login'));
+  $('lgBack').addEventListener('click', () => lgGo(lg.view === 'sns' ? lg.from : 'start'));
   $('lPwToggle').addEventListener('click', () => {
     const on = $('lPw').type === 'password';
     $('lPw').type = on ? 'text' : 'password';
@@ -819,8 +946,9 @@
     me = m;
     loginDlg.close();
     renderUtil();
-    // 방금 로그인으로 비밀번호(SNS 계정)를 확인했으므로 회원정보 수정은 재확인 없이 바로 진입
-    if (isEditRoute()) { setPage(true); openEdit(); } else route();
+    // 방금 로그인으로 비밀번호(SNS 계정)를 확인했으므로 회원정보 수정·회원 탈퇴는 재확인 없이 바로 진입
+    const r = routeOf();
+    if (r === 'home') route(); else { setPage(r); afterGate(); }
     toast(msg || `${m.name}님, 반갑습니다.`);
   }
 
@@ -846,7 +974,7 @@
 
   // SNS 로그인 (가상): 그 SNS로 가입한 회원(같은 이메일·같은 가입유형)이면 로그인, 아니면 회원가입 안내
   // TODO: 실서비스에서는 각 SNS OAuth 로그인 창 → 콜백의 SNS 식별값으로 회원 확인
-  $('lgSnsRow').addEventListener('click', e => {
+  loginDlg.addEventListener('click', e => {
     const b = e.target.closest('[data-lg-sns]');
     if (!b) return;
     const code = b.dataset.lgSns, p = PROV[code];
@@ -873,7 +1001,7 @@
       completeLogin(dup.member, `${dup.member.name}님, ${SNS_LABEL[code]} 계정으로 로그인되었습니다.`);
       return;
     }
-    $('mProv').innerHTML = `${esc(SNS_LABEL[code])} 계정으로 가입한 회원 정보가 없습니다.<small><a href="signup.html#join">회원가입</a> 후 이용해 주세요.</small>`;
+    $('mProv').innerHTML = `${esc(SNS_LABEL[code])} 계정으로 가입한 회원 정보가 없습니다.<small><a href="signup.html#signup">회원가입</a> 후 이용해 주세요.</small>`;
     $('mProv').hidden = false;
   });
 
@@ -928,6 +1056,9 @@
       $('gPw').value = '';
       markInvalid('gPw', false);
     }
+    if (routeOf() === 'withdraw') {
+      $('gateSub').textContent = code ? `회원 탈퇴를 위해 ${SNS_LABEL[code]} 계정으로 한 번 더 확인해 주세요.` : '회원 탈퇴를 위해 비밀번호를 한 번 더 입력해 주세요.';
+    }
     show('viewGate');
     if (!code) $('gPw').focus();
   }
@@ -947,10 +1078,10 @@
     if (r.error === 'locked') { gateError(`비밀번호를 ${A.LOCK_FAILS}회 잘못 입력해 <b>${esc(r.until.slice(11))}</b>까지 확인이 제한됩니다.<small>비밀번호가 기억나지 않으면 로그인 화면의 비밀번호 찾기에서 임시 비밀번호를 받아 주세요.</small>`); return; }
     if (r.error === 'unset') { gateError('비밀번호가 설정되지 않은 계정입니다.<small>로그인 화면의 비밀번호 찾기에서 임시 비밀번호를 받아 주세요.</small>'); return; }
     if (r.error) { gateError(`비밀번호가 맞지 않습니다.${r.fails >= 2 ? ` (${r.fails}/${A.LOCK_FAILS}회)` : ''}<small>${A.LOCK_FAILS}회 틀리면 ${A.LOCK_MINUTES}분 동안 로그인과 확인이 제한됩니다.</small>`); $('gPw').select(); return; }
-    openEdit();
+    afterGate();
   });
   // TODO: 실서비스에서는 해당 SNS의 재인증(OAuth reauthenticate/prompt=login) 후 콜백에서 본인 여부 확인
-  $('gSnsBtn').addEventListener('click', () => { toast(`${SNS_LABEL[sns()]} 계정 확인이 완료되었습니다.`); openEdit(); });
+  $('gSnsBtn').addEventListener('click', () => { toast(`${SNS_LABEL[sns()]} 계정 확인이 완료되었습니다.`); afterGate(); });
 
   // ===== 2) 회원정보 수정 =====
   // 광고성 정보 수신 동의는 마케팅 목적 개인정보 수집·이용 동의가 있어야 함 (가입 화면과 같은 규칙)
@@ -1306,6 +1437,7 @@
   // ----- 저장 -----
   $('editForm').addEventListener('submit', e => {
     e.preventDefault();
+    if (MD.isWithdrawnStored(me.no)) { signOutWithdrawn(); return; }   // 다른 탭에서 탈퇴한 계정
     $('formError').hidden = true;
     const m = me, code = sns();
     const fields = {}, logs = [], told = [];
@@ -1374,6 +1506,7 @@
     if (logs.length) {
       const oldId = m.userId;
       const res = MD.updateProfile(m.no, fields, logs, '회원');
+      if (res.withdrawn) { signOutWithdrawn(); return; }   // 다른 탭에서 탈퇴한 계정
       if (res.error) { $('formError').textContent = res.error; $('formError').hidden = false; return; }
       // 로그인 화면의 '이메일(아이디) 저장' 값도 새 아이디로
       try { if (fields.userId && localStorage.getItem('stopbook.savedLoginId') === oldId) localStorage.setItem('stopbook.savedLoginId', fields.userId); } catch (err) { /* 무시 */ }
@@ -1400,6 +1533,126 @@
   $('btnReset').addEventListener('click', () => {
     if (!confirm('입력한 내용을 취소하고 저장된 정보로 되돌릴까요?')) return;
     fillForm(); window.scrollTo(0, 0);
+  });
+
+  // ===== 3) 회원 탈퇴 (요구사항 PRD_MEM_010) =====
+  // 탈퇴 즉시 개인정보 파기 · 회원 목록에는 '탈퇴' 상태로 남김 (파기·보관·표기 기준: member-data.js 회원 탈퇴 주석)
+  //   탈퇴 사유·필수 여부·복수 선택·재가입 제한 기간은 관리자 > 회원 유형 관리 > 탈퇴회원(자진탈퇴) 설정을 따름
+  //   진행 중인 주문(입금대기·주문완료·제작중, 결제 미완료)이 있으면 탈퇴 불가 (MemberData.withdrawCheck)
+  // TODO: 실서비스에서는 GET /api/members/me/withdraw-check, POST /api/members/me/withdraw
+  const wd = { type: null, reasons: [], required: false };
+  const ETC_PH = { opt: '서비스 개선에 참고할 의견을 남겨 주세요. (선택)', req: '기타 사유를 입력해 주세요. (필수)' };
+  function openWithdraw() {
+    const m = me, chk = MD.withdrawCheck(m);
+    const { data, type } = MD.withdrawType();
+    const c = Object.assign({ reasonMode: 'optional', multi: true, rejoinDays: 0 }, type.cond);
+    wd.type = type;
+    wd.reasons = data ? data.reasons.filter(r => r.type === type.code && !r.hidden) : [];
+    // 사유 방식: required(필수) / optional(선택) / auto(사용 중인 첫 번째 사유를 자동 지정 → 사유 선택 없이 의견만)
+    wd.auto = c.reasonMode === 'auto' && wd.reasons.length > 0;
+    wd.required = c.reasonMode === 'required' && wd.reasons.length > 0;
+    wd.multi = !!c.multi;
+    const showReasons = wd.reasons.length && !wd.auto;
+
+    // 소멸 혜택
+    $('wdTiles').innerHTML = [['P', '마일리지', won(chk.mileage), 'P'], ['%', '쿠폰', won(chk.coupons), '장'], ['원', '상품권', won(chk.giftCard), '원']]
+      .map(([i, k, v, u]) => `<div class="tile"><div class="k"><i aria-hidden="true">${i}</i>${k}</div><div class="v">${v}<small>${u}</small></div></div>`).join('');
+    const kinds = chk.cart.length;
+    $('wdNotes').innerHTML = [
+      '마일리지·쿠폰·상품권은 탈퇴 즉시 <b>소멸</b>되며 복구할 수 없습니다.',
+      kinds ? `장바구니에 담긴 상품 <b>${kinds}종</b>과 편집 중인 작업물이 삭제됩니다.` : '장바구니와 편집 중인 작업물이 삭제됩니다.',
+      chk.waitingInquiries.length ? `답변을 기다리는 1:1 문의 <b>${chk.waitingInquiries.length}건</b>의 답변을 받을 수 없습니다.` : '',
+      chk.shipping.length ? `배송 중인 주문 <b>${chk.shipping.length}건</b>은 그대로 배송되지만, 탈퇴 후에는 교환·반품을 마이페이지에서 신청할 수 없습니다. 고객센터(080-860-1119)로 문의해 주세요.` : '',
+      sns() ? `${SNS_LABEL[sns()]} 계정 연결이 해제되며, 같은 계정으로 다시 로그인할 수 없습니다.` : '같은 아이디(이메일)로 다시 로그인할 수 없습니다.'
+    ].filter(Boolean).map(t => `<li>${t}</li>`).join('');
+    // 탈퇴를 막는 주문
+    const block = chk.blocking;
+    $('wdBlock').hidden = !block.length;
+    $('wdBlock').innerHTML = block.length ? `<b>진행 중인 주문 ${block.length}건이 있어 지금은 탈퇴할 수 없습니다.</b><br>
+      ${block.slice(0, 3).map(o => `· ${esc(o.at)} ${esc(o.title || '주문')} (${esc(o.status || o.payStatus)}${WAITING_PAY.includes(o.payStatus) && o.status !== o.payStatus ? ` · ${esc(o.payStatus)}` : ''})`).join('<br>')}${block.length > 3 ? `<br>· 외 ${block.length - 3}건` : ''}<br>
+      주문을 취소하거나 결제를 마치고, 상품 배송이 시작된 뒤 다시 신청해 주세요.` : '';
+    $('wdSubmit').disabled = !!block.length;
+    $('wdRejoin').textContent = c.rejoinDays
+      ? `탈퇴 후 ${c.rejoinDays.toLocaleString()}일 동안은 같은 이메일·휴대폰 번호로 다시 가입할 수 없습니다. 다시 가입해도 이전 혜택·주문 내역은 이어지지 않습니다.`
+      : '탈퇴 후 바로 다시 가입할 수 있습니다. 다시 가입해도 이전 혜택·주문 내역은 이어지지 않습니다.';
+
+    // 탈퇴 사유
+    $('wdReasonTitle').innerHTML = showReasons ? `탈퇴 사유 <small>${wd.required ? '필수' : '선택'}</small>` : '남기실 의견 <small>선택</small>';
+    $('wdReasonSub').textContent = showReasons
+      ? `${wd.multi ? '해당하는 사유를 모두 골라 주세요.' : '가장 큰 사유 하나를 골라 주세요.'} 서비스 개선에 참고하겠습니다.`
+      : '서비스 개선에 참고할 의견이 있다면 남겨 주세요.';
+    $('wdReasons').hidden = !showReasons;
+    const item = (type, value, label, etc) => `<label class="check"><input type="${type}" name="wdReason" value="${esc(value)}"${etc ? ' data-etc' : ''}><span class="box" aria-hidden="true"></span><span>${esc(label)}</span></label>`;
+    $('wdReasons').innerHTML = !showReasons ? '' : wd.reasons.map(r => item(wd.multi ? 'checkbox' : 'radio', r.code, r.name, r.etcInput)).join('')
+      // 선택 사항인데 하나만 고르는 방식이면 고른 사유를 되돌릴 수 있게 '선택 안 함'
+      + (!wd.required && !wd.multi ? item('radio', '', '선택 안 함') : '');
+    $('wdEtc').value = ''; $('wdEtc').placeholder = ETC_PH.opt; markInvalid('wdEtc', false);
+    $('wdEtcCount').textContent = '0 / 200';
+    $('wdAgree').checked = false;
+    setMsg('mWdReason', ''); setMsg('mWdAgree', '');
+    $('wdError').hidden = true;
+    show('viewWithdraw');
+    window.scrollTo(0, 0);
+  }
+  const WAITING_PAY = ['입금대기', '후결제대기', '부분결제'];
+  const wdPicked = () => [...$('wdReasons').querySelectorAll('input:checked')].filter(b => b.value);   // '선택 안 함'(값 없음) 제외
+  const etcPicked = () => wdPicked().some(b => b.hasAttribute('data-etc'));
+  $('wdReasons').addEventListener('change', () => {
+    $('wdEtc').placeholder = etcPicked() ? ETC_PH.req : ETC_PH.opt;
+    if (!etcPicked()) markInvalid('wdEtc', false);
+    setMsg('mWdReason', '');
+  });
+  // 다른 탭(창)에서 이 계정이 탈퇴되면 이 화면도 로그아웃 (탈퇴 계정으로 정보를 다시 저장하지 않게)
+  function signOutWithdrawn() {
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* 무시 */ }
+    me = null;
+    renderUtil();
+    setPage(routeOf());
+    show('viewNeedLogin');
+    toast('탈퇴 처리된 계정입니다. 다시 로그인해 주세요.');
+  }
+  const goneElsewhere = () => !!me && MD.isWithdrawnStored(me.no);
+  window.addEventListener('storage', e => { if ((e.key === MD.WITHDRAW_KEY || e.key === null) && goneElsewhere()) signOutWithdrawn(); });
+  $('wdEtc').addEventListener('input', () => { markInvalid('wdEtc', false); setMsg('mWdReason', ''); $('wdEtcCount').textContent = `${$('wdEtc').value.length} / 200`; });
+  $('wdAgree').addEventListener('change', () => setMsg('mWdAgree', ''));
+
+  $('wdSubmit').addEventListener('click', () => {
+    const picked = wdPicked(), etc = $('wdEtc').value.trim();
+    $('wdError').hidden = true;
+    if (wd.required && !picked.length) { setMsg('mWdReason', '탈퇴 사유를 선택해 주세요.'); $('wdReasons').scrollIntoView({ block: 'center' }); return; }
+    if (etcPicked() && !etc) { setMsg('mWdReason', '기타 사유를 입력해 주세요.'); markInvalid('wdEtc', true); $('wdEtc').focus(); return; }
+    if (!$('wdAgree').checked) { setMsg('mWdAgree', '안내 사항을 확인하고 동의해 주세요.'); $('wdAgree').focus(); return; }
+    if (!confirm('정말 탈퇴하시겠어요?\n탈퇴하면 개인정보와 보유 혜택이 즉시 삭제되며 되돌릴 수 없습니다.')) return;
+
+    if (goneElsewhere()) { signOutWithdrawn(); return; }
+    // 자동 지정: 사용 중인 첫 번째 사유
+    const codes = wd.auto ? [wd.reasons[0].code] : picked.map(b => b.value);
+    const oldIds = [me.userId, me.email].filter(Boolean).map(v => String(v).toLowerCase());
+    const res = MD.withdraw(me.no, {
+      reasonCodes: codes,
+      reasonLabels: codes.map(c => (wd.reasons.find(r => r.code === c) || { name: c }).name),
+      reasonEtc: etc, channel: loginEnv() === 'MO' ? '모바일' : 'PC', by: '회원'
+    });
+    if (res.withdrawn) { signOutWithdrawn(); return; }
+    if (res.error) {
+      if (res.blocking) openWithdraw();   // 막는 주문 목록을 다시 그린 뒤 오류 표시
+      $('wdError').textContent = res.error; $('wdError').hidden = false;
+      return;
+    }
+    // 로그아웃 + 로그인 화면의 '이메일(아이디) 저장' 값 삭제 (아이디·이메일 어느 쪽으로 저장했든, 대소문자 무시)
+    try {
+      sessionStorage.removeItem(SESSION_KEY);
+      const saved = String(localStorage.getItem(SAVED_ID_KEY) || '').trim().toLowerCase();
+      if (saved && oldIds.includes(saved)) localStorage.removeItem(SAVED_ID_KEY);
+    } catch (err) { /* 무시 */ }
+    me = null;
+    renderUtil();
+    const rec = res.record;
+    $('pageSub').textContent = '';
+    $('wdDoneSub').innerHTML = `${esc(rec.withdrawDate)}에 탈퇴 처리되었습니다. 그동안 스탑북을 이용해 주셔서 감사합니다.<br>
+      개인정보는 모두 파기되었으며, 주문·결제 기록은 관련 법령에 따라 보관 후 파기됩니다.${rec.rejoinUntil ? `<br><b>${esc(rec.rejoinUntil)}</b>부터 같은 이메일·휴대폰 번호로 다시 가입할 수 있습니다.` : ''}`;
+    show('viewWithdrawDone');
+    window.scrollTo(0, 0);
   });
 
   // ===== 시작 =====

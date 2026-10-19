@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 회원가입</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="../admin/feedback.css?v=20261015-2"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
+<link rel="stylesheet" href="../admin/feedback.css?v=20261019-1"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
 <style>
   /* 쇼핑몰(고객) 화면 — 관리자 화면(admin.css)과 별도 스타일
      톤앤매너: 사이트 컬러 팔레트 기준 (따뜻하고 포근한 감성, 글꼴은 모두 고딕 계열 Pretendard)
@@ -572,12 +572,12 @@
 <!-- 회원 유형 설정·회원 데이터·마일리지 유형·메시지 발송 기록을 관리자 화면(admin)과 공유
      localStorage를 함께 쓰므로 두 폴더를 같은 출처(같은 서버 또는 둘 다 file://)로 열어야 관리자 화면에 가입 회원이 보임
      TODO: 실서비스에서는 회원 API로 대체 -->
-<script src="../admin/member-type-store.js?v=20261015-2"></script>
-<script src="../admin/mileage-types.js?v=20261015-2"></script>
-<script src="../admin/message-store.js?v=20261015-2"></script>
-<script src="../admin/member-data.js?v=20261015-2"></script>
+<script src="../admin/member-type-store.js?v=20261019-1"></script>
+<script src="../admin/mileage-types.js?v=20261019-1"></script>
+<script src="../admin/message-store.js?v=20261019-1"></script>
+<script src="../admin/member-data.js?v=20261019-1"></script>
 <!-- 피드백 입력: 관리자 화면과 같은 구글 시트로 전송 (사이트 = 사용자) -->
-<script src="../admin/feedback.js?v=20261015-2"></script>
+<script src="../admin/feedback.js?v=20261019-1"></script>
 <script>
 (function () {
   'use strict';
@@ -973,7 +973,7 @@
     if (!name) { setMsg('mKName', '이름을 입력해 주세요.'); markInvalid('kName', true); $('kName').focus(); return; }
     if (!validEmail(email)) { setMsg('mKEmail', '이메일 주소를 정확히 입력해 주세요.'); markInvalid('kEmail', true); $('kEmail').focus(); return; }
     if (!fk.verified) { setMsg('mKPhone', '휴대폰 번호 인증을 완료해 주세요.'); markInvalid('kPhone', true); return; }
-    const m = MD.members.find(x => String(x.name).replace(/\s+/g, '') === name && String(x.email).toLowerCase() === email.toLowerCase() && digits(x.phone) === fk.verified);
+    const m = MD.members.find(x => !x.withdrawn && String(x.name).replace(/\s+/g, '') === name && String(x.email).toLowerCase() === email.toLowerCase() && digits(x.phone) === fk.verified);
     $('findForm').hidden = true; $('findDesc').hidden = true; $('findResult').hidden = false;
     $('authBody').scrollTop = 0;
     if (!m) { renderFindNone(); return; }
@@ -1208,6 +1208,9 @@
     // 인증을 마친 뒤에 가입 여부를 확인 (본인 확인 전에는 가입 여부를 알려주지 않음)
     const dup = MD.findDuplicate({ phone: $('fPhone').value });
     if (dup) { showExists('휴대폰 번호'); setMsg('mPhone', ''); return; }
+    // 탈퇴 후 재가입 제한 기간 (회원 유형 관리 > 탈퇴회원 설정)
+    const block = MD.rejoinBlock && MD.rejoinBlock({ phone: $('fPhone').value });
+    if (block) { setMsg('mPhone', `탈퇴한 휴대폰 번호입니다. 재가입 제한 기간이 끝나는 ${block.until}부터 다시 가입할 수 있습니다.`); return; }
     state.phoneVerified = digits($('fPhone').value);
     $('sendCode').textContent = '인증 완료'; $('sendCode').disabled = true;
     setMsg('mPhone', '휴대폰 번호 인증이 완료되었습니다.', 'ok');
@@ -1258,6 +1261,8 @@
     if (!validEmail(v)) { setMsg('mEmail', '이메일 주소를 정확히 입력해 주세요.'); markInvalid('fEmail', true); return false; }
     const dup = MD.findDuplicate({ email: v });
     if (dup) { state.emailChecked = ''; setMsg('mEmail', ''); showExists('이메일', 'existsEmail'); markInvalid('fEmail', true); return false; }
+    const block = MD.rejoinBlock && MD.rejoinBlock({ email: v });
+    if (block) { state.emailChecked = ''; setMsg('mEmail', `탈퇴한 이메일입니다. 재가입 제한 기간이 끝나는 ${block.until}부터 다시 가입할 수 있습니다.`); markInvalid('fEmail', true); return false; }
     state.emailChecked = v.toLowerCase();
     markInvalid('fEmail', false);
     setMsg('mEmail', '사용할 수 있는 이메일입니다.', 'ok');
@@ -1392,11 +1397,12 @@
   // 새로고침 시 로그인 상태 복원
   try {
     const no = Number(sessionStorage.getItem(SESSION_KEY));
-    const m = no && MD.members.find(x => x.no === no);
-    if (m) signedIn(m);
+    const m = no && MD.members.find(x => x.no === no && !x.withdrawn);   // 탈퇴한 회원의 로그인 상태는 복원하지 않음
+    if (m) signedIn(m); else if (no) sessionStorage.removeItem(SESSION_KEY);
   } catch (e) { /* 무시 */ }
   // 주소 끝이 #join이면 회원가입 모달을 바로 엶 (다른 화면에서 링크로 열 때)
   if (location.hash === '#join') openAuth();
+  else if (location.hash === '#signup') { openAuth(); startSignup('stopbook'); }   // 마이페이지 모달의 [스탑북 회원 가입]: 정보 입력 단계로 바로
   else if (location.hash === '#login') openLogin('');   // 마이페이지 등에서 로그인이 필요할 때
   else if (location.hash === '#find-id' || location.hash === '#find-pw') openFind(location.hash.slice(6), '');   // 마이페이지 로그인 모달의 찾기 링크
 })();
