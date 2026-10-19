@@ -227,7 +227,6 @@
             <thead>
               <tr>
                 <th class="sortable col-no" data-key="no">번호</th>
-                <th class="sortable" data-key="status">상태</th>
                 <th class="sortable" data-key="name">이름</th>
                 <th>이메일</th>
                 <th>휴대폰</th>
@@ -638,10 +637,10 @@
   const gradeRun = MemberTypeStore.GradeEvaluator.run(members.filter(m => !m.withdrawn), MemberTypeStore.load().find(g => g.key === 'grade'), MemberData.orderStats);
 
   // ===== 회원상태: 정상 / 탈퇴 (요구사항 PRD_MEM_010) =====
-  // 탈퇴 회원도 목록에 남기고 상태만 '탈퇴'로 표시. 개인정보는 member-data.js에서 탈퇴 시점에 파기되어 표기 기준(WITHDRAWN_LABEL) 값으로 보임
+  // 탈퇴 회원도 목록에 남김 (흐린 행, 최근접속일 자리에 '탈퇴 YYYY-MM-DD'). 개인정보는 member-data.js에서 탈퇴 시점에 파기되어 표기 기준(WITHDRAWN_LABEL) 값으로 보임
+  //   목록의 상태 열은 두지 않음 (상세검색 > 회원상태로 정상/탈퇴 구분 검색 가능)
   const WL = MemberData.WITHDRAWN_LABEL;
   members.forEach(m => { if (!m.status) m.status = '정상'; });
-  const statusBadge = m => `<span class="badge ms-${m.status}"${m.withdrawn ? ` title="탈퇴일 ${esc(m.withdrawDate)} · ${esc(m.withdrawType)}"` : ''}>${m.status}</span>`;
   // 파기·열람 제한 값은 흐린 글씨, 빈 값은 '-'
   const pv = v => (v === WL.purged || v === WL.restricted ? `<span class="purged">${esc(v)}</span>` : v ? esc(v) : '<span class="purged">-</span>');
 
@@ -772,7 +771,6 @@
     $('memberBody').innerHTML = rows.length ? rows.map(m => `
       <tr${m.withdrawn ? ' class="row-withdrawn"' : ''}>
         <td>${m.no}</td>
-        <td>${statusBadge(m)}</td>
         <td><a class="name-link" data-no="${m.no}">${esc(m.name)}</a></td>
         <td class="left email" title="${esc(m.email)}">${pv(m.email)}</td>
         <td>${pv(m.phone)}</td>
@@ -784,7 +782,7 @@
         <td>${m.joinDate}</td>
         <td>${m.withdrawn ? `<span class="purged" title="탈퇴 시 접속 기록 파기">탈퇴 ${esc(m.withdrawDate)}</span>` : m.lastLogin}</td>
       </tr>`).join('')
-      : '<tr><td colspan="12" class="empty">검색 결과가 없습니다.</td></tr>';
+      : '<tr><td colspan="11" class="empty">검색 결과가 없습니다.</td></tr>';
 
     document.querySelectorAll('th.sortable').forEach(th => {
       const active = th.dataset.key === state.sortKey;
