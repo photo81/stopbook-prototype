@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 마이페이지 - 회원정보 수정</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="../admin/feedback.css?v=20261019-1"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
+<link rel="stylesheet" href="../admin/feedback.css?v=20261020-6"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
 <style>
   /* 쇼핑몰(고객) 화면 — 회원가입(signup.html)과 같은 톤앤매너·토큰·입력 요소 사용 */
   :root {
@@ -364,7 +364,14 @@
   @media (max-width: 480px) {
     .util ul { gap: 16px; }
     .form-inline .field, .info-list { grid-template-columns: minmax(0, 1fr); }
-    .form-inline .field > label, .form-inline .field > .label { min-height: 0; margin-bottom: 6px; }
+    .form-inline .field > label, .form-inline .field > .label { min-height: 0; margin-bottom: 6px; word-break: keep-all; }
+    /* 한 열로 쌓을 때 입력 요소도 1열에 (2열로 두면 암시적 열이 생겨 라벨이 한 글자씩 줄바꿈됨) */
+    .form-inline .field > :not(label):not(.label) { grid-column: 1; }
+    .form-inline .field .opt { display: inline; width: auto; margin: 0 0 0 4px; }
+    .zip-row { flex-wrap: wrap; }
+    .zip-row input { flex: 1 1 110px !important; }
+    .addr-clear { flex-basis: 100%; text-align: right; }
+    .radio-row span { white-space: nowrap; }
     .info-list dt { padding-bottom: 0; }
     .info-list dd { border-top: 0; padding-top: 2px; }
     .sens-lock { flex-wrap: wrap; }
@@ -512,7 +519,7 @@
         <div class="form-inline" style="margin-top:14px">
           <div class="field">
             <label for="eName">이름<span class="req">*</span></label>
-            <div><input type="text" id="eName" maxlength="20" autocomplete="name"><p class="msg" id="mName" aria-live="polite"></p></div>
+            <div><input type="text" id="eName" maxlength="50" autocomplete="name"><p class="msg" id="mName" aria-live="polite"></p></div>
           </div>
           <div class="field">
             <label for="eBirth">생년월일<span class="req" id="birthReq">*</span><span class="opt" id="birthOpt" hidden>(선택)</span></label>
@@ -675,7 +682,7 @@
       <h2 class="auth-logo" id="lgLogo" tabindex="-1"><img src="images/logo-stopbook.png" alt="STOPBOOK" width="376" height="54"></h2>
       <div class="auth-main">
         <button type="button" class="btn btn-primary btn-block" id="lgToLogin">스탑북 회원 로그인</button>
-        <a class="btn btn-line btn-block" href="signup.html#signup">스탑북 회원 가입</a>
+        <a class="btn btn-line btn-block" href="signup.html#signup" data-go-login>스탑북 회원 가입</a>
       </div>
       <hr class="divider">
       <div class="sns-row" data-sns-row></div>
@@ -697,7 +704,7 @@
       <div class="login-links">
         <a href="signup.html#find-id" data-go-login>내 로그인 정보 찾기</a><span aria-hidden="true"></span>
         <a href="signup.html#find-pw" data-go-login>비밀번호 찾기</a><span aria-hidden="true"></span>
-        <a href="signup.html#signup">회원가입</a>
+        <a href="signup.html#signup" data-go-login>회원가입</a>
       </div>
       <hr class="divider">
       <div class="sns-row" data-sns-row></div>
@@ -755,11 +762,11 @@
 
 <!-- 회원 데이터·로그인 정보는 관리자 화면(admin)과 같은 저장소(localStorage) 사용 → 수정 내용이 관리자 회원 상세·변경 히스토리에 반영
      TODO: 실서비스에서는 회원 API로 대체 -->
-<script src="../admin/member-type-store.js?v=20261019-1"></script>
-<script src="../admin/mileage-types.js?v=20261019-1"></script>
-<script src="../admin/message-store.js?v=20261019-1"></script>
-<script src="../admin/member-data.js?v=20261019-1"></script>
-<script src="../admin/feedback.js?v=20261019-1"></script>
+<script src="../admin/member-type-store.js?v=20261020-6"></script>
+<script src="../admin/mileage-types.js?v=20261020-6"></script>
+<script src="../admin/message-store.js?v=20261020-6"></script>
+<script src="../admin/member-data.js?v=20261020-6"></script>
+<script src="../admin/feedback.js?v=20261020-6"></script>
 <!-- 카카오 우편번호 서비스: https://postcode.map.kakao.com/guide (file://에서도 열리도록 https 사용)
      가이드 기준 현재 주소(t1.kakaocdn.net)·이름(kakao.Postcode) 사용 (예전 다음 주소 t1.daumcdn.net에서는 결과 선택이 되지 않는 문제가 있었음) -->
 <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
@@ -875,7 +882,7 @@
   }
   document.addEventListener('click', e => {
     if (e.target.closest('[data-open-login]')) openLogin();
-    // 찾기 화면(회원가입 화면)으로 가면 로그인 후 이 화면으로 돌아옴 (signup.html completeLogin)
+    // 찾기·회원가입 화면(signup.html)으로 가면 로그인·가입 후 이 화면으로 돌아옴 (signup.html completeLogin·가입 완료)
     if (e.target.closest('[data-go-login]')) { try { sessionStorage.setItem(AFTER_LOGIN_KEY, 'mypage.html'); } catch (err) { /* 무시 */ } }
     if (e.target.closest('#logoutBtn')) {
       try { sessionStorage.removeItem(SESSION_KEY); } catch (err) { /* 무시 */ }
@@ -963,7 +970,8 @@
     if (res.error) {
       // 없는 계정·간편 로그인 계정·비밀번호 틀림을 구분하지 않음 (가입 여부 노출 방지)
       markInvalid('lPw', true);
-      loginError(`이메일(아이디) 또는 비밀번호가 맞지 않습니다.${res.fails >= 2 ? ` (${res.fails}/${A.LOCK_FAILS}회)` : ''}<small>카카오·네이버·구글로 가입하셨다면 아래 간편 로그인을 이용해 주세요.</small>`);
+      //   틀린 횟수는 있는 계정에만 생기므로 표시하지 않음 (가입 여부 노출 방지). 대신 제한 규칙을 안내
+      loginError(`이메일(아이디) 또는 비밀번호가 맞지 않습니다.<small>비밀번호를 ${A.LOCK_FAILS}회 연속 잘못 입력하면 ${A.LOCK_MINUTES}분간 로그인이 제한됩니다. 카카오·네이버·구글로 가입하셨다면 아래 간편 로그인을 이용해 주세요.</small>`);
       $('lPw').select();
       return;
     }
@@ -995,13 +1003,20 @@
     const id = $('provId').value.trim(), pw = $('provPw').value, code = lg.sns;
     if (!id || !pw) { $('mProv').textContent = '아이디와 비밀번호를 입력해 주세요.'; $('mProv').hidden = false; return; }
     const email = id.includes('@') ? id : `${id}@${PROV[code].domain}`;
-    const dup = MD.findDuplicate({ email });
-    if (dup && dup.member.memberType === typeName(code)) {
-      A.recordLogin(dup.member.no, loginEnv());
-      completeLogin(dup.member, `${dup.member.name}님, ${SNS_LABEL[code]} 계정으로 로그인되었습니다.`);
+    // SNS 계정 식별값으로 찾음 (가입 때·마이페이지에서 이메일을 바꾼 회원 포함, member-data.js findSnsMember)
+    const known = MD.findSnsMember(code, email, typeName(code));
+    if (known) {
+      A.recordLogin(known.no, loginEnv());
+      completeLogin(known, `${known.name}님, ${SNS_LABEL[code]} 계정으로 로그인되었습니다.`);
       return;
     }
-    $('mProv').innerHTML = `${esc(SNS_LABEL[code])} 계정으로 가입한 회원 정보가 없습니다.<small><a href="signup.html#signup">회원가입</a> 후 이용해 주세요.</small>`;
+    // 같은 이메일이 다른 방법으로 가입되어 있으면 그 방법으로 로그인 안내 (SNS 로그인으로 이메일 주인임이 확인됨)
+    const other = MD.findDuplicate({ email });
+    const oc = other && snsCodeOf(other.member);
+    $('mProv').innerHTML = !other
+      ? `${esc(SNS_LABEL[code])} 계정으로 가입한 회원 정보가 없습니다.<small><a href="signup.html#signup" data-go-login>회원가입</a> 후 이용해 주세요.</small>`
+      : oc ? `이 이메일은 <b>${esc(SNS_LABEL[oc])}</b> 계정으로 가입되어 있습니다.<small>${esc(SNS_LABEL[oc])} 로그인을 이용해 주세요.</small>`
+        : `이 이메일은 <b>스탑북 회원(이메일 로그인)</b>으로 가입되어 있습니다.<small>스탑북 회원 로그인에서 이메일과 비밀번호로 로그인해 주세요.</small>`;
     $('mProv').hidden = false;
   });
 
@@ -1391,7 +1406,10 @@
   // ----- 검사 (회원가입과 같은 규칙) -----
   function checkName() {
     const v = $('eName').value.trim();
-    const err = !v ? '이름을 입력해 주세요.' : !/^[가-힣a-zA-Z]+( [가-힣a-zA-Z]+)*$/.test(v) || v.length < 2 ? '이름은 한글 또는 영문 2~20자로 입력해 주세요.' : '';
+    // 회원가입과 같은 규칙: 한글 2~20자 또는 영문 2~50자 (영문은 띄어쓰기·하이픈·아포스트로피·마침표 허용)
+    const ko = /[가-힣]/.test(v);
+    const err = !v ? '이름을 입력해 주세요.'
+      : !/^[가-힣a-zA-Z]+([ '’\-.]+[가-힣a-zA-Z]+)*\.?$/.test(v) || v.length < 2 || v.length > (ko ? 20 : 50) ? '이름은 한글 2~20자 또는 영문 2~50자로 입력해 주세요.' : '';
     setMsg('mName', err); markInvalid('eName', err); return !err;
   }
   function checkBirth() {

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 회원가입</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="../admin/feedback.css?v=20261019-1"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
+<link rel="stylesheet" href="../admin/feedback.css?v=20261020-6"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
 <style>
   /* 쇼핑몰(고객) 화면 — 관리자 화면(admin.css)과 별도 스타일
      톤앤매너: 사이트 컬러 팔레트 기준 (따뜻하고 포근한 감성, 글꼴은 모두 고딕 계열 Pretendard)
@@ -357,7 +357,7 @@
     <form id="findForm" class="form-inline" novalidate>
       <div class="field">
         <label for="kName">이름</label>
-        <input type="text" id="kName" maxlength="20" autocomplete="name" placeholder="가입한 이름">
+        <input type="text" id="kName" maxlength="50" autocomplete="name" placeholder="가입한 이름">
         <p class="msg" id="mKName" aria-live="polite"></p>
       </div>
       <div class="field">
@@ -463,7 +463,7 @@
     <form id="infoForm" class="form-inline" novalidate>
       <div class="field">
         <label for="fName">이름<span class="req">*</span></label>
-        <input type="text" id="fName" maxlength="20" autocomplete="name" placeholder="이름을 입력해 주세요">
+        <input type="text" id="fName" maxlength="50" autocomplete="name" placeholder="이름을 입력해 주세요">
         <p class="msg" id="mName" aria-live="polite"></p>
       </div>
 
@@ -572,12 +572,12 @@
 <!-- 회원 유형 설정·회원 데이터·마일리지 유형·메시지 발송 기록을 관리자 화면(admin)과 공유
      localStorage를 함께 쓰므로 두 폴더를 같은 출처(같은 서버 또는 둘 다 file://)로 열어야 관리자 화면에 가입 회원이 보임
      TODO: 실서비스에서는 회원 API로 대체 -->
-<script src="../admin/member-type-store.js?v=20261019-1"></script>
-<script src="../admin/mileage-types.js?v=20261019-1"></script>
-<script src="../admin/message-store.js?v=20261019-1"></script>
-<script src="../admin/member-data.js?v=20261019-1"></script>
+<script src="../admin/member-type-store.js?v=20261020-6"></script>
+<script src="../admin/mileage-types.js?v=20261020-6"></script>
+<script src="../admin/message-store.js?v=20261020-6"></script>
+<script src="../admin/member-data.js?v=20261020-6"></script>
 <!-- 피드백 입력: 관리자 화면과 같은 구글 시트로 전송 (사이트 = 사용자) -->
-<script src="../admin/feedback.js?v=20261019-1"></script>
+<script src="../admin/feedback.js?v=20261020-6"></script>
 <script>
 (function () {
   'use strict';
@@ -637,6 +637,7 @@
       if (i === si) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
     });
     $('authBack').hidden = !['login', 'find', 'sns', 'terms', 'info'].includes(view);
+    if (view === 'info' || view === 'terms') armBackGuard();
     // 상단 가운데 제목: 가입 단계에서는 가입 방법(스탑북 회원 가입 / 카카오로 가입 …), 로그인·비밀번호 변경·찾기는 화면 이름
     const findTitle = state.findMode === 'pw' ? '비밀번호 찾기' : '내 로그인 정보 찾기';
     $('authHeadTitle').textContent = si >= 0 ? METHOD_LABEL[state.method] : view === 'find' ? findTitle : (HEAD_TITLE[view] || '');
@@ -661,12 +662,36 @@
     authDlg.showModal();
     $('authTitle').focus();   // 처음 포커스는 제목에 (닫기 버튼에 포커스 테두리가 생기지 않게)
   }
-  $('authClose').addEventListener('click', () => authDlg.close());
+  // 가입 입력 보호: 정보 입력·약관 동의 중에 Esc·닫기(×)·모바일 뒤로가기로 모달이 닫히면 입력과 휴대폰 인증이 모두 사라지므로 한 번 확인
+  //   뒤로가기: 가입 단계에 들어가면 기록(history)을 하나 쌓아 두고, 뒤로가기를 누르면 모달 안에서 한 단계 뒤로(약관 → 정보 입력) 또는 확인 후 닫기
+  const inSignup = () => authDlg.open && ['info', 'terms'].includes(state.view);
+  const signupDirty = () => !!state.phoneVerified || ['fName', 'fPhone', 'fEmail', 'fBirth', 'fPw', 'fNick'].some(id => $(id).value.trim());
+  const LEAVE_MSG = '회원가입을 그만두시겠습니까?\n입력한 정보와 휴대폰 인증이 모두 사라집니다.';
+  const okToLeave = () => !inSignup() || !signupDirty() || confirm(LEAVE_MSG);
+  let backGuard = false;
+  const armBackGuard = () => { if (backGuard) return; try { history.pushState({ signupGuard: 1 }, ''); backGuard = true; } catch (e) { /* file:// 등 기록 불가 */ } };
+  window.addEventListener('popstate', () => {
+    if (!backGuard) return;
+    backGuard = false;
+    if (!inSignup()) return;
+    if (state.view === 'terms') { go('info'); armBackGuard(); return; }
+    if (!okToLeave()) { armBackGuard(); return; }
+    authDlg.close();
+  });
+  authDlg.addEventListener('cancel', e => { if (!okToLeave()) e.preventDefault(); });   // Esc
+  $('authClose').addEventListener('click', () => { if (okToLeave()) authDlg.close(); });
   authDlg.addEventListener('close', () => {
+    if (backGuard) { backGuard = false; try { history.back(); } catch (e) { /* 무시 */ } }   // 쌓아 둔 기록 정리
     stopTimer(); stopFindTimer();
     try { sessionStorage.removeItem('stopbook.afterLogin'); } catch (e) { /* 무시 */ }   // 로그인하지 않고 닫으면 마이페이지 이동 취소 (로그인 완료 시에는 completeLogin이 먼저 읽음)
   });
-  $('doneClose').addEventListener('click', () => authDlg.close());
+  // 가입 완료 닫기: 마이페이지 등에서 회원가입하러 온 경우 그 화면으로 돌아감 (submit에서 state.next에 보관)
+  $('doneClose').addEventListener('click', () => {
+    const next = state.next;
+    state.next = '';
+    if (next) { backGuard = false; authDlg.close(); location.href = next; return; }
+    authDlg.close();
+  });
 
   // ===== 로그인 상태 (상단 유틸 메뉴: 로그인/회원가입 ↔ OOO님 · 로그아웃) =====
   // 새로고침해도 유지되도록 sessionStorage에 회원 번호 보관 (브라우저 탭을 닫으면 로그아웃)
@@ -771,10 +796,22 @@
     const code = state.method, mock = snsProfile(code);
     // SNS가 넘겨주는 이메일: 이메일로 로그인했으면 그 주소, 아니면 SNS 기본 메일 주소
     const email = id.includes('@') ? id : /^\d+$/.test(digits(id)) && digits(id).length >= 10 ? mock.email : `${id}@${PROV[code].domain}`;
-    const dup = MD.findDuplicate({ email });
-    if (dup && dup.member.memberType === typeName(code)) {
-      MD.Auth.recordLogin(dup.member.no, loginEnv());
-      completeLogin(dup.member, `${dup.member.name}님, ${SNS_LABEL[code]} 계정으로 로그인되었습니다.`);
+    // 가입 여부: SNS 계정 식별값으로 찾음 (가입 때 이메일을 바꾼 회원 포함). 식별값이 없는 예전 회원은 같은 이메일·같은 가입유형
+    const known = MD.findSnsMember(code, email, typeName(code));
+    if (known) {
+      MD.Auth.recordLogin(known.no, loginEnv());
+      completeLogin(known, `${known.name}님, ${SNS_LABEL[code]} 계정으로 로그인되었습니다.`);
+      return;
+    }
+    // 같은 이메일이 다른 방법(이메일 로그인·다른 SNS)으로 가입되어 있으면 새로 가입시키지 않고 그 방법으로 로그인 안내
+    //   (SNS 로그인으로 이메일 주인임이 확인됐으므로 가입 방법을 알려도 됨)
+    const other = MD.findDuplicate({ email });
+    if (other) {
+      const om = other.member, oc = snsCodeOf(om);
+      $('mProv').className = 'msg err';
+      $('mProv').innerHTML = oc
+        ? `이 이메일은 <b>${esc(SNS_LABEL[oc])}</b> 계정으로 가입되어 있습니다.<br><button type="button" class="btn btn-line btn-sm" data-sns-go="${oc}">${esc(SNS_LABEL[oc])}로 로그인</button>`
+        : `이 이메일은 <b>스탑북 회원(이메일 로그인)</b>으로 가입되어 있습니다.<br><button type="button" class="btn btn-line btn-sm" data-login="${esc(email)}">이메일로 로그인</button> <button type="button" class="btn btn-line btn-sm" data-find="pw" data-email="${esc(email)}">비밀번호 찾기</button>`;
       return;
     }
     startSignup(code, { name: mock.name, email });
@@ -823,9 +860,9 @@
     }
     if (res.error) {
       // 없는 계정·간편 로그인 계정·비밀번호 틀림을 구분하지 않음 (가입 여부 노출 방지)
+      //   틀린 횟수는 있는 계정에만 생기므로 표시하지 않음 (횟수가 보이면 가입 여부가 드러남). 대신 제한 규칙을 함께 안내
       markInvalid('lPw', true);
-      const count = res.fails >= 2 ? ` (${res.fails}/${A.LOCK_FAILS}회)` : '';
-      loginError(`이메일(아이디) 또는 비밀번호가 맞지 않습니다.${count}<small>카카오·네이버·구글로 가입하셨다면 아래 간편 로그인을 이용해 주세요.</small>`);
+      loginError(`이메일(아이디) 또는 비밀번호가 맞지 않습니다.<small>비밀번호를 ${A.LOCK_FAILS}회 연속 잘못 입력하면 ${A.LOCK_MINUTES}분간 로그인이 제한됩니다. 카카오·네이버·구글로 가입하셨다면 아래 간편 로그인을 이용해 주세요.</small>`);
       $('lPw').select();
       return;
     }
@@ -969,11 +1006,11 @@
   $('findForm').addEventListener('submit', e => {
     e.preventDefault();
     const email = $('kEmail').value.trim();
-    const name = $('kName').value.replace(/\s+/g, '');   // 이름은 띄어쓰기 무시하고 비교
+    const name = $('kName').value.replace(/\s+/g, '').toLowerCase();   // 이름은 띄어쓰기·영문 대소문자 무시하고 비교
     if (!name) { setMsg('mKName', '이름을 입력해 주세요.'); markInvalid('kName', true); $('kName').focus(); return; }
     if (!validEmail(email)) { setMsg('mKEmail', '이메일 주소를 정확히 입력해 주세요.'); markInvalid('kEmail', true); $('kEmail').focus(); return; }
     if (!fk.verified) { setMsg('mKPhone', '휴대폰 번호 인증을 완료해 주세요.'); markInvalid('kPhone', true); return; }
-    const m = MD.members.find(x => !x.withdrawn && String(x.name).replace(/\s+/g, '') === name && String(x.email).toLowerCase() === email.toLowerCase() && digits(x.phone) === fk.verified);
+    const m = MD.members.find(x => !x.withdrawn && String(x.name).replace(/\s+/g, '').toLowerCase() === name && String(x.email).toLowerCase() === email.toLowerCase() && digits(x.phone) === fk.verified);
     $('findForm').hidden = true; $('findDesc').hidden = true; $('findResult').hidden = false;
     $('authBody').scrollTop = 0;
     if (!m) { renderFindNone(); return; }
@@ -1149,7 +1186,10 @@
   // --- 이름 ---
   const checkName = () => {
     const v = $('fName').value.trim();
-    const err = !v ? '이름을 입력해 주세요.' : !/^[가-힣a-zA-Z]+( [가-힣a-zA-Z]+)*$/.test(v) || v.length < 2 ? '이름은 한글 또는 영문 2~20자로 입력해 주세요.' : '';
+    // 한글 2~20자 또는 영문 2~50자. 영문 이름은 띄어쓰기·하이픈·아포스트로피·마침표 허용 (예: Mary-Jane O'Neil Jr.)
+    const ko = /[가-힣]/.test(v);
+    const err = !v ? '이름을 입력해 주세요.'
+      : !/^[가-힣a-zA-Z]+([ '’\-.]+[가-힣a-zA-Z]+)*\.?$/.test(v) || v.length < 2 || v.length > (ko ? 20 : 50) ? '이름은 한글 2~20자 또는 영문 2~50자로 입력해 주세요.' : '';
     setMsg('mName', err); markInvalid('fName', err);
     return !err;
   };
@@ -1255,14 +1295,20 @@
     if (state.emailChecked && $('fEmail').value.trim().toLowerCase() !== state.emailChecked) { state.emailChecked = ''; setMsg('mEmail', '이메일이 바뀌어 다시 중복 확인이 필요합니다.', 'info'); }
   });
   $('checkEmail').addEventListener('click', checkEmailDup);
+  // Enter: 폼 전체를 제출하지 않고 그 칸의 동작만 (휴대폰 = 인증번호 받기, 이메일 = 중복 확인)
+  $('fEmail').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); checkEmailDup(); } });
+  $('fPhone').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (!$('sendCode').disabled) $('sendCode').click(); } });
   function checkEmailDup() {
     const v = $('fEmail').value.trim();
     $('existsEmail').hidden = true;
     if (!validEmail(v)) { setMsg('mEmail', '이메일 주소를 정확히 입력해 주세요.'); markInvalid('fEmail', true); return false; }
+    // 본인 확인(휴대폰 인증) 전에는 가입 여부를 알려주지 않음 (남의 이메일로 가입 여부·탈퇴 여부를 알아내지 못하게)
+    if (!state.phoneVerified) { setMsg('mEmail', '휴대폰 번호 인증을 먼저 완료해 주세요. 본인 확인 후 이메일 중복 여부를 확인합니다.'); $('fPhone').focus(); return false; }
     const dup = MD.findDuplicate({ email: v });
     if (dup) { state.emailChecked = ''; setMsg('mEmail', ''); showExists('이메일', 'existsEmail'); markInvalid('fEmail', true); return false; }
+    // 재가입 제한: 이메일 주인이 본인이라는 보장이 없으므로 탈퇴일·제한 기간은 알리지 않음
     const block = MD.rejoinBlock && MD.rejoinBlock({ email: v });
-    if (block) { state.emailChecked = ''; setMsg('mEmail', `탈퇴한 이메일입니다. 재가입 제한 기간이 끝나는 ${block.until}부터 다시 가입할 수 있습니다.`); markInvalid('fEmail', true); return false; }
+    if (block) { state.emailChecked = ''; setMsg('mEmail', '지금은 이 이메일로 가입할 수 없습니다. 다른 이메일을 입력하거나 고객센터로 문의해 주세요.'); markInvalid('fEmail', true); return false; }
     state.emailChecked = v.toLowerCase();
     markInvalid('fEmail', false);
     setMsg('mEmail', '사용할 수 있는 이메일입니다.', 'ok');
@@ -1344,6 +1390,8 @@
 
     const res = MD.registerMember({
       memberType: typeName(state.method),
+      // 간편 가입: SNS 계정 식별값 (가입 화면에서 이메일을 바꿔도 다음 SNS 로그인 때 같은 회원으로 찾음)
+      snsKey: isSns() && state.sns ? MD.snsKey(state.method, state.sns.email) : '',
       userId: email,   // 신규 가입은 이메일로 로그인
       name: $('fName').value.trim(),
       email,
@@ -1371,6 +1419,10 @@
     }
     renderDone(res.member, mileage, coupon, adText, marketingUse, at);
     signedIn(res.member);   // 가입 후 바로 로그인 상태
+    // 마이페이지에서 회원가입하러 온 경우: 완료 버튼을 누르면 마이페이지로 돌아감
+    state.next = '';
+    try { const nx = sessionStorage.getItem(AFTER_LOGIN_KEY) || ''; sessionStorage.removeItem(AFTER_LOGIN_KEY); if (/^[\w-]+\.html$/.test(nx)) state.next = nx; } catch (e) { /* 무시 */ }
+    $('doneClose').textContent = state.next === 'mypage.html' ? '마이페이지로 돌아가기' : '스탑북 시작하기';
     go('done');
   }
 
@@ -1401,10 +1453,15 @@
     if (m) signedIn(m); else if (no) sessionStorage.removeItem(SESSION_KEY);
   } catch (e) { /* 무시 */ }
   // 주소 끝이 #join이면 회원가입 모달을 바로 엶 (다른 화면에서 링크로 열 때)
-  if (location.hash === '#join') openAuth();
-  else if (location.hash === '#signup') { openAuth(); startSignup('stopbook'); }   // 마이페이지 모달의 [스탑북 회원 가입]: 정보 입력 단계로 바로
-  else if (location.hash === '#login') openLogin('');   // 마이페이지 등에서 로그인이 필요할 때
-  else if (location.hash === '#find-id' || location.hash === '#find-pw') openFind(location.hash.slice(6), '');   // 마이페이지 로그인 모달의 찾기 링크
+  //   읽은 뒤 주소의 #… 를 지움 → 로그인·가입 후 새로고침해도 모달이 다시 뜨지 않음
+  const hash = location.hash;
+  if (['#join', '#signup', '#login', '#find-id', '#find-pw'].includes(hash)) {
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* file:// 등 */ }
+  }
+  if (hash === '#join') openAuth();
+  else if (hash === '#signup') { openAuth(); startSignup('stopbook'); }   // 마이페이지 모달의 [스탑북 회원 가입]: 정보 입력 단계로 바로
+  else if (hash === '#login') openLogin('');   // 마이페이지 등에서 로그인이 필요할 때
+  else if (hash === '#find-id' || hash === '#find-pw') openFind(hash.slice(6), '');   // 마이페이지 로그인 모달의 찾기 링크
 })();
 </script>
 </body>
