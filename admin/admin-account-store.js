@@ -18,6 +18,9 @@
   const BOARD = ['board-all.html', 'board-admin-notice.html', 'board-inquiry-settings.html'];
   const POST = ['board-notice.html', 'board-inquiry.html', 'board-faq.html', 'board-review.html'];
   const BENEFIT = ['mileage-types.html', 'mileage.html'];
+  // 최고 관리자 전용 카테고리·메뉴. 다른 레벨에 주면 스스로 권한을 올릴 수 있으므로 부여 불가
+  const SUPER_ONLY_CAT = '관리자계정관리';
+  const SUPER_ONLY = ['admin-accounts.html'];
 
   const seed = () => {
     const at = '2026-10-01 09:00', by = '시스템';
@@ -42,11 +45,12 @@
   function load() {
     try {
       const d = JSON.parse(localStorage.getItem(KEY));
-      if (d && Array.isArray(d.levels) && Array.isArray(d.accounts)) return d;
+      if (d && Array.isArray(d.levels) && Array.isArray(d.accounts)) { d.levels.forEach(stripSuperOnly); return d; }
     } catch (e) { /* 저장값이 없거나 깨지면 기본값 */ }
     return seed();
   }
   function save(d) {
+    d.levels.forEach(stripSuperOnly);
     try { localStorage.setItem(KEY, JSON.stringify(d)); return true; }
     catch (e) { return false; }
   }
@@ -66,12 +70,23 @@
     return sections.filter(s => s.cats.length);
   }
   const allHrefs = catalog => catalog.flatMap(s => s.cats.flatMap(c => c.items.map(i => i.href)));
+  // 최고 관리자 전용 메뉴 (관리자계정관리 카테고리에 이후 추가되는 메뉴 포함)
+  const superOnlyHrefs = catalog => [...new Set([...SUPER_ONLY, ...(catalog || []).flatMap(s => s.cats).filter(c => c.cat === SUPER_ONLY_CAT).flatMap(c => c.items.map(i => i.href))])];
+  const isSuperOnly = (href, catalog) => superOnlyHrefs(catalog).includes(href);
+  // 최고 관리자가 아닌 레벨에서 전용 메뉴 제거 (저장·불러오기 시 적용)
+  function stripSuperOnly(lv) {
+    if (!lv || lv.all || !Array.isArray(lv.menus)) return lv;
+    let only = SUPER_ONLY;
+    try { only = superOnlyHrefs(menuCatalog()); } catch (e) { /* 사이드 메뉴가 없는 화면은 고정 목록만 */ }
+    lv.menus = lv.menus.filter(h => !only.includes(h));
+    return lv;
+  }
 
   // 레벨이 접근할 수 있는 메뉴 (목록에 없는 메뉴 = 삭제된 게시판 등은 제외)
-  const levelMenus = (lv, catalog) => { const all = allHrefs(catalog); return lv.all ? all : all.filter(h => lv.menus.includes(h)); };
-  // 대시보드는 모든 레벨 접근. 상세 화면은 목록 화면 권한을 따름
+  const levelMenus = (lv, catalog) => { const all = allHrefs(catalog); return lv.all ? all : all.filter(h => lv.menus.includes(h) && !isSuperOnly(h, catalog)); };
+  // 대시보드는 모든 레벨 접근. 상세 화면은 목록 화면 권한을 따름. 최고 관리자 전용 메뉴는 최고 관리자만
   const PARENT = { 'member-type-detail.html': 'member-types.html', 'order-detail.html': 'orders.html' };
-  const canAccess = (lv, href) => !!lv && (lv.all || href === 'dashboard.html' || lv.menus.includes(PARENT[href] || href));
+  const canAccess = (lv, href) => !!lv && (lv.all || href === 'dashboard.html' || (!SUPER_ONLY.includes(PARENT[href] || href) && lv.menus.includes(PARENT[href] || href)));
 
   // ===== 검사 =====
   const checkLevelName = (d, name, code) => {
@@ -94,5 +109,5 @@
   // 최고 관리자 레벨의 사용 중 계정이 최소 1개 남아야 함 (모두 잠기는 것 방지)
   const activeSuperCount = (d, exceptId) => d.accounts.filter(a => a.id !== exceptId && a.use && (d.levels.find(l => l.code === a.level) || {}).system).length;
 
-  window.AdminAccountStore = { DOMAIN, NAME_MAX, load, save, menuCatalog, allHrefs, levelMenus, canAccess, checkLevelName, checkEmailId, checkAccountName, activeSuperCount };
+  window.AdminAccountStore = { DOMAIN, NAME_MAX, load, save, menuCatalog, allHrefs, superOnlyHrefs, isSuperOnly, stripSuperOnly, levelMenus, canAccess, checkLevelName, checkEmailId, checkAccountName, activeSuperCount };
 })();

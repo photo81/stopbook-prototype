@@ -10,7 +10,8 @@
 (function () {
   'use strict';
   const { ORDERS, TODAY } = OrderData;
-  const KEYS = { requests: 'stopbook.docRequests.v1', issues: 'stopbook.docIssues.v1' };
+  // v2: 증빙서류·영수증을 따로 접수하면서 신청 구조가 바뀜 (v1에 저장된 처리 결과는 쓰지 않음)
+  const KEYS = { requests: 'stopbook.docRequests.v2', issues: 'stopbook.docIssues.v1' };
   const DAY = 86400000, HOUR = 3600000;
   const pad = n => String(n).padStart(2, '0');
   const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -29,6 +30,12 @@
   const CHANNEL_OF = { '사업자등록증': '마이페이지', '통장사본': '마이페이지', '견적서': '주문서', '거래내역서': '주문 상세', '현금영수증': '결제 확인', '세금계산서': '결제 확인' };
   // 별도 발급 신청 서류 종류 + 신청 샘플의 요청 사항
   const REQUEST_TYPES = ['사업자등록증', '통장사본', '견적서', '거래내역서', '납품서', '세금계산서', '현금영수증', '기타'];
+  // 서류 구분: 영수증(세금계산서·현금영수증) = 별도 전산에서 발급하고 처리일자·처리자명만 기록 / 증빙서류(나머지) = 관리자가 만들어 전달
+  const RECEIPT_TYPES = ['세금계산서', '현금영수증'];
+  const PROOF_TYPES = REQUEST_TYPES.filter(t => !RECEIPT_TYPES.includes(t));
+  const groupOf = t => (RECEIPT_TYPES.includes(t) ? '영수증' : '증빙서류');
+  const TAX_KINDS = ['영수', '청구'];          // 세금계산서 영수/청구 구분
+  const CASH_PURPOSES = ['소득공제', '지출증빙'];   // 현금영수증 발급 방식
   const REQUIREMENTS = {
     '견적서': ['기관 제출용 견적서 (공급가액·부가세 분리 표기, 담당자 직인 날인 필요)', '견적 유효기간 30일로 표기하고 수신처를 "○○초등학교 행정실"로 넣어 주세요.', '품목을 "포토북 제작" 한 줄로 합산 표기한 견적서가 필요합니다.'],
     '거래내역서': ['학교 행정실 제출용 (첨부한 기관 양식에 맞춰 작성, 직인 날인)', '수신처를 사업자명이 아닌 "○○유치원"으로 변경해서 발급해 주세요.', '회계 감사용 거래내역서 (최근 1년 거래 내역 포함)', '지원금 정산용 거래내역서'],
@@ -46,13 +53,20 @@
   const loadList = key => { try { return JSON.parse(localStorage.getItem(key)) || []; } catch (e) { return []; } };
   const overlay = loadOverlay(KEYS.requests);
   const adminIssues = loadList(KEYS.issues);
+  // 신청번호: 증빙서류 접수 = D…(주문 전 요청 DP…, 관리자 등록 DM…), 영수증 접수 = 같은 번호의 첫 글자를 R로 (R…, RP…, RM…)
+  //   고객이 한 번에 함께 신청해도 관리자에서는 두 건으로 나뉘어 접수됨 (pairNo로 서로 연결)
+  const rNo = no => `R${no.slice(1)}`;
+  const savedOf = no => [overlay[no], overlay[rNo(no)]].filter(Boolean);   // 저장된 처리 결과 (증빙서류·영수증 접수 중 있는 것)
   // 저장 후 새 신청 알림(대메뉴 빨간 점, member-type-store.js refreshNewMarks) 갱신
-  const saveReq = req => { overlay[req.reqNo] = JSON.parse(JSON.stringify(req)); let ok; try { localStorage.setItem(KEYS.requests, JSON.stringify(overlay)); ok = true; } catch (e) { ok = false; } if (window.AdminUtil && AdminUtil.refreshNewMarks) AdminUtil.refreshNewMarks(); return ok; };
+  //   함께 접수된 다른 건도 같이 저장 (다시 열 때 두 건이 늘 함께 복원되도록)
+  const saveReq = req => { [req, req.pairNo && requests.find(x => x.reqNo === req.pairNo)].filter(Boolean).forEach(x => { overlay[x.reqNo] = JSON.parse(JSON.stringify(x)); }); let ok; try { localStorage.setItem(KEYS.requests, JSON.stringify(overlay)); ok = true; } catch (e) { ok = false; } if (window.AdminUtil && AdminUtil.refreshNewMarks) AdminUtil.refreshNewMarks(); return ok; };
   const saveIssues = () => { try { localStorage.setItem(KEYS.issues, JSON.stringify(adminIssues)); return true; } catch (e) { return false; } };
 
   const orderOf = x => (x.orderNo ? OrderData.find(x.orderNo) : null);
   // 신청 서류 종류: 한 신청에 여러 서류를 함께 신청할 수 있음 (docTypes). 예전 저장 데이터는 docType 하나
   const typesOf = req => (req.docTypes && req.docTypes.length ? req.docTypes : [req.docType]);
+  const proofTypesOf = req => typesOf(req).filter(t => !RECEIPT_TYPES.includes(t));
+  const receiptTypesOf = req => typesOf(req).filter(t => RECEIPT_TYPES.includes(t));
   // 목록 표기: 하나면 그 이름, 여럿이면 '견적서 외 2종'
   // 신청자 정보 (목록·상세·엑셀 공통): 주문이 있으면 주문자, 주문 전 요청이면 신청 때 받은 customer
   const applicantOf = req => { const o = orderOf(req); if (o) return { name: o.name, userId: o.userId, phone: o.phone, email: o.email, category: o.member.category, company: o.member.business ? o.member.business.companyName : '', order: o };
@@ -98,7 +112,7 @@
   const requests = [];
   ORDERS.forEach(o => {
     const no = `D${o.orderNo.replace('-', '')}`;
-    if (overlay[no]) { requests.push(overlay[no]); return; }
+    if (savedOf(no).length) { requests.push(...savedOf(no)); return; }
     if (o.orderDate < daysAgo(90) || o.payStatus === '전체취소') return;
     const h = hash(o.orderNo, 71) % 100;
     const biz = !!o.member.business;
@@ -146,7 +160,7 @@
   });
   // 처리 대기 화면에서도 복수 서류 신청이 보이도록: 대기 중 복수 신청이 2건 미만이면 최근 대기 건에 서류를 더함 (저장된 처리 결과가 없는 샘플만)
   (() => {
-    const pending = requests.filter(q => q.status === '대기' && !overlay[q.reqNo]).sort((a, b) => b.at.localeCompare(a.at));
+    const pending = requests.filter(q => q.status === '대기' && !q.kind).sort((a, b) => b.at.localeCompare(a.at));
     const extra = [['거래내역서', '사업자등록증'], ['통장사본']];
     pending.filter(q => q.docTypes.length === 1).slice(0, Math.max(0, 2 - pending.filter(q => q.docTypes.length > 1).length)).forEach((q, n) => {
       extra[n].filter(t => !q.docTypes.includes(t)).forEach(t => q.docTypes.push(t));
@@ -165,7 +179,7 @@
       if (!m) return;
       const at = new Date(TODAY.getTime() - ago * DAY + (10 + n) * HOUR);
       const reqNo = `DP${fmtDate(at).replace(/-/g, '')}-${String(n + 1).padStart(3, '0')}`;
-      if (overlay[reqNo]) { requests.push(overlay[reqNo]); return; }
+      if (savedOf(reqNo).length) { requests.push(...savedOf(reqNo)); return; }
       const company = m.business.companyName;
       const req = { reqNo, orderNo: '', customer: { name: m.name, phone: m.phone, email: m.email, company, userId: m.userId }, at: fmtDt(at), docType: types[0], docTypes: types.slice(), requirement,
         attachment: '', receiveBy: '이메일', receiveTo: m.email, wantBy: fmtDate(new Date(at.getTime() + 3 * DAY)),
@@ -180,7 +194,7 @@
     });
   })();
   // 처리 대기 샘플은 오늘 접수분 7~10건만 (서류 발급도 대부분 당일 처리). 발급 희망일은 오늘 기준으로 다시 잡음. 관리자가 처리·등록한 신청은 그대로
-  AdminUtil.keepTodayPending(requests, q => q.status === '대기' && !overlay[q.reqNo], 'document').forEach((q, k) => {
+  AdminUtil.keepTodayPending(requests, q => q.status === '대기' && !q.kind, 'document').forEach((q, k) => {
     if (q.wantBy) { const d = new Date(); d.setDate(d.getDate() + 2 + k % 5); q.wantBy = fmtDate(d); }
     // 오늘 처리 대기 신청 중 일부(3건 중 1건)는 증빙도 함께 요청 → 계산서 영수증 발급 관리에 처리 대기 건이 보이게
     const types = typesOf(q);
@@ -209,8 +223,15 @@
       req.contact = { name: b ? b.managerName : (o ? o.name : c.name || ''), phone: b ? b.managerPhone : (o ? o.phone : c.phone || ''), email: b ? b.managerEmail : (o ? o.email : c.email || ''),
         org: b ? b.companyName : (c.company || '') };
     }
+    // 발급 희망일은 필수: 샘플에서 비어 있으면 신청일 + 3일
+    if (!req.wantBy) req.wantBy = fmtDate(new Date(toTime(req.at) + 3 * DAY));
     const types = typesOf(req);
     if (types.includes('세금계산서') && !req.bizCert) req.bizCert = `사업자등록증_${(m && m.userId) || req.reqNo}.${r() < 0.6 ? 'pdf' : 'jpg'}`;
+    // 세금계산서: 영수(결제 완료분)/청구(후결제·미입금분) + 세금계산서 일자(결제일, 없으면 신청일)
+    if (types.includes('세금계산서') && !req.taxInvoice) {
+      const paid = o && o.payment && o.payment.paidDateTime;
+      req.taxInvoice = { kind: paid ? '영수' : '청구', date: (paid || req.at).slice(0, 10) };
+    }
     if (types.includes('현금영수증') && !req.cashReceipt) {
       const purpose = r() < (b ? 0.5 : 0.3) ? '지출증빙' : '소득공제';   // 사업자 회원도 개인 소득공제로 받는 경우가 있음
       const idType = purpose === '지출증빙' ? '사업자등록번호' : (r() < 0.75 ? '휴대폰' : '주민번호');
@@ -222,19 +243,112 @@
   }
   requests.filter(q => !q.manual).forEach(fillRequestInfo);
 
+  // ===== 처리 단위: 증빙서류 / 영수증 =====
+  //   proofDone   = { at, by, file, sentBy, sentTo, memo } — 증빙서류를 만들어 전달한 기록 (증빙서류를 신청한 경우)
+  //   receiptDone = { [세금계산서|현금영수증]: { date(처리일자), by(처리자명), at(기록 일시), recordedBy } } — 별도 전산에서 발급한 뒤 남긴 기록
+  //   모든 처리가 끝나야 status '완료'(발급 완료 탭). 일부만 끝난 신청은 '대기'로 남고 진행 상태를 표시
+  //   예전 방식으로 완료 처리된 신청(처리 단위 없음)은 완료 정보로 두 처리 기록을 채움
+  const partsDone = req => ({ proof: !proofTypesOf(req).length || !!req.proofDone, receipts: receiptTypesOf(req).map(t => [t, !!(req.receiptDone || {})[t]]) });
+  const allDone = req => { const p = partsDone(req); return p.proof && p.receipts.every(([, d]) => d); };
+  const anyDone = req => !!req.proofDone || Object.keys(req.receiptDone || {}).length > 0;
+  // 진행 표시: '증빙 완료' · '세금계산서 완료' 등 (일부만 끝난 처리 대기 건)
+  const progressOf = req => {
+    if (req.status !== '대기' || !anyDone(req)) return [];
+    const p = partsDone(req);
+    return [...(proofTypesOf(req).length && p.proof ? ['증빙 완료'] : []), ...p.receipts.filter(([, d]) => d).map(([t]) => `${t} 완료`)];
+  };
+  function normalizeParts(req) {
+    if (req.status !== '완료') return;
+    if (proofTypesOf(req).length && !req.proofDone) req.proofDone = { at: req.processedAt, by: req.processedBy || '관리자', file: req.file || '', sentBy: req.sentBy || req.receiveBy, sentTo: req.sentTo || req.receiveTo || '', memo: req.memo || '' };
+    receiptTypesOf(req).forEach(t => {
+      req.receiptDone = req.receiptDone || {};
+      if (!req.receiptDone[t]) req.receiptDone[t] = { date: String(req.processedAt || req.at).slice(0, 10), by: req.processedBy || '관리자', at: req.processedAt || req.at, recordedBy: req.processedBy || '관리자' };
+    });
+  }
+  requests.filter(q => !q.kind).forEach(normalizeParts);
+
+  // ===== 접수 분리: 증빙서류 / 영수증 =====
+  //   고객이 한 신청서로 증빙서류와 영수증을 함께 신청해도 관리자에서는 따로 접수
+  //     증빙서류 접수(kind '증빙서류', D…) → 서류 발급 관리 / 영수증 접수(kind '영수증', R…) → 계산서 영수증 발급 관리
+  //   두 건은 pairNo로 연결되고, 각자 처리 상태(처리 대기·발급 완료·반려)를 가짐
+  const KINDS = ['증빙서류', '영수증'];
+  const TOGETHER = / \(함께 신청: [^)]*\)$/;
+  function splitApplication(app) {
+    if (app.kind) return [app];   // 이미 나뉘어 저장된 접수
+    const proof = proofTypesOf(app), rcpt = receiptTypesOf(app);
+    const parts = [['증빙서류', proof, app.reqNo], ['영수증', rcpt, rNo(app.reqNo)]].filter(([, t]) => t.length);
+    return parts.map(([kind, types, no]) => {
+      const x = JSON.parse(JSON.stringify(app));
+      const other = parts.find(p => p[0] !== kind);
+      Object.assign(x, { kind, reqNo: no, docType: types[0], docTypes: types.slice(), pairNo: other ? other[2] : '' });
+      const base = (app.requirement || '').replace(TOGETHER, '');
+      if (kind === '증빙서류') {
+        delete x.bizCert; delete x.taxInvoice; delete x.cashReceipt; delete x.receiptDone;
+        x.requirement = proof.length > 1 ? `${base} (함께 신청: ${proof.slice(1).join(', ')})` : base;
+      } else {
+        delete x.proofDone; x.attachment = '';
+        Object.assign(x, { file: '', sentBy: '', sentTo: '', memo: '' });
+        x.requirement = RECEIPT_TYPES.includes(app.docType) ? base : `${rcpt.join(', ')} 발급 요청`;
+      }
+      // 히스토리: 접수 기록은 이 접수의 서류로, 처리 기록은 이 접수에 해당하는 것만
+      const [first, ...rest] = app.history || [];
+      x.history = [];
+      if (first) x.history.push(Object.assign({}, first, { content: first.content.replace(typesOf(app).join(', '), types.join(', ')) }));
+      if (other) x.history.push({ at: app.at, content: `증빙서류·영수증 함께 신청 → ${kind} 접수로 분리 (함께 접수: ${other[0]} ${other[2]})`, by: '시스템' });
+      rest.forEach(h => {
+        if (/^반려/.test(h.content)) x.history.push(h);
+        else if (kind === '증빙서류' && !/영수증|세금계산서|현금영수증/.test(h.content.split('(')[0])) x.history.push(h);
+      });
+      if (kind === '영수증' && x.status === '완료') Object.entries(x.receiptDone || {}).forEach(([t, d]) => x.history.push({ at: d.at, content: `${t} 발급 완료 기록 (별도 전산 발급 · 처리일자 ${d.date} · 처리자 ${d.by})`, by: d.recordedBy }));
+      return x;
+    });
+  }
+  requests.splice(0, requests.length, ...requests.flatMap(splitApplication));
+
   // ===== 처리 =====
-  // 발급 완료: 관리자가 만든 서류를 고객에게 전달. opts = { file, sentBy, sentTo, memo, by }. 주문 히스토리('서류발급')에 남김
-  function complete(req, opts) {
-    if (req.status !== '대기') return false;
+  // 모든 처리(증빙서류 + 영수증 서류별)가 끝나면 발급 완료로. 반환: 이번에 발급 완료가 됐는지
+  function finalize(req, by) {
+    if (req.status !== '대기' || !allDone(req)) return false;
+    const at = nowText(), p = req.proofDone;
+    Object.assign(req, { status: '완료', processedAt: at, processedBy: by,
+      file: p ? p.file : '', sentBy: p ? p.sentBy : '', sentTo: p ? p.sentTo : '', memo: p ? p.memo : '' });   // 목록·엑셀용 대표 값 (증빙서류 전달 내용)
+    req.history.push({ at, content: `모든 처리 완료 → 발급 완료 (${typesOf(req).join(', ')})`, by });
+    return true;
+  }
+  // 증빙서류 발급 완료: 관리자가 만든 서류를 고객에게 전달. opts = { file, sentBy, sentTo, memo, by }. 주문 히스토리('서류발급')에 남김
+  //   반환: { ok, finished(발급 완료가 됐는지) }
+  function completeProof(req, opts) {
+    if (req.status !== '대기' || !proofTypesOf(req).length || req.proofDone) return { ok: false };
+    const at = nowText(), types = proofTypesOf(req);
+    req.proofDone = { at, by: opts.by, file: opts.file || '', sentBy: opts.sentBy || req.receiveBy, sentTo: opts.sentTo || req.receiveTo || '', memo: opts.memo || '' };
+    const p = req.proofDone;
+    req.history.push({ at, content: `증빙서류 발급 완료 (${types.join(', ')}) → ${p.sentBy} 전달${p.sentTo ? ` (${p.sentTo})` : ''}${p.file ? ` · ${p.file}` : ''}${p.memo ? ` · ${p.memo}` : ''}`, by: opts.by });
+    if (req.orderNo) OrderData.addHistory(req.orderNo, '서류발급', `${types.join(', ')} 별도 발급 (${req.reqNo}) · ${p.sentBy} 전달${p.file ? ` · ${p.file}` : ''}${p.memo ? ` · ${p.memo}` : ''}`, opts.by);
+    const finished = finalize(req, opts.by);
+    return { ok: saveReq(req), finished };
+  }
+  // 영수증(세금계산서·현금영수증) 발급 완료 기록: 별도 전산에서 발급한 뒤 처리일자·처리자명을 남김. opts = { date, issuer(처리자명), by(기록한 관리자) }
+  function completeReceipt(req, type, opts) {
+    if (req.status !== '대기' || !receiptTypesOf(req).includes(type) || (req.receiptDone || {})[type]) return { ok: false };
     const at = nowText();
-    Object.assign(req, { status: '완료', processedAt: at, processedBy: opts.by, file: opts.file || '', sentBy: opts.sentBy || req.receiveBy, sentTo: opts.sentTo || req.receiveTo, memo: opts.memo || '' });
-    req.history.push({ at, content: `발급 완료 → ${req.sentBy} 전달${req.sentTo ? ` (${req.sentTo})` : ''}${req.file ? ` · ${req.file}` : ''}${req.memo ? ` · ${req.memo}` : ''}`, by: opts.by });
-    if (req.orderNo) OrderData.addHistory(req.orderNo, '서류발급', `${typesOf(req).join(', ')} 별도 발급 (${req.reqNo}) · ${req.sentBy} 전달${req.file ? ` · ${req.file}` : ''}${req.memo ? ` · ${req.memo}` : ''}`, opts.by);
+    req.receiptDone = Object.assign({}, req.receiptDone, { [type]: { date: opts.date, by: opts.issuer, at, recordedBy: opts.by } });
+    const tax = type === '세금계산서' && req.taxInvoice ? ` · ${req.taxInvoice.kind} · 세금계산서 일자 ${req.taxInvoice.date}` : '';
+    const cash = type === '현금영수증' && req.cashReceipt ? ` · ${req.cashReceipt.purpose}` : '';
+    req.history.push({ at, content: `${type} 발급 완료 기록 (별도 전산 발급 · 처리일자 ${opts.date} · 처리자 ${opts.issuer}${tax}${cash})`, by: opts.by });
+    if (req.orderNo) OrderData.addHistory(req.orderNo, '서류발급', `${type} 발급 (${req.reqNo}, 별도 전산) · 처리일자 ${opts.date} · 처리자 ${opts.issuer}`, opts.by);
+    const finished = finalize(req, opts.by);
+    return { ok: saveReq(req), finished };
+  }
+  // 관리자 메모 (영수증 접수): 처리 상태와 상관없이 언제든 저장. 고객에게는 보이지 않고 처리 히스토리에 남김
+  function saveMemo(req, memo, by) {
+    if ((req.memo || '') === memo) return true;
+    req.memo = memo;
+    req.history.push({ at: nowText(), content: memo ? `관리자 메모: ${memo}` : '관리자 메모 삭제', by });
     return saveReq(req);
   }
-  // 반려: 사유는 고객에게 안내
+  // 반려: 사유는 고객에게 안내. 이미 일부를 처리한 신청은 반려할 수 없음 (처리한 서류가 이미 고객에게 전달됨)
   function reject(req, reason, by) {
-    if (req.status !== '대기') return false;
+    if (req.status !== '대기' || anyDone(req)) return false;
     const at = nowText();
     Object.assign(req, { status: '반려', processedAt: at, processedBy: by, rejectReason: reason });
     req.history.push({ at, content: `반려 처리 (사유: ${reason})`, by });
@@ -242,21 +356,23 @@
     return saveReq(req);
   }
   // 관리자 등록: 유선 등으로 받은 별도 발급 신청을 관리자가 직접 입력 → 처리 대기로 추가. 주문 히스토리('서류발급')에도 남김
-  //   input = { orderNo(선택), customer(주문번호가 없을 때: name, phone, email, company), contact{name, phone, email, org}, bizCert(세금계산서), cashReceipt{purpose, idType, idValue}(현금영수증),
+  //   input = { orderNo(선택), customer(주문번호가 없을 때: name, phone, email, company), contact{name, phone, email, org}, bizCert·taxInvoice{kind, date}(세금계산서), cashReceipt{purpose, idType, idValue}(현금영수증),
   //             docTypes[], requirement, receiveBy, receiveTo, wantBy, attachment, channel(접수 경로), memo }
+  //   증빙서류와 영수증을 함께 받았으면 두 건으로 나눠 접수. 반환: 접수된 신청 배열 (실패하면 null)
   function addRequest(input, by) {
     const at = nowText();
     const today = at.slice(0, 10).replace(/-/g, '');
-    const n = Object.values(overlay).filter(x => x.manual && x.reqNo.startsWith(`DM${today}`)).length + 1;
-    const req = { reqNo: `DM${today}-${String(n).padStart(3, '0')}`, manual: true, channel: input.channel, orderNo: input.orderNo || '', customer: input.orderNo ? null : input.customer, at,
+    const n = new Set(Object.values(overlay).filter(x => x.manual && x.reqNo.slice(1).startsWith(`M${today}`)).map(x => x.reqNo.slice(1))).size + 1;
+    const app = { reqNo: `DM${today}-${String(n).padStart(3, '0')}`, manual: true, channel: input.channel, orderNo: input.orderNo || '', customer: input.orderNo ? null : input.customer, at,
       docType: input.docTypes[0], docTypes: input.docTypes.slice(), requirement: input.requirement, attachment: input.attachment || '',
-      contact: input.contact, bizCert: input.bizCert || '', cashReceipt: input.cashReceipt || null,
+      contact: input.contact, bizCert: input.bizCert || '', taxInvoice: input.taxInvoice || null, cashReceipt: input.cashReceipt || null,
       receiveBy: input.receiveBy, receiveTo: input.receiveTo, wantBy: input.wantBy || '',
       status: '대기', processedAt: '', processedBy: '', file: '', sentBy: '', sentTo: '', memo: '', rejectReason: '',
       history: [{ at, content: `관리자 등록 (${input.channel} 접수${input.orderNo ? '' : ', 주문 전 요청'}) · ${input.docTypes.join(', ')} · ${input.receiveBy} 수령${input.memo ? ` · 메모: ${input.memo}` : ''}`, by }] };
-    requests.unshift(req);
-    if (req.orderNo) OrderData.addHistory(req.orderNo, '서류발급', `${req.docTypes.join(', ')} 별도 발급 신청 등록 (${req.reqNo}, ${input.channel} 접수)`, by);
-    return saveReq(req) ? req : null;
+    const parts = splitApplication(app);
+    requests.unshift(...parts);
+    if (app.orderNo) parts.forEach(q => OrderData.addHistory(q.orderNo, '서류발급', `${q.docTypes.join(', ')} ${q.kind} 발급 신청 등록 (${q.reqNo}, ${input.channel} 접수)`, by));
+    return saveReq(parts[0]) ? parts : null;
   }
   // 관리자 발급(재발급·주문 상세의 증빙서류 발급): 발급 이력에 관리자 건으로 추가. src = { docType, orderNo, userId, name, email, category, company, amount, channel }
   function addIssue(src, by) {
@@ -279,7 +395,8 @@
   const byAt = (a, b) => b.at.localeCompare(a.at);
   window.DocData = {
     STATUS_TEXT, AUTO_TYPES, REQUEST_TYPES, RECEIVE_METHODS, CHANNEL_OF, RECEIPT_CHANNELS: ['유선', '이메일', '팩스', '방문', '기타'], CASH_ID_TYPES, orderOf, applicantOf, typesOf, typeLabel,
+    RECEIPT_TYPES, PROOF_TYPES, TAX_KINDS, CASH_PURPOSES, KINDS, groupOf, proofTypesOf, receiptTypesOf, partsDone, allDone, anyDone, progressOf,
     issues: issues.sort(byAt), requests: requests.sort(byAt),
-    complete, reject, addIssue, reissue, addRequest
+    completeProof, completeReceipt, saveMemo, reject, addIssue, reissue, addRequest
   };
 })();

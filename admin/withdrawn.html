@@ -4,7 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 탈퇴 회원 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261019-1">
+<link rel="stylesheet" href="admin.css?v=20261020-6">
+<style>
+  /* 실제 탈퇴 기록 / 샘플(분석 예시) 구분 표시 */
+  .wd-table .w-mno { width: 92px; }
+  .tag-sample { display: inline-block; padding: 0 5px; border: 1px solid #e4e4e7; border-radius: 4px; background: #f4f4f5; color: #71717a; font-size: 10px; line-height: 16px; vertical-align: 1px; }
+  tr.row-sample td { color: var(--muted); }
+  .data-note { margin: -4px 0 12px; }
+  .data-note .btn { height: 24px; padding: 0 8px; font-size: 12px; vertical-align: 1px; }
+</style>
 </head>
 <body>
 <div class="layout">
@@ -24,8 +32,8 @@
         <a href="#" class="menu-parent" aria-expanded="false">메시지전송관리<span class="chev">▼</span></a>
         <ul class="submenu">
           <li><a href="message-send.html">메시지 전송</a></li>
-          <li><a href="message-sms.html">SMS 발송 관리</a></li>
           <li><a href="message-alimtalk.html">알림톡 발송 관리</a></li>
+          <li><a href="message-sms.html">SMS 발송 관리</a></li>
           <li><a href="message-email.html">이메일 발송 관리</a></li>
         </ul>
       </li>      <li class="has-sub">
@@ -98,12 +106,7 @@
 
   <div class="main">
     <header class="topbar">
-      <div class="breadcrumb">홈 &gt; 회원관리 &gt; <b>탈퇴 회원 관리</b>
-        <!-- 사용자 화면(마이페이지 > 회원 탈퇴) 바로가기: 브레드크럼 바로 아래 오른쪽 (통합 회원 관리의 [사용자] 버튼과 같은 모양) -->
-        <span class="user-links">
-          <a class="user-link" href="../user/mypage.html#withdraw" target="_blank" rel="noopener">[사용자] 회원 탈퇴</a>
-        </span>
-      </div>
+      <div class="breadcrumb">홈 &gt; 회원관리 &gt; <b>탈퇴 회원 관리</b></div>
       <div><span class="proto-ver" data-proto-version>프로토타입 v2.75 (2026-10-13)</span> 관리자님 | <a href="#">로그아웃</a></div>
     </header>
 
@@ -133,6 +136,15 @@
               <label for="sReasonType">탈퇴구분</label>
               <select id="sReasonType">
                 <option value="">전체</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="sData">데이터 범위</label>
+              <!-- 기본은 실제 탈퇴 기록만 (통합 회원 관리 > 회원상태 '탈퇴'와 같은 건수). 샘플은 분석 화면 예시용 -->
+              <select id="sData">
+                <option value="real" selected>실제 탈퇴 기록</option>
+                <option value="all">실제 + 샘플(분석 예시)</option>
+                <option value="sample">샘플만</option>
               </select>
             </div>
           </div>
@@ -190,6 +202,7 @@
           </div>
         </div>
       </form>
+      <p class="readonly at-note data-note" id="dataNote"></p>
 
       <!-- 분석 탭 -->
       <div role="tabpanel" id="panelAnalysis" aria-labelledby="tab-analysis">
@@ -224,7 +237,7 @@
       <!-- 탈퇴회원 목록 -->
       <section class="panel">
         <div class="list-head">
-          <div class="count">검색결과 <b id="totalCount">0</b>명 / 전체 <span id="allCount">0</span>명</div>
+          <div class="count">검색결과 <b id="totalCount">0</b>명 / 전체 <span id="allCount">0</span></div>
           <div class="right">
             <select id="pageSize">
               <option value="10" selected>10개씩</option>
@@ -239,6 +252,7 @@
             <thead>
               <tr>
                 <th class="sortable col-no" data-key="no">번호</th>
+                <th class="sortable w-mno" data-key="memberNo">회원번호</th>
                 <th class="sortable w-cat" data-key="category">회원구분</th>
                 <th class="sortable w-mt" data-key="memberType">가입유형</th>
                 <th class="sortable w-grade" data-key="grade">회원등급</th>
@@ -279,9 +293,11 @@
 <div class="viz-tip" id="vizTip" role="tooltip" hidden></div>
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261019-1"></script>
-<script src="member-type-store.js?v=20261019-1"></script>
-<script src="feedback.js?v=20261019-1"></script>
+<script src="board-store.js?v=20261020-6"></script>
+<script src="member-type-store.js?v=20261020-6"></script>
+<script src="feedback.js?v=20261020-6"></script>
+<script src="member-data.js?v=20261020-6"></script><!-- 실제 탈퇴 기록(MemberData.withdrawals)과 통합 회원 관리 회원 목록 -->
+
 <script>
 (function () {
   'use strict';
@@ -302,7 +318,7 @@
   //  사후        rejoined, rejoinDate, orderRecordPurgeDate(탈퇴일 + 5년)
   //
   // TODO: 실서비스에서는 탈퇴 처리 시 서버가 이 스냅샷을 저장하고 GET /api/admin/withdrawals 로 조회
-  //       (샘플은 통합 회원 관리 데이터와 연결되지 않은 임의 데이터)
+  //       (샘플은 통합 회원 관리 데이터와 연결되지 않은 임의 데이터 → '샘플' 배지로 구분, 기본 화면은 실제 탈퇴 기록만)
   // ======================================================================
 
   // 탈퇴 사유 코드 (선택형). 자진탈퇴는 복수 선택 가능
@@ -435,7 +451,7 @@
     const withdrawDate = fmtDate(new Date(withdrawT));
 
     items.push({
-      no: i,
+      no: i, sample: true, memberNo: 0,   // 샘플: 통합 회원 관리에 없는 회원 (회원번호 없음, 회원 상세 연결 없음)
       userId: 'out' + String(100 + i),
       emailMasked: maskEmail(`${emailLocal}@${emailDomain}`),   // 원본은 저장하지 않음 (표시용)
       emailHash: hashEmail(`${emailLocal}@${emailDomain}`),     // 검색용 (원본 복원 불가)
@@ -463,26 +479,44 @@
   }
   items.forEach(m => { if (m.rejoinDate && m.rejoinDate > fmtDate(new Date(base))) { m.rejoined = false; m.rejoinDate = ''; } });
 
-  // ===== 실제 탈퇴 기록 (쇼핑몰 마이페이지 > 회원 탈퇴, member-data.js withdraw) =====
-  // 탈퇴 시점에 저장한 스냅샷(식별 정보 없음)을 샘플 뒤에 이어 붙임. 저장 형식은 member-data.js 회원 탈퇴 주석 참고
-  // TODO: 실서비스에서는 GET /api/admin/withdrawals 결과에 함께 포함
-  let realRecords = {};
-  try { realRecords = JSON.parse(localStorage.getItem('stopbook.memberWithdrawals.v1')) || {}; } catch (e) { /* 저장소 사용 불가 시 샘플만 */ }
-  Object.entries(realRecords).forEach(([memberNo, r]) => {
+  // ===== 실제 탈퇴 기록 (member-data.js withdraw) =====
+  // 마이페이지 회원 탈퇴 · 관리자 탈퇴 처리(회원 상세) · 장기미이용 자동 탈퇴(시스템)로 저장된 스냅샷(식별 정보 없음)
+  // 통합 회원 관리에 '탈퇴' 상태로 남아 있는 회원의 기록만 실제 기록으로 보여 줌
+  //   → 기본 화면(데이터 범위: 실제 탈퇴 기록)의 건수 = 통합 회원 관리 > 상세검색 > 회원상태 '탈퇴' 건수
+  // 샘플(위 180건)은 분석 화면 예시용 임의 데이터라 '샘플' 배지로 구분하고, 데이터 범위에서 포함할 때만 보임
+  // TODO: 실서비스에서는 GET /api/admin/withdrawals (샘플 없음)
+  const MD = window.MemberData;
+  const realRecords = MD ? MD.withdrawals()
+    : (() => { try { return Object.entries(JSON.parse(localStorage.getItem('stopbook.memberWithdrawals.v1')) || {}).map(([no, r]) => Object.assign({ memberNo: Number(no) }, r)); } catch (e) { return []; } })();
+  const withdrawnNos = MD ? new Set(MD.members.filter(m => m.withdrawn).map(m => m.no)) : null;
+  // 처리자·탈퇴 경로: 관리자 처리 = 관리자 이름 / '관리자', 장기미이용 자동 탈퇴 = '시스템' / '시스템', 회원 본인 = '본인' / PC·모바일
+  //   (처리자 값이 없는 예전 기록은 탈퇴 경로로 판단)
+  const byOf = r => r.processedBy || (r.channel === '시스템' ? '시스템' : r.channel === '관리자' ? '관리자' : '본인');
+  const realItems = [];
+  realRecords.filter(r => !withdrawnNos || withdrawnNos.has(r.memberNo)).forEach(r => {
+    const memberNo = r.memberNo;
     const s = r.snapshot || {};
-    items.push(Object.assign({
+    realItems.push(Object.assign({
       category: '', kind: '', memberType: '', grade: '', marketing: 'N', joinDate: '', tenureDays: 0, lastLoginDate: '', inactiveDays: 0,
       orderCount: 0, orderAmount: 0, avgOrder: 0, orders12m: 0, lastOrderDate: '', mainProduct: '',
       inquiryCount: 0, openInquiry: false, lastInquiryType: '', claimCount: 0, savedProjects: 0, cartAmount: 0,
       lostMileage: 0, lostCoupons: 0, lostGiftCard: 0, orderRecordPurgeDate: ''
     }, s, {
-      no: items.length + 1, memberNo: Number(memberNo), real: true,
+      memberNo: Number(memberNo), real: true, sample: false,
       userId: r.userIdMasked || '', emailMasked: r.emailMasked || '', emailHash: r.emailHash || '',
       withdrawDate: r.withdrawDate, reasonType: r.reasonType || '자진탈퇴', reasonCodes: r.reasonCodes || [], savedLabels: r.reasonLabels || [],
-      reasonEtc: r.reasonEtc || '', channel: r.channel || '', processedBy: r.processedBy || '본인', processNote: r.processNote || '',
+      reasonEtc: r.reasonEtc || '', channel: r.channel || '', processedBy: byOf(r), processNote: r.processNote || '',
       rejoined: false, rejoinDate: '', rejoinUntil: r.rejoinUntil || ''
     }));
   });
+  // 번호: 실제 기록(탈퇴일 최근 순) 먼저, 샘플은 그 뒤 (샘플 값은 그대로, 번호만 다시 매김)
+  realItems.sort((a, b) => String(b.withdrawDate).localeCompare(String(a.withdrawDate)));
+  items.unshift(...realItems);
+  items.forEach((m, i) => { m.no = i + 1; });
+  const REAL_COUNT = realItems.length, SAMPLE_COUNT = items.length - REAL_COUNT;
+  // 데이터 범위(실제 / 실제 + 샘플 / 샘플만)에 드는 기록
+  const inScope = (m, scope) => (scope === 'all' || (scope === 'sample' ? m.sample : !m.sample));
+  const scopeItems = () => items.filter(m => inScope(m, $('sData').value));
 
   // ===== 공통 =====
   const state = { filtered: [], page: 1, size: 10, sortKey: 'withdrawDate', sortDir: 'desc' };
@@ -521,6 +555,7 @@
     const tb = TENURE_BUCKETS.find(b => b.key === v('sTenure'));
     const ynMatch = (val, flag) => !val || (val === 'Y') === flag;
     state.filtered = items.filter(m =>
+      inScope(m, v('sData')) &&
       (!email || m.emailHash === emailHash || m.emailMasked.toLowerCase() === email) &&
       (!from || m.withdrawDate >= from) && (!to || m.withdrawDate <= to) &&
       (!v('sReasonType') || m.reasonType === v('sReasonType')) &&
@@ -552,8 +587,9 @@
   const pct = (a, b) => (b ? Math.round(a / b * 1000) / 10 : 0);
 
   function renderAnalysis() {
-    const list = state.filtered, n = list.length;
-    $('analysisScope').textContent = `· ${n === items.length ? `전체 탈퇴 회원 ${n}명` : `검색 결과 ${n}명 / 전체 ${items.length}명`} · 사유 막대를 누르면 리스트에서 해당 회원을 볼 수 있습니다`;
+    const list = state.filtered, n = list.length, all = scopeItems().length;
+    const scopeName = { real: '실제 탈퇴 기록', all: '실제 + 샘플', sample: '샘플' }[$('sData').value];
+    $('analysisScope').textContent = `· ${scopeName} · ${n === all ? `전체 ${n}명` : `검색 결과 ${n}명 / 전체 ${all}명`} · 사유 막대를 누르면 리스트에서 해당 회원을 볼 수 있습니다`;
 
     const buyers = list.filter(m => m.orderCount > 0).length;
     const lostMileage = sum(list, m => m.lostMileage), lostGift = sum(list, m => m.lostGiftCard), lostCoupons = sum(list, m => m.lostCoupons);
@@ -659,12 +695,22 @@
     const rows = state.filtered.slice(start, start + state.size);
 
     $('totalCount').textContent = total.toLocaleString();
-    $('allCount').textContent = items.length.toLocaleString();
+    // 전체: 실제 탈퇴 기록과 샘플을 따로 표시 (실제 건수 = 통합 회원 관리 회원상태 '탈퇴' 건수)
+    const scope = $('sData').value;
+    $('allCount').innerHTML = scope === 'real' ? `실제 <b>${REAL_COUNT.toLocaleString()}</b>명`
+      : scope === 'sample' ? `샘플 ${SAMPLE_COUNT.toLocaleString()}명`
+      : `실제 <b>${REAL_COUNT.toLocaleString()}</b>명 · 샘플 ${SAMPLE_COUNT.toLocaleString()}명`;
 
+    // 회원번호: 실제 기록만 통합 회원 관리 회원 상세로 연결 (샘플은 '샘플' 배지)
+    const memberCell = m => (m.sample ? '<span class="tag-sample" title="분석 예시용 샘플 데이터 (통합 회원 관리에 없는 회원)">샘플</span>'
+      : `<a class="name-link" href="members.html?member=${m.memberNo}" title="통합 회원 관리에서 회원 상세 보기 ('탈퇴' 상태)">No.${m.memberNo}</a>`);
+    const emptyMsg = scope === 'real' && !REAL_COUNT
+      ? '실제 탈퇴 기록이 없습니다. 데이터 범위를 \'실제 + 샘플\'로 바꾸면 분석 예시용 샘플을 볼 수 있습니다.' : '검색 결과가 없습니다.';
     $('listBody').innerHTML = rows.length ? rows.map(m => {
       const labels = reasonLabels(m);
-      return `<tr>
+      return `<tr${m.sample ? ' class="row-sample"' : ''}>
         <td>${m.no}</td>
+        <td>${memberCell(m)}</td>
         <td>${esc(catText(m))}</td>
         <td>${esc(m.memberType.replace('회원', ''))}</td>
         <td>${esc(m.grade)}</td>
@@ -677,7 +723,7 @@
         <td><span class="badge wd-${m.reasonType}">${m.reasonType}</span>${m.rejoined ? ` <span class="tag-rejoin" title="재가입 ${m.rejoinDate}">재가입</span>` : ''}</td>
         <td class="reason"><a class="name-link" data-no="${m.no}" title="${esc(labels.join(', '))}${m.reasonEtc ? ` / ${esc(m.reasonEtc)}` : ''}">${esc(labels[0] || '선택 안 함')}${labels.length > 1 ? ` <span class="muted">외 ${labels.length - 1}</span>` : ''}</a></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="12" class="empty">검색 결과가 없습니다.</td></tr>';
+    }).join('') : `<tr><td colspan="13" class="empty">${emptyMsg}</td></tr>`;
     $('tabListCount').textContent = total.toLocaleString();
 
     document.querySelectorAll('th.sortable').forEach(th => {
@@ -700,14 +746,24 @@
     $('pagination').innerHTML = html;
   }
 
+  // 실제 탈퇴 기록 / 샘플 차이 안내 (데이터 범위에 따라)
+  function renderDataNote() {
+    const scope = $('sData').value;
+    const real = `실제 탈퇴 기록 ${REAL_COUNT.toLocaleString()}건은 통합 회원 관리에서 회원상태 '탈퇴'로 조회되는 회원입니다 (마이페이지 탈퇴 · 관리자 탈퇴 처리 · 장기미이용 자동 탈퇴). 회원번호를 누르면 회원 상세로 이동합니다.`;
+    const sample = `샘플 ${SAMPLE_COUNT.toLocaleString()}건은 분석 화면 예시용 임의 데이터로, 통합 회원 관리에 없는 회원입니다.`;
+    $('dataNote').innerHTML = scope === 'real'
+      ? `${esc(real)} ${esc(sample)} <button type="button" class="btn" id="btnWithSample">샘플 포함해서 보기</button>`
+      : `${esc(real)} <b>'샘플' 배지</b>가 붙은 행은 ${esc(sample.replace(/^샘플 [\d,]+건은 /, ''))}`;
+  }
+
   // 검색하면 리스트와 분석을 함께 다시 그림 (어느 탭에서 검색해도 두 탭 결과가 같음)
-  const renderAll = () => { render(); renderAnalysis(); };
+  const renderAll = () => { render(); renderAnalysis(); renderDataNote(); };
 
   // ===== 상세 모달 (탈퇴 시점 스냅샷) =====
   function openModal(no) {
     const m = items.find(x => x.no === no);
     if (!m) return;
-    $('modalTitle').textContent = `탈퇴 상세 - ${m.userId}`;
+    $('modalTitle').textContent = `탈퇴 상세 - ${m.userId}${m.sample ? ' (샘플)' : ''}`;
     const row = cells => `<tr>${cells.map(([k, v, span]) => `<th>${k}</th><td${span ? ` colspan="${span}"` : ''}>${v}</td>`).join('')}</tr>`;
     const table = rows => `<table class="form-table multi-col"><colgroup><col class="c-th"><col><col class="c-th"><col></colgroup>${rows.join('')}</table>`;
     const none = '<span class="muted">없음</span>';
@@ -715,8 +771,10 @@
       <div class="section-title">기본 정보</div>
       ${table([
         row([['이메일', `<span class="mono">${esc(m.emailMasked || '-')}</span> <span class="readonly">마스킹 저장</span>`, 3]]),
-        // 실제 탈퇴 기록: 통합 회원 관리에 '탈퇴' 상태로 남아 있는 회원번호와 재가입 제한 기간
-        ...(m.real ? [row([['회원번호', `No.${m.memberNo} <span class="readonly">(통합 회원 관리 '탈퇴' 상태)</span>`], ['재가입 제한', m.rejoinUntil ? `${esc(m.rejoinUntil)}까지` : '제한 없음']])] : [])
+        // 실제 탈퇴 기록: 통합 회원 관리에 '탈퇴' 상태로 남아 있는 회원번호(회원 상세로 연결)와 재가입 제한 기간
+        // 샘플: 통합 회원 관리에 없는 분석 예시용 데이터 (회원 상세 연결 없음)
+        m.real ? row([['회원번호', `<a class="name-link" href="members.html?member=${m.memberNo}">No.${m.memberNo}</a> <span class="readonly">(통합 회원 관리 '탈퇴' 상태)</span>`], ['재가입 제한', m.rejoinUntil ? `${esc(m.rejoinUntil)}까지` : '제한 없음']])
+          : row([['데이터', '<span class="tag-sample">샘플</span> <span class="readonly">분석 화면 예시용 임의 데이터 · 통합 회원 관리에 없는 회원</span>', 3]])
       ])}
       <div class="section-title">탈퇴 처리</div>
       ${table([
@@ -764,7 +822,7 @@
   function downloadExcel() {
     if (!state.filtered.length) { toast('다운로드할 데이터가 없습니다.'); return; }
     const cols = [
-      ['no', '번호'], ['userId', '아이디'], ['emailMasked', '이메일(마스킹)'], ['category', '회원구분'], ['kind', '종류'], ['memberType', '가입유형'], ['grade', '회원등급'], ['marketing', '마케팅수신'],
+      ['no', '번호'], ['dataKind', '데이터'], ['memberNo', '회원번호'], ['userId', '아이디'], ['emailMasked', '이메일(마스킹)'], ['category', '회원구분'], ['kind', '종류'], ['memberType', '가입유형'], ['grade', '회원등급'], ['marketing', '마케팅수신'],
       ['joinDate', '가입일'], ['withdrawDate', '탈퇴일'], ['tenureDays', '이용기간(일)'], ['tenureBucket', '이용기간구간'], ['lastLoginDate', '마지막접속일'], ['inactiveDays', '탈퇴전미접속(일)'],
       ['orderCount', '주문건수'], ['orderAmount', '주문금액'], ['avgOrder', '객단가'], ['orders12m', '최근1년주문'], ['lastOrderDate', '마지막주문일'], ['mainProduct', '주구매상품'],
       ['inquiryCount', '문의건수'], ['openInquiry', '미답변문의'], ['lastInquiryType', '최근문의유형'], ['claimCount', '재제작반품'], ['savedProjects', '남은작업물'], ['cartAmount', '장바구니금액'],
@@ -773,6 +831,8 @@
       ['channel', '탈퇴경로'], ['processedBy', '처리자'], ['processNote', '처리근거'], ['rejoined', '재가입'], ['rejoinDate', '재가입일'], ['orderRecordPurgeDate', '주문기록파기예정일']
     ];
     const value = (m, k) => {
+      if (k === 'dataKind') return m.sample ? '샘플' : '실제';
+      if (k === 'memberNo') return m.sample ? '' : m.memberNo;
       if (k === 'tenureBucket') return bucketOf(m.tenureDays).label;
       if (k === 'reasonCodes') return m.reasonCodes.join('|');
       if (k === 'reasonLabels') return reasonLabels(m).join(', ');
@@ -834,6 +894,13 @@
     AdminUtil.setDefaultRange();   // 초기화하면 기간은 기본값(최근 1개월)으로
     updateDetailCount();
     applyFilter(); state.page = 1; renderAll();
+  });
+  // 데이터 범위는 바꾸면 바로 다시 검색 (리스트·분석 공용)
+  $('sData').addEventListener('change', () => { if (applyFilter()) { state.page = 1; renderAll(); } });
+  $('dataNote').addEventListener('click', e => {
+    if (!e.target.closest('#btnWithSample')) return;
+    $('sData').value = 'all';
+    if (applyFilter()) { state.page = 1; renderAll(); }
   });
   $('pageSize').addEventListener('change', e => { state.size = Number(e.target.value); state.page = 1; render(); });
   $('btnExcel').addEventListener('click', downloadExcel);

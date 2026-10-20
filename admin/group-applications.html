@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 단체 회원 신청 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261019-1">
+<link rel="stylesheet" href="admin.css?v=20261020-6">
 </head>
 <body>
 <div class="layout">
@@ -24,8 +24,8 @@
         <a href="#" class="menu-parent" aria-expanded="false">메시지전송관리<span class="chev">▼</span></a>
         <ul class="submenu">
           <li><a href="message-send.html">메시지 전송</a></li>
-          <li><a href="message-sms.html">SMS 발송 관리</a></li>
           <li><a href="message-alimtalk.html">알림톡 발송 관리</a></li>
+          <li><a href="message-sms.html">SMS 발송 관리</a></li>
           <li><a href="message-email.html">이메일 발송 관리</a></li>
         </ul>
       </li>      <li class="has-sub">
@@ -271,22 +271,25 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261019-1"></script>
-<script src="member-type-store.js?v=20261019-1"></script>
-<script src="feedback.js?v=20261019-1"></script>
-<script src="member-data.js?v=20261019-1"></script>
+<script src="board-store.js?v=20261020-6"></script>
+<script src="member-type-store.js?v=20261020-6"></script>
+<script src="feedback.js?v=20261020-6"></script>
+<script src="member-data.js?v=20261020-6"></script>
 <script>
 (function () {
   'use strict';
   const { esc, toast, fmtDateTime, initSidebar, ADMIN_NAME } = AdminUtil;
   const { members, applications, saveApplication, applyApproval } = MemberData;
   const $ = id => document.getElementById(id);
-  const memberOf = app => members.find(m => m.userId === app.userId);
+  // 신청 회원은 회원번호로 찾음 (탈퇴하면 아이디가 마스킹되어 다른 탈퇴 회원과 겹칠 수 있음)
+  const memberOf = app => members.find(m => (app.memberNo ? m.no === app.memberNo : m.userId === app.userId));
   const typeBadge = t => `<span class="badge ty-${esc(t)}">${esc(t)}</span>`;
   const statusBadge = s => `<span class="badge st-${s}">${s}</span>`;
 
-  // 해제: 승인 후 회원 정보에서 구분을 일반으로 바꾼 건 / 만료: 적용 기간이 끝나 자동 전환된 건
-  const STATUSES = ['대기', '승인', '반려', '해제', '만료', '전체'];
+  // 해제: 승인 후 회원 정보에서 구분을 일반으로 바꾼 건 / 만료: 적용 기간이 끝나 자동 전환된 건 / 취소: 승인 대기 중 회원이 탈퇴해 자동 취소된 건
+  const STATUSES = ['대기', '승인', '반려', '해제', '만료', '취소', '전체'];
+  // 승인했지만 적용 기간 시작 전 (시작일부터 회원 구분·사업자 정보 반영)
+  const notStarted = a => a.status === '승인' && !!a.periodFrom && a.periodFrom > fmtDateTime(new Date()).slice(0, 10);
 
   // 회원·신청 데이터의 구분 참조(code)를 현재 구분명으로 정리
   MemberTypeStore.normalizeCategoryRefs(MemberData);
@@ -408,7 +411,7 @@
         <td>${typeBadge(m.memberType)}</td>
         <td><b>${esc(m.name)}</b></td>
         <td class="email" title="${esc(m.email)}">${esc(m.email)}</td>
-        <td>${statusBadge(a.status)}</td>
+        <td>${statusBadge(a.status)}${notStarted(a) ? ` <span class="muted" title="적용 시작일 ${a.periodFrom}부터 반영">적용 예정</span>` : ''}</td>
         <td><button type="button" class="btn btn-sm ${a.status === '대기' ? 'btn-primary' : ''}" data-app="${a.appNo}">확인</button></td>
       </tr>`;
     }).join('') : `<tr><td colspan="${heads.length}" class="empty">해당 상태의 신청이 없습니다.</td></tr>`;
@@ -474,7 +477,7 @@
     $('statusBanner').className = `status-banner st-${a.status}`;
     $('statusBanner').innerHTML = pending
       ? '<b>승인 대기</b> 사업자 정보와 사업자등록증을 확인한 뒤 처리해 주세요.'
-      : `<b>${a.status}</b> ${a.processedAt} · ${esc(a.processedBy)}${assignText(a) ? `<div class="banner-sub">회원 구분: ${esc(assignText(a))}</div>` : ''}${a.periodFrom ? `<div class="banner-sub">적용 기간: ${a.periodFrom} ~ ${a.periodTo} · 만료 후 '${esc(a.expireTo || NORMAL_NAME)}' 전환</div>` : ''}${a.rejectReason ? `<div class="banner-sub">반려 사유: ${esc(a.rejectReason)}</div>` : ''}${a.revokedAt ? `<div class="banner-sub">승인: ${a.processedAt} · ${esc(a.processedBy)} → 회원 정보에서 구분을 ${esc(NORMAL_NAME)}(으)로 변경해 사업자 정보 삭제</div>` : ''}`;
+      : `<b>${a.status}</b> ${a.processedAt} · ${esc(a.processedBy)}${assignText(a) ? `<div class="banner-sub">회원 구분: ${esc(assignText(a))}</div>` : ''}${a.periodFrom ? `<div class="banner-sub">적용 기간: ${a.periodFrom} ~ ${a.periodTo} · 만료 후 '${esc(a.expireTo || NORMAL_NAME)}' 전환${notStarted(a) ? ` · <b>적용 예정</b> (${a.periodFrom}부터 회원 구분·사업자 정보 반영)` : ''}</div>` : ''}${a.rejectReason ? `<div class="banner-sub">반려 사유: ${esc(a.rejectReason)}</div>` : ''}${a.revokedAt ? `<div class="banner-sub">승인: ${a.processedAt} · ${esc(a.processedBy)} → 회원 정보에서 구분을 ${esc(NORMAL_NAME)}(으)로 변경해 사업자 정보 삭제</div>` : ''}`;
     // 해제·만료 건은 첫 줄에 해당 시각을 표시
     if (a.status === '해제') $('statusBanner').querySelector('b').nextSibling.textContent = ` ${a.revokedAt} · ${a.revokedBy}`;
     if (a.status === '만료') $('statusBanner').querySelector('b').nextSibling.textContent = ` ${a.expiredAt} · 시스템 자동 전환 (승인 ${a.processedAt} · ${a.processedBy})`;
@@ -530,7 +533,7 @@
     renderStatus();
     render();
     if (!saved) toast('저장소를 사용할 수 없어 이 화면에만 반영되었습니다.');
-    else toast(status === '승인' ? '승인되었습니다. 회원 정보에 사업자 정보가 추가되었습니다.' : '반려되었습니다.');
+    else toast(status !== '승인' ? '반려되었습니다.' : notStarted(a) ? `승인되었습니다. 적용 시작일(${a.periodFrom})부터 회원 구분과 사업자 정보가 반영됩니다.` : '승인되었습니다. 회원 정보에 사업자 정보가 추가되었습니다.');
   }
 
   function approve() {
@@ -548,6 +551,8 @@
     if (msg) return;
 
     const m = memberOf(current);
+    // 그사이 탈퇴한 회원(다른 탭 포함)은 승인 불가
+    if (!m || m.withdrawn || MemberData.isWithdrawnStored(m.no)) { $('eReview').textContent = '탈퇴한 회원의 신청은 승인할 수 없습니다.'; $('eReview').classList.add('show'); return; }
     const assign = `${cat.label}${kind ? ` > ${kind}` : ''}`;
     if (!confirm(`${m.name}(${m.userId}) 회원의 단체회원 신청을 승인하시겠습니까?\n회원 구분: ${assign}\n적용 기간: ${from} ~ ${to} (만료 후 '${exp.name}' 전환)\n사업자 정보가 회원 정보에 추가됩니다.`)) return;
     // TODO: 실서비스에서는 POST /api/admin/group-applications/{appNo}/approve { categoryId, kind, periodFrom, periodTo, expireToCategoryId }
@@ -576,8 +581,7 @@
     if (s) { search = s; render(); }
   });
   $('btnReset').addEventListener('click', () => {
-    $('searchForm').reset();
-    AdminUtil.setDefaultRange();   // 초기화하면 기간은 기본값(최근 1개월)으로
+    $('searchForm').reset();   // 초기화하면 기간은 기본값(전체)으로
     search = readSearch();
     render();
   });
@@ -609,7 +613,7 @@
   });
 
   initSidebar();
-  AdminUtil.setDefaultRange();   // 처음 열면 신청일 최근 1개월 (관리자가 바꿔 검색 가능)
+  // 신청일 기간 기본값: 전체 (최근 1개월로 자르면 오래 기다린 승인 대기 건이 가려짐. 관리자가 바꿔 검색 가능)
   search = readSearch();
   render();
 })();

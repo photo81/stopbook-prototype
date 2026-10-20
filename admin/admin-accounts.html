@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 계정 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261019-1">
+<link rel="stylesheet" href="admin.css?v=20261020-6">
 </head>
 <body>
 <div class="layout">
@@ -24,8 +24,8 @@
         <a href="#" class="menu-parent" aria-expanded="false">메시지전송관리<span class="chev">▼</span></a>
         <ul class="submenu">
           <li><a href="message-send.html">메시지 전송</a></li>
-          <li><a href="message-sms.html">SMS 발송 관리</a></li>
           <li><a href="message-alimtalk.html">알림톡 발송 관리</a></li>
+          <li><a href="message-sms.html">SMS 발송 관리</a></li>
           <li><a href="message-email.html">이메일 발송 관리</a></li>
         </ul>
       </li>
@@ -288,10 +288,10 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261019-1"></script>
-<script src="member-type-store.js?v=20261019-1"></script>
-<script src="feedback.js?v=20261019-1"></script>
-<script src="admin-account-store.js?v=20261019-1"></script>
+<script src="board-store.js?v=20261020-6"></script>
+<script src="member-type-store.js?v=20261020-6"></script>
+<script src="feedback.js?v=20261020-6"></script>
+<script src="admin-account-store.js?v=20261020-6"></script>
 <script>
 (function () {
   'use strict';
@@ -390,19 +390,24 @@
   }
 
   // ----- 레벨 추가/설정 모달: 접근 메뉴 트리 -----
+  // 관리자계정관리(계정 관리)는 최고 관리자 전용: 다른 레벨에서는 잠금 + 안내 (data-super-only)
+  const SUPER_ONLY = S.superOnlyHrefs(catalog);
   $('permTree').innerHTML = catalog.map(s => `
     <div class="perm-sec">
       <div class="perm-sec-head"><label><input type="checkbox" data-sec><span>${esc(s.label)}</span></label><small>${s.cats.reduce((n, c) => n + c.items.length, 0)}개 메뉴</small></div>
-      ${s.cats.map(c => `<div class="perm-cat">
-        <label class="perm-cat-name"><input type="checkbox" data-cat><span>${esc(c.cat)}</span></label>
-        <div class="perm-items">${c.items.map(it => `<label><input type="checkbox" data-menu value="${esc(it.href)}"><span>${esc(it.label)}</span></label>`).join('')}</div>
-      </div>`).join('')}
+      ${s.cats.map(c => { const only = c.items.length && c.items.every(it => SUPER_ONLY.includes(it.href)); return `<div class="perm-cat">
+        <label class="perm-cat-name"><input type="checkbox" data-cat${only ? ' data-super-only' : ''}><span>${esc(c.cat)}</span></label>
+        <div class="perm-items">${c.items.map(it => `<label><input type="checkbox" data-menu value="${esc(it.href)}"${SUPER_ONLY.includes(it.href) ? ' data-super-only' : ''}><span>${esc(it.label)}</span></label>`).join('')}</div>
+        ${c.items.some(it => SUPER_ONLY.includes(it.href)) ? '<div class="readonly at-note" data-super-note hidden>계정 관리는 최고 관리자만 사용할 수 있습니다.</div>' : ''}
+      </div>`; }).join('')}
     </div>`).join('');
 
   const menuBoxes = (root = $('permTree')) => [...root.querySelectorAll('input[data-menu]')];
   // 하위 메뉴 선택 상태에 맞춰 카테고리·대메뉴 체크(일부 선택은 indeterminate) 갱신
   function syncPerm() {
-    const setGroup = (box, items) => {
+    const setGroup = (box, all) => {
+      // 잠긴(최고 관리자 전용) 메뉴는 제외하고 계산. 모두 잠겼으면 그대로
+      const items = all.some(x => !x.disabled) ? all.filter(x => !x.disabled) : all;
       const k = items.filter(x => x.checked).length;
       box.checked = k > 0 && k === items.length;
       box.indeterminate = k > 0 && k < items.length;
@@ -414,8 +419,8 @@
   }
   $('permTree').addEventListener('change', e => {
     const t = e.target;
-    if (t.matches('[data-cat]')) menuBoxes(t.closest('.perm-cat')).forEach(x => { x.checked = t.checked; });
-    if (t.matches('[data-sec]')) menuBoxes(t.closest('.perm-sec')).forEach(x => { x.checked = t.checked; });
+    if (t.matches('[data-cat]')) menuBoxes(t.closest('.perm-cat')).forEach(x => { if (!x.disabled) x.checked = t.checked; });
+    if (t.matches('[data-sec]')) menuBoxes(t.closest('.perm-sec')).forEach(x => { if (!x.disabled) x.checked = t.checked; });
     $('permErr').classList.remove('show');
     syncPerm();
   });
@@ -436,6 +441,9 @@
     const mine = lv ? S.levelMenus(lv, catalog) : [];
     $('permTree').querySelectorAll('input').forEach(x => { x.disabled = locked; });
     menuBoxes().forEach(x => { x.checked = mine.includes(x.value); });
+    // 최고 관리자 외 레벨: 계정 관리(관리자계정관리)는 선택 불가 (자기 권한 상승 방지)
+    $('permTree').querySelectorAll('input[data-super-only]').forEach(x => { if (!locked) { x.disabled = true; x.checked = false; } });
+    $('permTree').querySelectorAll('[data-super-note]').forEach(x => { x.hidden = locked; });
     $('btnPermAll').hidden = $('btnPermNone').hidden = locked;
     $('permLocked').hidden = !locked;
     ['lvNameErr', 'permErr'].forEach(id => $(id).classList.remove('show'));
@@ -452,7 +460,7 @@
     $('lvNameErr').classList.toggle('show', !!nameMsg);
     const lv = editLevel ? levelBy(editLevel) : null;
     const locked = !!(lv && lv.all);
-    const menus = menuBoxes().filter(x => x.checked).map(x => x.value);
+    const menus = menuBoxes().filter(x => x.checked && !SUPER_ONLY.includes(x.value)).map(x => x.value);
     const permMsg = !locked && !menus.length ? '접근 메뉴를 하나 이상 선택하세요.' : '';
     setErr('permErr', permMsg);
     if (nameMsg || permMsg) return;
@@ -482,16 +490,22 @@
 
   // ===== 계정 추가 =====
   $('acDomain').textContent = $('edDomain').textContent = '@' + S.DOMAIN;
-  const levelOptions = () => d.levels.map(l => `<option value="${esc(l.code)}">${esc(l.name)} (메뉴 ${S.levelMenus(l, catalog).length}개)</option>`).join('');
+  // def: 기본 선택 레벨 (selected 속성 → form.reset() 시 첫 옵션(최고 관리자)이 아닌 이 레벨로 돌아감)
+  const levelOptions = def => d.levels.map(l => `<option value="${esc(l.code)}"${l.code === def ? ' selected' : ''}>${esc(l.name)} (메뉴 ${S.levelMenus(l, catalog).length}개)</option>`).join('');
+  // 계정 추가 기본 레벨: 최고 관리자를 제외하고 접근 메뉴가 가장 적은 레벨 (같으면 아래쪽). 없으면 맨 아래 레벨
+  const defaultLevel = () => {
+    const pick = d.levels.filter(l => !l.all).reduce((m, l) => !m || S.levelMenus(l, catalog).length <= S.levelMenus(m, catalog).length ? l : m, null);
+    return (pick || d.levels[d.levels.length - 1] || {}).code || '';
+  };
   const showLevelInfo = (selId, infoId) => { const lv = levelBy($(selId).value); $(infoId).textContent = lv ? summaryText(lv) : ''; };
   $('acLevel').addEventListener('change', () => showLevelInfo('acLevel', 'acLevelInfo'));
   $('edLevel').addEventListener('change', () => showLevelInfo('edLevel', 'edLevelInfo'));
 
   function renderAccounts() {
-    // 추가 폼 레벨 선택지 (선택값 유지, 없으면 권한이 가장 적은 맨 아래 레벨을 기본으로)
-    const keep = $('acLevel').value;
-    $('acLevel').innerHTML = levelOptions();
-    $('acLevel').value = levelBy(keep) ? keep : (d.levels[d.levels.length - 1] || {}).code || '';
+    // 추가 폼 레벨 선택지 (선택값 유지, 없으면 권한이 가장 적은 레벨을 기본으로)
+    const keep = $('acLevel').value, def = defaultLevel();
+    $('acLevel').innerHTML = levelOptions(def);
+    $('acLevel').value = levelBy(keep) ? keep : def;
     showLevelInfo('acLevel', 'acLevelInfo');
 
     const fl = $('fLevel').value;
@@ -540,7 +554,8 @@
   });
   $('addForm').addEventListener('reset', () => {
     ['acEmailErr', 'acNameErr'].forEach(id => $(id).classList.remove('show'));
-    setTimeout(() => { renderAccounts(); }, 0);   // reset 후 레벨 기본값·안내 다시 표시
+    // reset 후 레벨을 기본 레벨로 되돌리고 안내 다시 표시 (첫 옵션 = 최고 관리자로 남지 않도록 명시 지정)
+    setTimeout(() => { $('acLevel').value = defaultLevel(); renderAccounts(); }, 0);
   });
 
   // 최고 관리자 레벨의 사용 중 계정이 모두 사라지지 않도록 막음

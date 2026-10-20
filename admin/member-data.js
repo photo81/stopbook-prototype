@@ -439,7 +439,8 @@
   }
 
   // ===== 회원 구분 샘플 =====
-  // 회원 유형 관리 > 구분에 지금 등록된 항목(숨김 제외)을 기준으로 배정 (member-type-store.js를 먼저 로드해야 함)
+  // 회원 유형 관리 > 구분 목록을 처음 한 번 저장해 둔 것(sampleCategoryTree)을 기준으로 배정 (member-type-store.js를 먼저 로드해야 함)
+  //   그 뒤 구분을 숨기거나 추가해도 기존 회원의 구분은 바뀌지 않음 (매번 현재 목록으로 나누면 다른 회원의 구분까지 다시 배정됨)
   //   기본 구분(normal) 약 80%, 나머지 20%는 그 외 구분에 회원 번호 순으로 번갈아 배정. 종류가 있는 구분은 종류도 번갈아 지정
   //   저장소를 못 읽으면 기본값(일반/단체)으로 생성. 승인된 단체 신청 회원은 아래 applyApproval에서 관리자가 지정한 구분·종류로 덮어씀
   // 회원 구분 참조: categoryCode(기준, 회원 유형 관리의 구분 code) + category(표시명)
@@ -453,7 +454,7 @@
     { code: 'company', name: '회사', subs: [] },
     { code: 'group', name: '단체', subs: ['동호회', '협회', '기타'] }
   ];
-  const liveTree = window.MemberTypeStore ? MemberTypeStore.categoryTree().filter(c => !c.hidden) : [];
+  const liveTree = window.MemberTypeStore && MemberTypeStore.sampleCategoryTree ? MemberTypeStore.sampleCategoryTree() : [];
   const catTree = liveTree.length ? liveTree : DEFAULT_TREE;
   const mainCat = catTree.find(c => c.code === 'normal') || catTree[0];              // 개인 회원 기본 구분
   const otherCats = catTree.filter(c => c !== mainCat);
@@ -555,6 +556,7 @@
     const appliedAt = new Date(base - k * 2 * 86400000 - (k * 37 % 600) * 60000);
     const app = {
       appNo: 501 + k,
+      memberNo: m.no,   // 신청 회원은 회원번호로 찾음 (탈퇴하면 아이디가 마스킹되어 다른 탈퇴 회원과 겹칠 수 있음)
       userId: m.userId,
       reqCategoryCode: reqCat.code,
       reqCategory: reqCat.name,
@@ -606,10 +608,15 @@
     try { localStorage.setItem(APP_KEY, JSON.stringify(appOverlay)); return true; } catch (e) { return false; }
   }
 
+  // 신청한 회원 (회원번호 기준, 예전 데이터는 아이디)
+  const appMember = app => members.find(x => (app.memberNo ? x.no === app.memberNo : x.userId === app.userId));
+  // 적용 시작 전 승인 건: 시작일 전에는 회원 구분·사업자 정보를 바꾸지 않음 (시작일이 되면 화면을 열 때 반영)
+  const notStarted = app => !!app.periodFrom && app.periodFrom > fmtDate(new Date());
   // 승인된 신청 → 관리자가 지정한 구분·종류로 회원 구분을 바꾸고 기본 정보 하단에 사업자 정보 추가
+  //   적용 기간 시작 전이면 바꾸지 않음 (계약 전부터 단체 혜택이 적용되지 않게). 탈퇴 회원에게는 적용하지 않음
   function applyApproval(app) {
-    const m = members.find(x => x.userId === app.userId);
-    if (!m) return;
+    const m = appMember(app);
+    if (!m || m.withdrawn || notStarted(app)) return;
     m.categoryCode = app.assignCategoryCode || groupCat.code;
     m.category = app.assignCategory || groupCat.name;   // 표시명은 화면에서 code 기준으로 다시 맞춤
     m.subCategory = app.assignKind !== undefined ? app.assignKind : app.groupType;
@@ -644,8 +651,8 @@
   applications.forEach(a => {
     if (!['승인', '해제', '만료'].includes(a.status)) return;
     applyApproval(a);
-    const m = members.find(x => x.userId === a.userId);
-    if (!m || a.status === '승인') return;
+    const m = appMember(a);
+    if (!m || a.status === '승인' || notStarted(a)) return;
     const biz = `${a.business.companyName} (${a.business.bizNo})`;
     m.subCategory = '';
     if (a.status === '해제') {
@@ -742,7 +749,13 @@
   // 저장된 비밀번호가 없을 때: 샘플 회원만 SAMPLE_PASSWORD 사용
   //   쇼핑몰에서 가입한 회원(fromSignup)은 샘플 비밀번호를 쓰지 않음 → '패스워드 미설정' (로그인 기능 추가 전에 가입해 비밀번호가 저장되지 않은 경우)
   //   관리자 회원 상세에서 패스워드 초기화(임시 패스워드 발급)로 복구
-  const authOf = m => AUTH[m.no] || (hasPassword(m) && !m.fromSignup ? { hash: pwHash(m.no, SAMPLE_PASSWORD), changedAt: (m.history[0] && m.history[0].at) || ` 00:00`, temp: false, fail: 0, lockedUntil: '', snoozeUntil: '', sample: true } : null);
+  //   매번 저장소를 다시 읽음: 다른 탭(마이페이지·관리자 화면)에서 바꾼 비밀번호를 예전 값으로 되돌리지 않게
+  const authOf = m => {
+    const fresh = readJson(AUTH_KEY)[m.no];
+    if (fresh) AUTH[m.no] = fresh; else delete AUTH[m.no];
+    return authOfMem(m);
+  };
+  const authOfMem = m => AUTH[m.no] || (hasPassword(m) && !m.fromSignup ? { hash: pwHash(m.no, SAMPLE_PASSWORD), changedAt: (m.history[0] && m.history[0].at) || ` 00:00`, temp: false, fail: 0, lockedUntil: '', snoozeUntil: '', sample: true } : null);
   // 저장 직전에 저장소를 다시 읽어 이 회원 값만 바꿈 (다른 탭에서 지운 탈퇴 회원의 비밀번호 기록이 되살아나지 않게)
   const saveAuth = (m, a) => {
     delete a.sample; AUTH[m.no] = a;
@@ -879,13 +892,29 @@
     return byEmail ? { field: 'email', member: byEmail } : null;
   }
 
+  // 간편 로그인(카카오·네이버·구글) 회원 찾기: 가입 때 저장한 SNS 계정 식별값(snsKey)으로 찾음
+  //   회원이 가입 화면·마이페이지에서 이메일을 바꿔도 같은 SNS 계정이면 같은 회원으로 로그인
+  //   식별값이 없는 예전 회원(샘플 등)은 같은 이메일·같은 가입유형으로 찾음. 탈퇴 회원은 제외
+  // TODO: 실서비스에서는 OAuth 응답의 SNS 고유 식별값(sub·id)으로 회원을 찾음
+  const snsKey = (code, email) => `${code}:${String(email || '').trim().toLowerCase()}`;
+  // 가입유형 이름 → SNS 코드 (kakao·naver·google, 회원 유형 관리 > 가입유형)
+  const snsCodeOf = m => {
+    try { const g = MemberTypeStore.load().find(x => x.key === 'memberType'); const it = g && g.items.find(x => x.name === m.memberType); return it && it.code !== 'stopbook' ? it.code : ''; }
+    catch (e) { return ''; }
+  };
+  function findSnsMember(code, email, typeName) {
+    const key = snsKey(code, email), live = members.filter(m => !m.withdrawn);
+    return live.find(m => m.snsKey === key)
+      || live.find(m => !m.snsKey && m.memberType === typeName && String(m.email).toLowerCase() === String(email).trim().toLowerCase()) || null;
+  }
+
   // ===== 회원정보 수정 (user/mypage.html, 요구사항 PRD_MEM_009) =====
   // 회원이 마이페이지에서 고친 정보를 localStorage에 보관하고 페이지를 열 때 회원 데이터에 덮어씀
   //   → 관리자 통합 회원 관리(목록·상세·변경 히스토리)에도 같은 값이 보임 (샘플 회원·가입 회원 공통)
   //   PROFILE_KEY: { [회원 no]: { fields: { name, email, userId, phone, ... }, log: [{ at, content, by }] } }
   // TODO: 실서비스에서는 PUT /api/members/me (이메일·휴대폰 번호는 서버에서 본인 인증 토큰 확인 후 변경)
   const PROFILE_KEY = 'stopbook.memberProfile.v1';
-  const PROFILE_FIELDS = ['name', 'email', 'userId', 'phone', 'birth', 'nickname', 'gender', 'zipcode', 'address1', 'address2', 'interests', 'interestEtc', 'marketingUse', 'marketingSms', 'marketingEmail'];
+  const PROFILE_FIELDS = ['name', 'email', 'userId', 'phone', 'birth', 'nickname', 'gender', 'zipcode', 'address1', 'address2', 'interests', 'interestEtc', 'marketingUse', 'marketingSms', 'marketingEmail', 'snsKey'];
   const PROFILES = readJson(PROFILE_KEY);
   members.forEach(m => {
     const p = PROFILES[m.no];
@@ -907,6 +936,11 @@
     const logs = (contents || []).map(content => ({ at, content, by: by || '회원' }));
     const next = {};
     PROFILE_FIELDS.forEach(k => { if (k in fields) next[k] = fields[k]; });
+    // 간편 로그인 회원이 이메일을 바꾸면: SNS 계정 식별값을 바꾸기 전 이메일로 남겨 다음 SNS 로그인 때 같은 회원으로 찾게 함
+    if ('email' in next && !m.snsKey && !hasPassword(m)) {
+      const code = snsCodeOf(m);
+      if (code) next.snsKey = snsKey(code, m.email);
+    }
     p.fields = Object.assign({}, p.fields, next);
     p.log = (p.log || []).concat(logs);
     store[no] = p; PROFILES[no] = p;
@@ -954,10 +988,12 @@
   // 히스토리 중 개인정보 값이 들어 있는 기록 → 내용만 파기 표시 (변경 사실과 일시는 남김)
   const PERSONAL_LOG = /^(이름|생년월일|이메일|휴대폰 번호|닉네임|성별|주소|관심분야|로그인 아이디) 변경/;
 
-  const withdrawType = () => {
+  // 탈퇴구분 (회원 유형 관리 > 탈퇴회원). code 기본값 = 자진탈퇴
+  const withdrawType = (code = 'voluntary') => {
     const WS = window.MemberTypeStore && MemberTypeStore.WithdrawStore;
     const data = WS ? WS.load() : null;
-    const type = data && WS.typeByCode(data, 'voluntary');
+    const type = data && WS.typeByCode(data, code);
+    if (!type && code !== 'voluntary') return { data, type: null };
     return { data, type: type || { code: 'voluntary', name: '자진탈퇴', cond: { reasonMode: 'optional', multi: true, rejoinDays: 0 } } };
   };
 
@@ -1020,7 +1056,7 @@
       withdrawReasons: rec.reasonLabels || [], withdrawEtc: rec.reasonEtc || '', rejoinUntil: rec.rejoinUntil || '',
       name: L.name, userId: rec.userIdMasked, email: rec.emailMasked, phone: L.purged,
       birth: '', nickname: '', gender: '', zipcode: '', address1: '', address2: '', interests: [], interestEtc: '',
-      marketingUse: 'N', marketingSms: 'N', marketingEmail: 'N', loginEnv: '', lastLogin: '',
+      marketingUse: 'N', marketingSms: 'N', marketingEmail: 'N', loginEnv: '', lastLogin: '', snsKey: '',
       mileage: 0, giftCard: 0, coupon: 0, cart: [], postpay: 'N', postpayFrom: '', postpayTo: ''
     });
     // 문의(법정 보관): 답변 본문의 고객 이름도 가림 (관리자 처리 전 원래 답변 사본 q.sample 포함)
@@ -1033,9 +1069,15 @@
     const hideBiz = b => Object.assign(b, { ceo: L.name, managerName: L.name, managerPhone: L.restricted, managerEmail: L.restricted,
       certFile: b.certFile ? String(b.certFile).split(oldId).join(rec.userIdMasked) : b.certFile });
     if (m.business) hideBiz(m.business);
-    applications.filter(a => a.userId === oldId).forEach(a => {
+    applications.filter(a => (a.memberNo ? a.memberNo === m.no : a.userId === oldId)).forEach(a => {
       a.userId = rec.userIdMasked;
       if (a.business) hideBiz(a.business);
+      // 승인 대기 중인 단체 신청은 탈퇴와 함께 자동 취소 (탈퇴 회원에게 승인되지 않게)
+      if (a.status === '대기') {
+        Object.assign(a, { status: '취소', processedAt: rec.at, processedBy: '시스템' });
+        a.history.push({ at: rec.at, content: '회원 탈퇴로 신청 자동 취소', by: '시스템' });
+        saveApplication(a);
+      }
     });
     // 히스토리: 개인정보 변경 기록은 값만 파기
     m.history.forEach(h => { h.content = scrubLog(h.content); });
@@ -1056,7 +1098,7 @@
   const COPY_STORES = [
     'stopbook.orderCancels.v1', 'stopbook.orderAdminLog.v1', 'stopbook.orderDeposits.v2', 'stopbook.orderExtraPayments.v1',
     'stopbook.outsourceRequests.v1', 'stopbook.outsourceRequestMemos.v1', 'stopbook.voucherMemos.v1',
-    'stopbook.cancelRequests.v2', 'stopbook.exchangeRequests.v1', 'stopbook.docRequests.v1', 'stopbook.docIssues.v1',
+    'stopbook.cancelRequests.v2', 'stopbook.exchangeRequests.v1', 'stopbook.docRequests.v1', 'stopbook.docRequests.v2','stopbook.docIssues.v1',
     'stopbook.inquiries.v1', 'stopbook.messageLogs.v1', 'stopbook.groupApplications.v4'
   ];
   const ADDRESS_STORE = 'stopbook.orderAddresses.v1', ORDER_LOG_STORE = 'stopbook.orderAdminLog.v1';
@@ -1106,7 +1148,10 @@
     return changed;
   }
 
-  // 회원 탈퇴 처리. opts = { reasonCodes, reasonLabels, reasonEtc, channel('PC'|'모바일'), by('회원') }. 반환: { record } 또는 { error, blocking }
+  // 회원 탈퇴 처리. 반환: { record } 또는 { error, blocking }
+  //   opts = { typeCode(탈퇴구분, 기본 자진탈퇴), reasonCodes, reasonLabels, reasonEtc, channel('PC'|'모바일'|'관리자'|'시스템'),
+  //            by('회원'|관리자 이름|'시스템'), note(처리 메모: 관리자 처리·시스템 자동) }
+  //   회원 본인 신청 = 마이페이지 / 관리자 처리(강제탈퇴, 전화 등으로 받은 탈퇴 요청 대리 처리) = 회원 상세 / 시스템 자동(장기미이용) = runDormantBatch
   function withdraw(no, opts = {}) {
     const m = members.find(x => x.no === no);
     if (!m || m.withdrawn) return { error: '회원 정보를 찾을 수 없습니다.' };
@@ -1114,7 +1159,9 @@
     if (isWithdrawnStored(no)) return { error: '이미 탈퇴 처리된 계정입니다.', withdrawn: true };
     const chk = withdrawCheck(m);
     if (chk.blocking.length) return { error: `진행 중인 주문 ${chk.blocking.length}건이 있어 탈퇴할 수 없습니다.`, blocking: chk.blocking };
-    const { type } = withdrawType();
+    const { type } = withdrawType(opts.typeCode || 'voluntary');
+    if (!type) return { error: '탈퇴구분을 찾을 수 없습니다.' };
+    const byMember = !opts.by || opts.by === '회원';
     const now = new Date(), at = fmtDateTime(now), date = fmtDate(now);
     const orders = effectiveOrders(m);
     const tenureDays = Math.max(0, daysBetween(m.joinDate, date));
@@ -1127,7 +1174,7 @@
     const reasonCodes = (opts.reasonCodes || []).slice(), reasonLabels = (opts.reasonLabels || []).slice(), reasonEtc = String(opts.reasonEtc || '').trim();
     const rec = {
       at, withdrawDate: date, typeCode: type.code, reasonType: type.name, reasonCodes, reasonLabels, reasonEtc,
-      channel: opts.channel || 'PC', processedBy: '본인', processNote: '',
+      channel: opts.channel || 'PC', processedBy: byMember ? '본인' : opts.by, processNote: String(opts.note || '').trim(),
       userIdMasked: maskUserId(m.userId), emailMasked: maskEmail(m.email),
       emailHash: m.email ? hashOf(m.email) : '', phoneHash: digits(m.phone) ? hashOf(digits(m.phone)) : '',
       rejoinUntil,
@@ -1146,7 +1193,7 @@
         orderRecordPurgeDate: orders.length ? daysAfter(date, 365 * 5 + 1) : ''
       },
       log: [
-        { at, content: `회원 탈퇴 (${type.name}${reasonLabels.length ? ` · 사유: ${reasonLabels.join(', ')}` : ''}${reasonEtc ? ` · 의견: ${reasonEtc}` : ''})`, by: opts.by || '회원' },
+        { at, content: `회원 탈퇴 (${type.name}${reasonLabels.length ? ` · 사유: ${reasonLabels.join(', ')}` : ''}${reasonEtc ? ` · 의견: ${reasonEtc}` : ''}${opts.note ? ` · 처리 메모: ${String(opts.note).trim()}` : ''})`, by: opts.by || '회원' },
         { at, content: `개인정보 파기 (이름·이메일·휴대폰·생일·주소 등) · 보유 혜택 소멸 (마일리지 ${chk.mileage.toLocaleString()}P · 쿠폰 ${chk.coupons}장 · 상품권 ${chk.giftCard.toLocaleString()}원)`, by: '시스템' }
       ],
       // 아래에서 지우는 회원정보 수정·비밀번호 기록의 사본 (일시·처리자는 남기고 개인정보 값만 파기 표시)
@@ -1167,7 +1214,7 @@
     if (m.fromSignup) {
       const list = loadSignups().map(r => (r.no !== no ? r : Object.assign({}, r, {
         name: WITHDRAWN_LABEL.name, userId: rec.userIdMasked, email: rec.emailMasked, phone: WITHDRAWN_LABEL.purged,
-        birth: '', nickname: '', gender: '', marketingUse: 'N', marketingSms: 'N', marketingEmail: 'N', lastLogin: '', loginEnv: '',
+        birth: '', nickname: '', gender: '', marketingUse: 'N', marketingSms: 'N', marketingEmail: 'N', lastLogin: '', loginEnv: '', snsKey: '',
         history: (r.history || []).map(h => Object.assign({}, h, { content: scrubLog(h.content) }))
       })));
       try { localStorage.setItem(SIGNUP_KEY, JSON.stringify(list)); } catch (e) { /* 화면에는 아래 적용으로 가려짐 */ }
@@ -1198,22 +1245,140 @@
     if (dup) return { error: dup.field === 'phone' ? '이미 가입된 휴대폰 번호입니다.' : '이미 사용 중인 이메일입니다.' };
     const block = rejoinBlock(rec);
     if (block) return { error: `탈퇴 후 재가입 제한 기간입니다. ${block.until}부터 다시 가입할 수 있습니다.` };
+    // 다른 탭(창)에서 방금 가입한 회원도 확인: 저장소를 다시 읽어 이 화면에 아직 없는 가입 기록과 비교 (같은 정보로 계정이 두 개 생기지 않게)
+    const list = loadSignups();
+    const e = String(rec.email || '').trim().toLowerCase(), p = digits(rec.phone);
+    const fresh = list.filter(r => !members.some(m => m.no === r.no));
+    if (fresh.some(r => (p && digits(r.phone) === p))) return { error: '이미 가입된 휴대폰 번호입니다.' };
+    if (fresh.some(r => e && String(r.email).toLowerCase() === e)) return { error: '이미 사용 중인 이메일입니다.' };
     const now = new Date(), at = fmtDateTime(now);
     const saved = Object.assign({}, rec, {
-      no: members.reduce((n, m) => Math.max(n, m.no), 1000) + 1,
+      no: members.concat(list).reduce((n, m) => Math.max(n, m.no), 1000) + 1,   // 회원번호도 다른 탭 가입분과 겹치지 않게
       grade: GRADE_ORDER[0], joinDate: fmtDate(now), lastLogin: fmtDate(now), loginEnv: rec.joinEnv,
       memos: [], history: [{ at, content: `회원 가입 (${rec.memberType})`, by: '회원' }].concat(rec.history || [])
     });
-    const list = loadSignups();
     list.push(saved);
     try { localStorage.setItem(SIGNUP_KEY, JSON.stringify(list)); } catch (e) { return { error: '가입 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.' }; }
     return { member: attachSignup(saved) };
   }
 
+  // ===== 등급 자동 산정 =====
+  // 회원 유형 관리 > 등급 탭의 평가 조건으로, 산정 예정일이 지났으면 회원 데이터를 불러올 때 재산정 (이전 결과는 localStorage에서 먼저 반영)
+  //   관리자 화면과 쇼핑몰(마이페이지·탈퇴 기록)이 같은 등급을 보도록 여기서 한 번만 실행. 탈퇴 회원은 탈퇴 시점 등급 유지
+  // TODO: 실서비스에서는 서버 배치가 처리
+  //   관리자가 '등급 고정'으로 저장한 회원(관리자 회원 상세 저장소의 gradeLocked)은 자동 산정에서 뺌
+  const ADMIN_EDIT_KEY = 'stopbook.memberAdminEdits.v1';
+  const gradeLocked = (() => { const s = readJson(ADMIN_EDIT_KEY); return no => !!(s[no] && s[no].fields && s[no].fields.gradeLocked); })();
+  const gradeRun = (() => {
+    const MTS = window.MemberTypeStore;
+    const group = MTS && MTS.GradeEvaluator && MTS.load().find(g => g.key === 'grade');
+    return group ? MTS.GradeEvaluator.run(members.filter(m => !m.withdrawn && !gradeLocked(m.no)), group, orderStats) : { ran: false, changes: [], run: { lastRunAt: '' } };
+  })();
+
+  // ===== 관리자 회원 상세 저장 (admin/members.html) =====
+  // 관리자가 회원 상세에서 바꾼 값을 localStorage에 보관하고 페이지를 열 때마다 회원 데이터에 덮어씀 (샘플 회원은 매번 새로 만들어지므로)
+  //   ADMIN_EDIT_KEY: { [회원 no]: { fields: { categoryCode, category, subCategory, grade, gender, marketingSms, marketingEmail, postpay, postpayFrom, postpayTo },
+  //                     gradeAt(등급을 바꾼 일시), dropBusiness(사업자 정보 삭제), memos: [], alimtalkLog: [], ledger: { giftCard: [], coupon: [] }, log: [{ at, content, by }] } }
+  //   회원등급: 관리자가 바꾼 등급은 다음 자동 산정 전까지 유지 (바꾼 일시가 마지막 자동 산정보다 늦을 때만 덮어씀)
+  //     gradeLocked(등급 고정) = 자동 산정에서 빼고 관리자가 정한 등급을 계속 유지
+  //   탈퇴 회원은 메모·히스토리만 반영 (파기한 값이 되살아나지 않게)
+  // TODO: 실서비스에서는 PUT /api/admin/members/{no}, POST /api/admin/members/{no}/memos|alimtalk|benefits/{kind}
+  const ADMIN_FIELDS = ['categoryCode', 'category', 'subCategory', 'grade', 'gradeLocked', 'gender', 'marketingSms', 'marketingEmail', 'postpay', 'postpayFrom', 'postpayTo'];
+  const copyAll = list => (list || []).map(x => Object.assign({}, x));
+  function applyAdminEdit(m, e) {
+    if (!m.withdrawn) {
+      const f = Object.assign({}, e.fields);
+      if ('grade' in f && !f.gradeLocked && gradeRun.run.lastRunAt && (e.gradeAt || '') < gradeRun.run.lastRunAt) delete f.grade;   // 고정하지 않았으면 그 뒤 자동 산정된 등급이 우선
+      Object.assign(m, f);
+      if (e.dropBusiness) delete m.business;
+      ['giftCard', 'coupon'].forEach(k => {
+        const list = m.ledger && m.ledger[k];
+        if (!list) return;
+        copyAll((e.ledger || {})[k]).forEach(x => { delete x.balance; pushEntry(list, x); });
+        m[k] = list.length ? list[list.length - 1].balance : 0;
+      });
+      if ((e.alimtalkLog || []).length) m.alimtalkLog = (m.alimtalkLog || []).concat(copyAll(e.alimtalkLog));
+    }
+    m.memos = (m.memos || []).concat(copyAll(e.memos));
+    copyAll(e.log).forEach(h => m.history.push(h));
+  }
+  const ADMIN_EDITS = readJson(ADMIN_EDIT_KEY);
+  members.forEach(m => { if (ADMIN_EDITS[m.no]) applyAdminEdit(m, ADMIN_EDITS[m.no]); });
+  // 저장: patch = { fields, memo, alimtalk, ledger: { kind, entry }, dropBusiness, logs: [내용] } (있는 것만). 회원 데이터에는 화면이 이미 반영해 둔 상태
+  //   다른 탭에서 저장한 값을 덮어쓰지 않도록 저장 직전에 다시 읽어 이 회원 값만 바꿈. 반환: 저장 성공 여부
+  function saveAdminEdit(no, patch, by) {
+    const m = members.find(x => x.no === no);
+    if (!m) return false;
+    const store = readJson(ADMIN_EDIT_KEY);
+    const e = store[no] || { fields: {}, memos: [], alimtalkLog: [], ledger: {}, log: [] };
+    const at = fmtDateTime(new Date());
+    if (patch.fields && !m.withdrawn && !isWithdrawnStored(no)) {
+      ADMIN_FIELDS.forEach(k => { if (k in patch.fields) e.fields[k] = patch.fields[k]; });
+      if ('grade' in patch.fields) e.gradeAt = at;
+    }
+    if (patch.dropBusiness) e.dropBusiness = true;
+    if (patch.memo) e.memos.push(patch.memo);
+    if (patch.alimtalk) e.alimtalkLog.push(patch.alimtalk);
+    if (patch.ledger) (e.ledger[patch.ledger.kind] || (e.ledger[patch.ledger.kind] = [])).push(Object.assign({}, patch.ledger.entry));
+    (patch.logs || []).forEach(content => e.log.push({ at, content, by: by || '관리자' }));
+    store[no] = e; ADMIN_EDITS[no] = e;
+    return writeJson(ADMIN_EDIT_KEY, store);
+  }
+
+  // ===== 장기미이용 자동 탈퇴 (탈퇴구분 중 '시스템 자동', 회원 유형 관리 > 탈퇴회원) =====
+  // 하루 한 번 (회원 데이터를 불러올 때 오늘 실행 기록이 없으면) 실행
+  //   ① 탈퇴 예정 안내: 미접속 (탈퇴 조건 일수 − 사전 안내 일수)일이 지난 회원에게 탈퇴 예정일을 안내 (이메일·알림톡 발송 기록)
+  //   ② 자동 탈퇴: 안내한 탈퇴 예정일이 지났고 그동안 접속하지 않은 회원을 탈퇴 처리 (사유는 그 탈퇴구분의 첫 번째 사용 중 사유)
+  //      진행 중인 주문이 있으면 탈퇴하지 않고 다음 실행 때 다시 확인. 안내 후 접속한 회원은 안내를 취소
+  //   안내 없이 바로 탈퇴하지 않음: 사전 안내를 거친 회원만 탈퇴 (처음 실행하면 대상자에게 안내만 나감)
+  //   DORMANT_KEY: { lastRunDate, notices: { [회원 no]: { noticedAt, dueDate, typeCode } }, log: { [회원 no]: [{ at, content, by }] } }
+  // TODO: 실서비스에서는 매일 00:00 서버 배치 + 실제 이메일·알림톡 발송
+  const DORMANT_KEY = 'stopbook.dormantWithdraw.v1';
+  const dormant = Object.assign({ lastRunDate: '', notices: {}, log: {} }, readJson(DORMANT_KEY));
+  members.forEach(m => { (dormant.log[m.no] || []).forEach(h => m.history.push(Object.assign({}, h))); });
+  function runDormantBatch(now = new Date()) {
+    const today = fmtDate(now), at = fmtDateTime(now);
+    const result = { ran: false, noticed: 0, withdrawn: 0, held: 0 };
+    if (dormant.lastRunDate === today) return result;
+    const WS = window.MemberTypeStore && MemberTypeStore.WithdrawStore;
+    const data = WS ? WS.load() : null;
+    const types = data ? data.types.filter(t => t.actor === 'system' && !t.hidden) : [];
+    result.ran = true;
+    const addLog = (no, content) => { const h = { at, content, by: '시스템' }; (dormant.log[no] || (dormant.log[no] = [])).push(h); const m = members.find(x => x.no === no); if (m) m.history.push(h); };
+    members.filter(m => !m.withdrawn && m.lastLogin).forEach(m => {
+      const n = dormant.notices[m.no];
+      if (n && m.lastLogin > n.noticedAt.slice(0, 10)) { delete dormant.notices[m.no]; addLog(m.no, '장기미이용 탈퇴 예정 취소 (안내 후 접속)'); return; }
+      const t = types.find(x => x.code === (n ? n.typeCode : '')) || types[0];
+      if (!t) return;
+      const inactive = daysBetween(m.lastLogin, today), c = t.cond;
+      if (!n) {
+        if (inactive < c.inactiveDays - c.noticeDays) return;
+        const due = daysAfter(m.lastLogin, c.inactiveDays) > daysAfter(today, c.noticeDays) ? daysAfter(m.lastLogin, c.inactiveDays) : daysAfter(today, c.noticeDays);
+        dormant.notices[m.no] = { noticedAt: at, dueDate: due, typeCode: t.code };
+        addLog(m.no, `장기미이용 탈퇴 예정 안내 (미접속 ${inactive.toLocaleString()}일 · ${due} 자동 탈퇴 예정, 이메일·알림톡 발송)`);
+        result.noticed++;
+        return;
+      }
+      if (today < n.dueDate) return;
+      const reason = data.reasons.find(r => r.type === t.code && !r.hidden);
+      const r = withdraw(m.no, { typeCode: t.code, reasonCodes: reason ? [reason.code] : [], reasonLabels: reason ? [reason.name] : [], channel: '시스템', by: '시스템',
+        note: `미접속 ${inactive.toLocaleString()}일 (${n.noticedAt.slice(0, 10)} 사전 안내)` });
+      if (r.error) { if (!n.held) addLog(m.no, `장기미이용 자동 탈퇴 보류: ${r.error}`); n.held = true; result.held++; return; }
+      delete dormant.notices[m.no];
+      result.withdrawn++;
+    });
+    dormant.lastRunDate = today;
+    writeJson(DORMANT_KEY, dormant);
+    return result;
+  }
+  const dormantRun = runDormantBatch();
+  // 탈퇴 예정 안내를 받은 회원 (회원 상세 안내용). 반환: { noticedAt, dueDate } 또는 null
+  const dormantNotice = no => dormant.notices[no] || null;
+
   window.MemberData = {
-    members, GRADE_ORDER, BENEFITS, COUPONS, PRODUCTS, PROJECT_NAMES, VIEWER_SAMPLE, viewerUrl, pad, fmtDate, fmtDateTime, pushEntry, heldCoupons, orderStats, validOrders, statusClass, ageOf, addMileage, mileageHistory,
+    members, GRADE_ORDER, gradeRun, saveAdminEdit, dormantRun, dormantNotice, runDormantBatch, BENEFITS, COUPONS, PRODUCTS, PROJECT_NAMES, VIEWER_SAMPLE, viewerUrl, pad, fmtDate, fmtDateTime, pushEntry, heldCoupons, orderStats, validOrders, statusClass, ageOf, addMileage, mileageHistory,
     applications, saveApplication, applyApproval, revokeBusiness, GROUP_TYPES: groupKinds,
-    findDuplicate, registerMember, SIGNUP_KEY, Auth, updateProfile, PROFILE_KEY,
+    findDuplicate, registerMember, snsKey, findSnsMember, SIGNUP_KEY, Auth, updateProfile, PROFILE_KEY,
     INTERESTS, INTEREST_ETC, interestText, addressText,
     WITHDRAW_KEY, WITHDRAWN_LABEL, withdrawCheck, withdraw, withdrawType, rejoinBlock, withdrawals, isWithdrawnStored, maskEmail, maskUserId
   };

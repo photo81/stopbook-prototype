@@ -180,6 +180,25 @@
     });
   }
 
+  // 샘플 회원 구분 배정용 구분 목록 (member-data.js에서 사용)
+  //   샘플 회원은 페이지를 열 때마다 새로 만들어지므로 현재 구분 목록(숨김 제외)으로 배정하면
+  //   구분을 숨기거나 추가할 때마다 '회원 번호 % 구분 수' 배정이 달라져 다른 회원의 구분까지 바뀜
+  //   → 처음 쓴 시점의 사용 중 구분 목록을 따로 저장해 두고 계속 같은 목록으로 배정
+  //     (이후 숨긴 구분도 빠지지 않고 기존 회원에 그대로 남음, 새로 추가한 구분에는 기존 회원이 배정되지 않음)
+  //   반환: [{ code, name, subs }] — 이름은 현재 구분명(삭제된 구분은 저장해 둔 이름)
+  // TODO: 실서비스에서는 회원 데이터에 구분 ID가 저장되므로 불필요
+  const SAMPLE_CATS_KEY = 'stopbook.memberTypes.sampleCats.v1';
+  function sampleCategoryTree() {
+    let snap = null;
+    try { snap = JSON.parse(localStorage.getItem(SAMPLE_CATS_KEY) || 'null'); } catch (e) { /* 저장소 사용 불가 시 현재 목록 */ }
+    if (!Array.isArray(snap) || !snap.length) {
+      snap = categoryTree().filter(c => !c.hidden).map(c => ({ code: c.code, name: c.name, subs: c.subs }));
+      try { localStorage.setItem(SAMPLE_CATS_KEY, JSON.stringify(snap)); } catch (e) { /* 저장 실패 시 이번 화면에서만 사용 */ }
+    }
+    return snap.map(c => ({ code: c.code, name: categoryName(c.code) || c.name, subs: (c.subs || []).slice() }));
+  }
+  sampleCategoryTree();   // 스크립트 로드 시 바로 저장해 두어, 이후 구분을 숨기거나 추가해도 배정 기준이 바뀌지 않게 함
+
   // 구분명 검증 (중복 이름 허용). 반환: 오류 메시지 또는 ''
   function checkCategoryName(name) {
     const v = String(name).trim();
@@ -655,7 +674,7 @@
 
   // inactiveDays/noticeDays: 시스템 자동일 때만 사용 · memoRequired: 관리자 처리일 때만 사용
   // reasonMode: required(사유 선택 필수) / optional(선택 사항) / auto(사용 중인 첫 번째 사유를 자동 지정)
-  // rejoinDays: 탈퇴 후 같은 아이디로 재가입할 수 없는 기간 (0 = 제한 없음)
+  // rejoinDays: 탈퇴 후 같은 이메일·휴대폰 번호로 재가입할 수 없는 기간 (0 = 제한 없음, member-data.js rejoinBlock에서 확인)
   const emptyWdCond = () => ({ inactiveDays: 365, noticeDays: 30, reasonMode: 'required', multi: false, memoRequired: false, rejoinDays: 0 });
   const wdType = (code, name, actor, desc, cond) => ({ code, name, actor, desc, hidden: false, cond: Object.assign(emptyWdCond(), cond) });
   const wdReason = (code, name, type, desc, etcInput) => ({ code, name, type, desc, etcInput: !!etcInput, hidden: false });
@@ -740,7 +759,7 @@
   };
 
   window.MemberTypeStore = { load, save, FLAGS, flagsFor, categoryTree, checkSub,
-    categoryName, categoryByCode, codeByName, normalizeCategoryRefs, checkCategoryName, PROTECTED_CATEGORIES, GradeBenefit, GradePolicy, GradeCriteria, GradeEvaluator, WithdrawStore };
+    categoryName, categoryByCode, codeByName, normalizeCategoryRefs, sampleCategoryTree, checkCategoryName, PROTECTED_CATEGORIES, GradeBenefit, GradePolicy, GradeCriteria, GradeEvaluator, WithdrawStore };
   // 리스트 검색 기간 기본값: 최근 1개월 (오늘로부터 30일 전 ~ 오늘). 화면을 열 때와 초기화할 때 채움, 관리자가 바꿔 검색할 수 있음
   // 기준일 = 실제 오늘 날짜 (기간 빠른 선택 버튼도 같은 기준. 샘플 주문은 2026-10-08까지 있음 — member-data.js base)
   const listToday = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
@@ -784,6 +803,17 @@
   // 상단바 프로토타입 버전 표시. 버전을 올릴 때는 여기만 바꾸면 모든 화면에 반영됨 (HTML의 같은 문구는 스크립트 실패 시 대비용)
   const PROTO_VERSION = '프로토타입 v2.76 (2026-10-15)';
   document.querySelectorAll('[data-proto-version]').forEach(el => { el.textContent = PROTO_VERSION; });
+  // 사용자(쇼핑몰) 화면 바로가기: 모든 관리자 화면 상단바의 프로토타입 버전 왼쪽 (새 탭으로 user/signup.html)
+  document.querySelectorAll('.topbar [data-proto-version]').forEach(el => {
+    if (el.parentNode.querySelector('.user-link')) return;
+    const a = document.createElement('a');
+    a.className = 'user-link';
+    a.href = '../user/signup.html';
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = '[사용자페이지 바로가기]';
+    el.parentNode.insertBefore(a, el);
+  });
 
   // ===== 상단 대메뉴(GNB): 회원 / 주문·배송 =====
   // 상단바 왼쪽에 대메뉴를 넣고, 누르면 사이드 메뉴에 그 대메뉴의 카테고리만 보여줌
@@ -904,7 +934,8 @@
     { key: 'inquiry', gnb: 'board', href: 'board-inquiry.html', label: '1:1 문의', note: '담당자 미지정', count: () => (window.InquiryData ? InquiryData.newCount() : null) },
     { key: 'cancel', gnb: 'order', href: 'claim-cancel.html', label: '취소 요청', note: '승인 대기', count: () => (window.ClaimData ? ClaimData.cancel.requests.filter(q => q.status === '대기').length : null) },
     { key: 'exchange', gnb: 'order', href: 'claim-exchange.html', label: '교환·반품 신청', note: '승인 대기', count: () => (window.ClaimData ? ClaimData.exchange.requests.filter(q => q.status === '대기').length : null) },
-    { key: 'document', gnb: 'order', href: 'claim-documents.html', label: '서류 발급 신청', note: '처리 대기', count: () => (window.DocData ? DocData.requests.filter(q => q.status === '대기').length : null) }
+    { key: 'document', gnb: 'order', href: 'claim-documents.html', label: '서류 발급 신청', note: '처리 대기', count: () => (window.DocData ? DocData.requests.filter(q => q.kind === '증빙서류' && q.status === '대기').length : null) },
+    { key: 'receipt', gnb: 'order', href: 'claim-receipts.html', label: '영수증 발급 신청', note: '처리 대기', count: () => (window.DocData ? DocData.requests.filter(q => q.kind === '영수증' && q.status === '대기').length : null) }
   ];
   const readNew = () => { try { return JSON.parse(localStorage.getItem(NEW_KEY)) || {}; } catch (e) { return {}; } };
   function setDot(el, n, title) {

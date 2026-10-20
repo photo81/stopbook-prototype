@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 회원 유형 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261019-1">
+<link rel="stylesheet" href="admin.css?v=20261020-6">
 </head>
 <body>
 <div class="layout">
@@ -24,8 +24,8 @@
         <a href="#" class="menu-parent" aria-expanded="false">메시지전송관리<span class="chev">▼</span></a>
         <ul class="submenu">
           <li><a href="message-send.html">메시지 전송</a></li>
-          <li><a href="message-sms.html">SMS 발송 관리</a></li>
           <li><a href="message-alimtalk.html">알림톡 발송 관리</a></li>
+          <li><a href="message-sms.html">SMS 발송 관리</a></li>
           <li><a href="message-email.html">이메일 발송 관리</a></li>
         </ul>
       </li>      <li class="has-sub">
@@ -153,7 +153,7 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>탈퇴구분</th><th>처리 방식</th><th>탈퇴 조건</th><th>사유 선택</th><th>재가입 제한</th><th>탈퇴 사유</th><th class="col-desc">설명</th><th>사용</th><th>관리</th></tr>
+                <tr><th>탈퇴구분</th><th>처리 방식</th><th>탈퇴 조건</th><th>사유 선택</th><th title="탈퇴 후 같은 이메일·휴대폰 번호로 재가입할 수 없는 기간">재가입 제한</th><th>탈퇴 사유</th><th class="col-desc">설명</th><th>사용</th><th>관리</th></tr>
               </thead>
               <tbody id="wTypeBody"></tbody>
             </table>
@@ -281,7 +281,7 @@
         </td></tr>
         <tr><th>재가입 제한</th><td>
           <div class="inline-row">
-            탈퇴 후 <input type="text" id="wtRejoin" inputmode="numeric" class="w-num"> 일 동안 같은 아이디로 재가입 불가
+            탈퇴 후 <input type="text" id="wtRejoin" inputmode="numeric" class="w-num"> 일 동안 같은 이메일·휴대폰 번호로 재가입 불가
             <span class="readonly">0 입력 시 제한 없음</span>
           </div>
           <div class="err" id="wtCondErr"></div>
@@ -326,10 +326,10 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261019-1"></script>
-<script src="member-type-store.js?v=20261019-1"></script>
-<script src="feedback.js?v=20261019-1"></script>
-<script src="member-data.js?v=20261019-1"></script>
+<script src="board-store.js?v=20261020-6"></script>
+<script src="member-type-store.js?v=20261020-6"></script>
+<script src="feedback.js?v=20261020-6"></script>
+<script src="member-data.js?v=20261020-6"></script>
 <script>
 (function () {
   'use strict';

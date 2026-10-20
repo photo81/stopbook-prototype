@@ -462,8 +462,8 @@ table.order-table { table-layout: fixed; }
 /* 회원 상세를 다른 화면의 모달(iframe) 안에 띄울 때 (members.html?embed=1): 화면 틀은 숨기고 회원 상세 모달만 */
 body.embed { background: #fff; }
 body.embed .layout { display: none; }
-body.embed #modal.modal-bg { align-items: flex-start; padding: 0; background: none; }   /* 그 위에 뜨는 혜택·이용 정보 모달은 기존처럼 어둡게 */
-body.embed #modal .modal { width: 100%; max-width: none; max-height: none; height: 100vh; border-radius: 0; box-shadow: none; }
+body.embed #modal.modal-bg, body.embed #regModal.modal-bg { align-items: flex-start; padding: 0; background: none; }   /* 그 위에 뜨는 혜택·이용 정보 모달은 기존처럼 어둡게 */
+body.embed #modal .modal, body.embed #regModal .modal { width: 100%; max-width: none; max-height: none; height: 100vh; border-radius: 0; box-shadow: none; }
 /* 주문 상세 > 회원정보 모달: 회원 상세 화면을 iframe으로 */
 .member-frame-modal .modal { width: 1080px; max-width: calc(100vw - 32px); height: calc(100vh - 48px); max-height: none; padding: 0; overflow: hidden; }
 .member-frame-modal iframe { display: block; width: 100%; height: 100%; border: 0; }
@@ -1012,13 +1012,10 @@ td.cat-desc { max-width: 360px; overflow: hidden; text-overflow: ellipsis; color
 .fb-float:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-soft), 0 6px 18px rgba(0,0,0,.18); }
 .fb-meta { margin-top: 4px; text-align: right; font-size: 11px; }
 .fb-note { margin: 10px 0 0; font-size: 12px; }
-/* 사용자 화면(회원가입/로그인) 바로가기 (통합 회원 관리: 브레드크럼 바로 아래 오른쪽, 직사각형·최소 크기) */
-.breadcrumb a.user-link { display: block; width: max-content; margin: 4px 0 0 auto; padding: 1px 6px; border: 1px solid #dc2626; border-radius: 0; background: #dc2626; color: #fff; font-size: 11px; font-weight: 600; line-height: 16px; text-decoration: none; }   /* .page-head .breadcrumb a 보다 뒤에 두어 흰 글자 유지 */
-.breadcrumb a.user-link:hover { background: #b91c1c; border-color: #b91c1c; color: #fff; }
-.breadcrumb a.user-link:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(220,38,38,.35); }
-/* 바로가기가 여러 개면 세로로 쌓고 가장 긴 버튼 폭에 맞춰 같은 크기로 */
-.breadcrumb .user-links { display: grid; gap: 4px; width: max-content; margin: 4px 0 0 auto; }
-.breadcrumb .user-links a.user-link { width: auto; margin: 0; text-align: left; }
+/* 사용자(쇼핑몰) 화면 바로가기: 모든 관리자 화면 상단바, 프로토타입 버전 왼쪽 (member-type-store.js가 넣음). 빨간 직사각형·최소 크기 */
+.topbar a.user-link { display: inline-flex; align-items: center; height: 20px; margin-right: 8px; padding: 0 7px; border: 1px solid #dc2626; border-radius: 0; background: #dc2626; color: #fff; font-size: 11px; font-weight: 600; text-decoration: none; vertical-align: 1px; }
+.topbar a.user-link:hover { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+.topbar a.user-link:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(220,38,38,.35); }
 @media print { .fb-float, .user-link { display: none; } }
 /* 탭 + 오른쪽 버튼 한 줄 (예: 서류 발급 관리 > 처리 대기 탭 오른쪽 '서류 발급 등록') */
 .tabs-row { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
@@ -1248,6 +1245,21 @@ table.mt-table tr.off td { color: var(--faint); }
 table.rc-table { table-layout: fixed; min-width: 1150px; }
 table.rc-table td { overflow: hidden; text-overflow: ellipsis; }
 #rcModal .modal { width: 760px; max-width: calc(100vw - 32px); }
+/* 서류 발급: 증빙서류 / 영수증 구분 · 처리 진행 표시 */
+.doc-group { display: flex; align-items: center; gap: 10px; }
+.doc-group + .doc-group { margin-top: 6px; }
+.doc-group-label { flex: none; display: inline-block; min-width: 56px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.doc-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.doc-line + .doc-line { margin-top: 6px; }
+.part-progress { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+.part-done, .part-wait { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.part-done { background: #ecfdf3; color: var(--success); }
+.part-wait { background: var(--subtle); color: var(--muted); border: 1px solid var(--border); }
+table.rcpt-proc td { white-space: normal; }
+table.rcpt-proc input[type=date], table.rcpt-proc input[type=text] { width: 100%; }
+/* 계산서 영수증 발급 관리 > 확인: 서류 발급 관리의 신청 상세를 iframe으로 (claim-documents.html?embed=1&req=) */
+.doc-frame-modal .modal { width: 1080px; max-width: calc(100vw - 32px); height: calc(100vh - 48px); max-height: none; padding: 0; overflow: hidden; }
+.doc-frame-modal iframe { display: block; width: 100%; height: 100%; border: 0; }
 
 /* ===== 관리자 계정관리 (admin-accounts.html) ===== */
 /* 레벨 설정 모달 > 접근 메뉴: 대메뉴 상자 안에 카테고리 한 줄씩, 카테고리 체크 = 하위 메뉴 전체 */

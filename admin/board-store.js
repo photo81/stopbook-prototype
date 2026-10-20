@@ -4,12 +4,14 @@
 //     말머리: 게시판별 글 분류 (예: 공지사항 · 이벤트), 연동: 상품 / 연동 없음, 읽기·쓰기 권한, 쇼핑몰 노출 여부
 //   기본 게시판(공지사항·이용후기·1:1 문의·FAQ)은 관리 화면이 따로 있어 삭제할 수 없음
 //   게시물 수·신규 게시물 수: 1:1 문의는 실제 문의 데이터(inquiry-data.js: 전체 / 대기), 나머지는 샘플 값
+//   기본 샘플(DEFAULTS)은 2026-10-20 기준 운영 프로토타입의 게시판 목록 그대로 (기본 4개 + 제휴문의) → GitHub Pages에서도 같은 목록이 보임
+//     샘플을 바꾸면 KEY 버전을 올려서(v2→v3) 이미 열어 본 브라우저도 새 샘플을 읽게 함
 //   게시판을 등록하면 사이드 메뉴 게시글관리에 바로 생기고(member-type-store.js injectBoardMenu), 게시글은 board-posts.html?board=코드에서 관리
 //   모든 화면에서 member-type-store.js보다 먼저 로드 (사이드 메뉴를 그리기 전에 게시판 목록이 있어야 함)
 // TODO: 실서비스에서는 GET/POST/PUT/DELETE /api/admin/boards, /api/admin/boards/{code}/posts
 (function () {
   'use strict';
-  const KEY = 'stopbook.boards.v1';
+  const KEY = 'stopbook.boards.v2';   // v1: 샘플 11개(가이드·건의사항·보도자료 포함) → v2: 운영 프로토타입 목록 5개
   const pad = n => String(n).padStart(2, '0');
   const nowText = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 
@@ -26,16 +28,11 @@
   const B = (no, code, type, name, heads, posts, fresh, extra) => Object.assign({ no, code, type, name, heads, posts, fresh, use: true, system: false, href: '' }, TYPE_DEFAULT[type], extra || {});
   const DEFAULTS = [
     B(1, 'notice', '기본형', '공지사항', ['공지사항', '이벤트'], 75, 0, { system: true, href: 'board-notice.html' }),
-    B(2, 'qna', '1:1 문의형', '1:1 문의', [], 0, 0, { system: true, href: 'board-inquiry.html', live: 'inquiry' }),
+    B(2, 'qna', '1:1 문의형', '1:1 문의', [], 0, 0, { system: true, href: 'board-inquiry.html', live: 'inquiry', link: '상품', updatedAt: '2026-10-12 15:37', updatedBy: '관리자' }),
     B(3, 'faq', '기본형', 'FAQ', ['주문/결제', '배송', '편집·제작', '회원'], 42, 0, { system: true, href: 'board-faq.html' }),
     B(4, 'product_review', '상품리뷰', '이용후기', [], 128, 3, { system: true, href: 'board-review.html' }),
-    B(5, 'design_service', '1:1 문의형', '디자인 서비스', [], 248, 2),
-    B(6, 'guide_order', '기본형', '가이드 - 주문 제작', ['그룹'], 10, 0),
-    B(7, 'guide_printing', '기본형', '가이드 - 인쇄 가이드', ['그룹'], 39, 0),
-    B(8, 'guide_making', '기본형', '가이드 - 제작 가이드', ['그룹'], 191, 1),
-    B(9, 'guide_claim', '기본형', '가이드 - 불량 및 환불', ['그룹'], 8, 0),
-    B(10, 'feedback', '1:1 문의형', '건의사항', [], 151, 0),
-    B(11, 'press', '기본형', '보도자료', [], 1, 0, { use: false })
+    // 관리자가 등록한 게시판: 제휴문의 (1:1 문의형, 누구나 읽고 쓸 수 있음)
+    B(5, 'join', '1:1 문의형', '제휴문의', ['제휴문의', '기타문의'], 0, 0, { link: '상품', read: '전체', write: '전체', createdAt: '2026-10-12 15:36', updatedAt: '2026-10-12 15:36', updatedBy: '관리자' })
   ];
 
   let boards;
@@ -50,15 +47,10 @@
   let saved;
   try { saved = JSON.parse(localStorage.getItem(POST_KEY)) || {}; } catch (e) { saved = {}; }
   const savePosts = () => { try { localStorage.setItem(POST_KEY, JSON.stringify(saved)); return true; } catch (e) { return false; } };
+  // 게시판 코드별 샘플 제목 (없는 코드는 아래 공용 제목을 돌려 씀)
   const TITLES = {
     notice: ['추석 연휴 배송·고객센터 운영 안내', '10월 포토북 20% 할인 이벤트', '시스템 정기 점검 안내 (02:00~06:00)', '개인정보처리방침 개정 안내', '신상품 우드월캘린더 출시 기념 이벤트', '무통장입금 계좌 변경 안내', '회원 등급 혜택 개편 안내', '친구 추천 적립금 이벤트', '택배사 변경 안내', '연말 주문 마감 일정 안내'],
-    design_service: ['졸업앨범 표지 디자인 의뢰합니다', '포토북 레이아웃 디자인 문의', '단체 캘린더 디자인 요청드립니다', '회사 로고 넣은 액자 디자인 가능할까요', '유치원 앨범 디자인 견적 문의', '청첩장 스타일 포토북 디자인', '돌잔치 포토북 디자인 의뢰'],
-    guide_order: ['주문 전 확인해 주세요', '편집기 사용 방법', '사진 해상도 기준 안내', '주문 후 수정 가능 기간', '대량 주문 방법'],
-    guide_printing: ['인쇄 색상(CMYK) 안내', '종이 종류별 특징', '코팅 옵션 비교', '재단선과 안전 영역', '흑백 인쇄 시 주의사항'],
-    guide_making: ['포토북 제작 과정', '제본 방식 비교 (무선·PUR·레이플랫)', '캘린더 제작 기간', '액자 제작 과정', '하드커버 제작 기준'],
-    guide_claim: ['불량 접수 기준', '재제작 처리 절차', '환불 기준과 기간', '배송 중 파손 시 처리', '단순 변심 반품 안내'],
-    feedback: ['편집기에 템플릿이 더 있으면 좋겠어요', '모바일 편집 속도 개선 요청', '배송 조회 알림이 늦어요', '쿠폰 사용 조건을 쉽게 보여 주세요', '사진 자동 배치 기능 건의', '주문 내역 엑셀 다운로드 요청'],
-    press: ['스탑북, 포토북 앱 리뉴얼 출시']
+    join: ['제휴 제안드립니다 (학원 단체 앨범)', '기업 굿즈 제작 협업 문의', '사진관 연계 제휴 가능할까요', '온라인 쇼핑몰 입점 문의']
   };
   // 공지사항 샘플: 제목에 '이벤트'가 들어가면 말머리 이벤트, 최근 2건은 상단 고정
   const AUTHORS_ADMIN = ['김지영', '김태복', '창경훈', '최의담', '이고은'];

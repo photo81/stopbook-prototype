@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 통합 회원 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261019-1c">
+<link rel="stylesheet" href="admin.css?v=20261020-6c">
 </head>
 <body>
 <div class="layout">
@@ -24,8 +24,8 @@
         <a href="#" class="menu-parent" aria-expanded="false">메시지전송관리<span class="chev">▼</span></a>
         <ul class="submenu">
           <li><a href="message-send.html">메시지 전송</a></li>
-          <li><a href="message-sms.html">SMS 발송 관리</a></li>
           <li><a href="message-alimtalk.html">알림톡 발송 관리</a></li>
+          <li><a href="message-sms.html">SMS 발송 관리</a></li>
           <li><a href="message-email.html">이메일 발송 관리</a></li>
         </ul>
       </li>      <li class="has-sub">
@@ -98,13 +98,7 @@
 
   <div class="main">
     <header class="topbar">
-      <div class="breadcrumb">홈 &gt; 회원관리 &gt; <b>통합 회원 관리</b>
-        <!-- 사용자 화면(회원가입/로그인) 바로가기: 브레드크럼 바로 아래 오른쪽 (initGnb가 브레드크럼을 제목 줄로 옮길 때 같이 이동) -->
-        <span class="user-links">
-          <a class="user-link" href="../user/signup.html" target="_blank" rel="noopener">[사용자] 회원가입/로그인</a>
-          <a class="user-link" href="../user/mypage.html#edit" target="_blank" rel="noopener">[사용자] 회원정보수정</a>
-        </span>
-      </div>
+      <div class="breadcrumb">홈 &gt; 회원관리 &gt; <b>통합 회원 관리</b></div>
       <div><span class="proto-ver" data-proto-version>프로토타입 v2.75 (2026-10-13)</span> 관리자님 | <a href="#">로그아웃</a></div>
     </header>
 
@@ -388,9 +382,11 @@
         <tr>
           <th>회원등급</th><td colspan="5">
             <div class="inline-row">
-              <select id="fGrade" class="w-auto"><option>일반</option><option>스타터</option><option>홀리커</option><option>마스터</option><option>마스터 VIP</option></select>
+              <select id="fGrade" class="w-auto"></select>
+              <label class="readonly" title="체크하면 자동 등급 산정에서 빠지고 지금 등급이 유지됩니다"><input type="checkbox" id="fGradeLock"> 등급 고정 (자동 산정 제외)</label>
               <span class="readonly" id="fGradeDesc"></span>
             </div>
+            <div class="readonly" id="fGradeAuto" style="margin-top:4px"></div>
           </td>
         </tr>
         <tr>
@@ -474,8 +470,72 @@
       </div>
     </form>
     <div class="modal-footer">
+      <button type="button" class="btn btn-danger" id="btnWithdraw" style="margin-right:auto">탈퇴 처리</button>
       <button type="button" class="btn" data-close>닫기</button>
       <button type="submit" form="editForm" class="btn btn-primary" id="btnSave">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 엑셀 다운로드 모달: 개인정보 포함 여부 · 다운로드 사유(필수) · 다운로드 이력 (개인정보 보호법 안전성 확보조치: 개인정보 다운로드 사유 확인·기록) -->
+<div class="modal-bg" id="xModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="xTitle">
+    <div class="modal-header">
+      <h2 id="xTitle">회원 목록 엑셀 다운로드</h2>
+      <button type="button" class="close" data-xclose aria-label="닫기">&times;</button>
+    </div>
+    <form id="xForm" class="modal-body" novalidate>
+      <table class="form-table">
+        <tr><th>대상</th><td class="readonly" id="xTarget"></td></tr>
+        <tr><th>개인정보</th><td>
+          <label><input type="radio" name="xPii" value="mask" checked> 마스킹 (이름·이메일·휴대폰·아이디 일부 가림)</label>
+          <label style="margin-left:12px"><input type="radio" name="xPii" value="full"> 전체 포함</label>
+          <div class="readonly" style="margin-top:4px">통계·집계 용도라면 마스킹으로 받아 주세요. 전체 포함은 회원 연락 등 꼭 필요한 경우에만 사용합니다.</div>
+        </td></tr>
+        <tr><th>다운로드 사유 *</th><td>
+          <div class="inline-row">
+            <select id="xReasonType" class="w-auto" aria-label="사유 구분"><option value="">사유 선택</option><option>회원 통계·분석</option><option>마케팅 발송 대상 추출</option><option>고객 문의·민원 처리</option><option>정산·회계</option><option>기타</option></select>
+            <input type="text" id="xReason" maxlength="100" placeholder="구체적인 사유 (예: 10월 단체회원 현황 보고)" style="flex:1">
+          </div>
+        </td></tr>
+      </table>
+      <div class="err" id="eExcel"></div>
+      <div class="section-title">다운로드 이력 <span class="section-note">최근 10건</span></div>
+      <div class="table-wrap history-wrap">
+        <table class="history-table">
+          <thead><tr><th style="width:130px">일시</th><th style="width:70px">인원</th><th style="width:80px">개인정보</th><th>사유</th><th style="width:80px">담당자</th></tr></thead>
+          <tbody id="xHistory"></tbody>
+        </table>
+      </div>
+    </form>
+    <div class="modal-footer">
+      <button type="button" class="btn" data-xclose>닫기</button>
+      <button type="submit" form="xForm" class="btn btn-primary">다운로드</button>
+    </div>
+  </div>
+</div>
+
+<!-- 관리자 탈퇴 처리 모달 (회원 상세 모달 위): 강제탈퇴 등 관리자 처리 탈퇴구분 + 전화 등으로 받은 회원 탈퇴 요청 대리 처리 -->
+<div class="modal-bg modal-top" id="wModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="wTitle">
+    <div class="modal-header">
+      <h2 id="wTitle">회원 탈퇴 처리</h2>
+      <button type="button" class="close" data-wclose aria-label="닫기">&times;</button>
+    </div>
+    <form id="wForm" class="modal-body" novalidate>
+      <div class="status-banner st-반려" id="wBlock" hidden></div>
+      <table class="form-table">
+        <tr><th>대상 회원</th><td class="readonly" id="wTarget"></td></tr>
+        <tr><th>탈퇴구분 *</th><td><select id="wType" class="w-auto" aria-label="탈퇴구분"></select> <span class="readonly" id="wTypeDesc"></span></td></tr>
+        <tr><th>탈퇴 사유 <span id="wReasonReq">*</span></th><td><div class="check-chips" id="wReasons"></div></td></tr>
+        <tr><th>처리 메모 <span id="wNoteReq">*</span></th><td><textarea id="wNote" maxlength="300" placeholder="처리 근거 (예: 고객센터 전화 요청 2026-10-20 본인 확인 완료 / 부정 거래 확인 내역)" style="height:72px"></textarea></td></tr>
+        <tr><th>처리 결과</th><td class="readonly" id="wInfo"></td></tr>
+      </table>
+      <div class="err" id="eWithdraw"></div>
+    </form>
+    <div class="modal-footer">
+      <button type="button" class="btn" data-wclose>닫기</button>
+      <button type="submit" form="wForm" class="btn btn-danger" id="btnWSubmit">탈퇴 처리</button>
     </div>
   </div>
 </div>
@@ -614,11 +674,11 @@
 <div class="viz-tip" id="vizTip" role="tooltip" hidden></div>
 <div class="toast" id="toast"></div>
 
-<script src="alimtalk.js?v=20261019-1"></script>
-<script src="board-store.js?v=20261019-1"></script>
-<script src="member-type-store.js?v=20261019-1"></script>
-<script src="feedback.js?v=20261019-1"></script>
-<script src="member-data.js?v=20261019-1"></script>
+<script src="alimtalk.js?v=20261020-6"></script>
+<script src="board-store.js?v=20261020-6"></script>
+<script src="member-type-store.js?v=20261020-6"></script>
+<script src="feedback.js?v=20261020-6"></script>
+<script src="member-data.js?v=20261020-6"></script>
 <script>
 (function () {
   'use strict';
@@ -631,10 +691,8 @@
   const NORMAL_NAME = MemberTypeStore.categoryName('normal') || '일반';   // 기본 구분(일반)의 현재 이름
 
   // ===== 등급 자동 산정 =====
-  // 회원 유형 관리 > 등급 탭의 평가 조건에 따라, 산정 예정일이 지났으면 화면을 열 때 전체 회원 등급을 재산정
-  // (이전 산정 결과는 localStorage에서 먼저 반영). TODO: 실서비스에서는 서버 배치가 처리
-  //   탈퇴 회원은 탈퇴 시점 등급을 그대로 두므로 산정 대상에서 뺌
-  const gradeRun = MemberTypeStore.GradeEvaluator.run(members.filter(m => !m.withdrawn), MemberTypeStore.load().find(g => g.key === 'grade'), MemberData.orderStats);
+  // 회원 데이터를 불러올 때 member-data.js가 실행 (쇼핑몰 마이페이지와 같은 등급이 보이도록). 여기서는 결과만 안내
+  const gradeRun = MemberData.gradeRun;
 
   // ===== 회원상태: 정상 / 탈퇴 (요구사항 PRD_MEM_010) =====
   // 탈퇴 회원도 목록에 남김 (흐린 행, 최근접속일 자리에 '탈퇴 YYYY-MM-DD'). 개인정보는 member-data.js에서 탈퇴 시점에 파기되어 표기 기준(WITHDRAWN_LABEL) 값으로 보임
@@ -710,6 +768,24 @@
   };
   const GRADE_DESC = Object.fromEntries(gradeGroup.items.map(it => [it.name, [gradeCondText(it), it.desc].filter(Boolean).join(' · ')]));
   const renderGradeDesc = () => { $('fGradeDesc').textContent = GRADE_DESC[$('fGrade').value] || ''; };
+  // 등급 선택지: 회원 유형 관리 > 등급 탭의 등급 (거기서 추가하면 바로 노출). 회원의 현재 등급이 삭제된 등급이면 그 값만 표시를 붙여 남김
+  function fillGradeSelect(m) {
+    const names = gradeGroup.items.map(it => it.name);
+    $('fGrade').innerHTML = names.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('')
+      + (m.grade && !names.includes(m.grade) ? `<option value="${esc(m.grade)}">${esc(m.grade)} (삭제됨)</option>` : '');
+    $('fGrade').value = m.grade;
+    $('fGradeLock').checked = !!m.gradeLocked;
+    renderGradeAuto();
+  }
+  // 자동 등급 산정 안내: 다음 산정일에 실적 기준으로 다시 바뀔 수 있음 (등급 고정이면 유지)
+  const nextGradeRun = () => (gradePolicy.auto ? fmtDate(MemberTypeStore.GradeEvaluator.nextScheduled(gradePolicy, new Date())) : '');
+  function renderGradeAuto() {
+    const next = nextGradeRun();
+    $('fGradeAuto').textContent = !next ? '' : $('fGradeLock').checked
+      ? '등급 고정: 자동 등급 산정에서 제외되어 지금 등급이 유지됩니다.'
+      : `자동 등급 산정 사용 중 · 다음 산정일 ${next}에 주문 실적 기준으로 등급이 다시 정해집니다. 직접 정한 등급을 유지하려면 '등급 고정'을 체크하세요.`;
+  }
+  $('fGradeLock').addEventListener('change', renderGradeAuto);
   $('fGrade').addEventListener('change', renderGradeDesc);
 
   // 구분을 바꾸면 종류는 새로 고르도록 비움
@@ -733,8 +809,11 @@
 
     const fields = type === 'all' ? ['name', 'userId', 'email', 'phone'] : [type];
     const dayOf = m => String(m[dateType] || '').slice(0, 10);
+    // 휴대폰: 하이픈 없이 숫자만 입력해도 검색 (01012345678 · 5678 등)
+    const kwDigits = /^[\d\s-]+$/.test(kw) ? kw.replace(/\D/g, '') : '';
+    const hit = (m, f) => m[f].toLowerCase().includes(kw) || (f === 'phone' && kwDigits.length >= 3 && m.phone.replace(/\D/g, '').includes(kwDigits));
     state.filtered = members.filter(m =>
-      (!kw || fields.some(f => m[f].toLowerCase().includes(kw))) &&
+      (!kw || fields.some(f => hit(m, f))) &&
       (!category || m.categoryCode === category) &&
       (!memberType || m.memberType === memberType) &&
       (!grade || m.grade === grade) &&
@@ -830,8 +909,8 @@
     ];
     $('kpis').innerHTML = tiles.map(([k, v, s]) => `<div class="kpi"><div class="kpi-label">${k}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
 
-    // 월별 신규 가입: 기준일 이전 12개월
-    const months = Array.from({ length: 12 }, (_, i) => { const d = new Date(TODAY.getFullYear(), TODAY.getMonth() - 12 + i, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; });
+    // 월별 신규 가입: 기준일이 속한 달(이번 달)까지 최근 12개월
+    const months = Array.from({ length: 12 }, (_, i) => { const d = new Date(TODAY.getFullYear(), TODAY.getMonth() - 11 + i, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; });
     const monthly = months.map(ym => { const c = list.filter(m => m.joinDate.startsWith(ym)).length; return { label: `${Number(ym.slice(5))}월`, value: c, tip: `${ym.replace('-', '년 ')}월 · ${c}명` }; });
     renderColumns($('chartMonthly'), monthly, { labelIdx: [monthly.length - 1, maxIdx(monthly)] });
 
@@ -972,7 +1051,7 @@
     const envTag = (v, what) => (v ? ` <span class="env-tag env-${v}" title="${what}: ${v === 'MO' ? '모바일' : 'PC'}">${v}</span>` : '');
     $('fJoinDate').innerHTML = esc(m.joinDate) + envTag(m.joinEnv, '가입 기기');
     $('fLastLogin').innerHTML = esc(m.lastLogin) + envTag(m.loginEnv, '최근 접속 기기');
-    $('fGrade').value = m.grade;
+    fillGradeSelect(m);
     renderGradeDesc();
     document.querySelector(`input[name=fMkSms][value=${m.marketingSms}]`).checked = true;
     document.querySelector(`input[name=fMkEmail][value=${m.marketingEmail}]`).checked = true;
@@ -997,6 +1076,13 @@
     const wd = !!m.withdrawn;
     $('wdBanner').hidden = !wd;
     $('btnSave').hidden = wd;
+    $('btnWithdraw').hidden = wd;
+    // 장기미이용 탈퇴 예정 안내를 받은 회원: 상단에 예정일 표시
+    const dn = !wd && MemberData.dormantNotice(m.no);
+    if (dn) {
+      $('wdBanner').hidden = false;
+      $('wdBanner').innerHTML = `<b>장기미이용 탈퇴 예정</b>${esc(dn.dueDate)} 자동 탈퇴 예정 (${esc(dn.noticedAt.slice(0, 10))} 안내 발송)<div class="banner-sub">그 전에 회원이 로그인하면 탈퇴 예정이 취소됩니다.${dn.held ? ' 진행 중인 주문이 있어 자동 탈퇴가 보류되었습니다.' : ''}</div>`;
+    }
     if (!wd) return;
     document.querySelectorAll(WD_LOCK).forEach(el => { if (!el.disabled) { el.disabled = true; el.dataset.wdLock = '1'; } });
     $('wdBanner').innerHTML = `<b>탈퇴 회원</b>${esc(m.withdrawnAt)} · ${esc(m.withdrawType)}${m.withdrawReasons.length ? ` · 사유: ${esc(m.withdrawReasons.join(', '))}` : ''}
@@ -1123,8 +1209,10 @@
     const [res] = Alimtalk.simulateSend(r.payload);
     const result = Alimtalk.resultText(res);
     const entry = { at: nowText(), tmplId: t.tmplId, tmplName: t.name, result, msgid: res.data.msgid, reserveDt: r.payload.reserveDt, by: ADMIN_NAME };
+    const atLog = `알림톡 ${reserve ? '예약 ' : ''}발송: ${t.name} - ${result} (${res.data.msgid})`;
+    MemberData.saveAdminEdit(m.no, { alimtalk: entry, logs: [atLog] }, ADMIN_NAME);   // 발송 내역 보관 (새로고침해도 유지)
     (m.alimtalkLog || (m.alimtalkLog = [])).push(entry);
-    addHistory(m, `알림톡 ${reserve ? '예약 ' : ''}발송: ${t.name} - ${result} (${res.data.msgid})`);
+    addHistory(m, atLog);
     renderAtHistory();
     toast(res.code === 'success' ? `알림톡 ${result}` : `알림톡 발송 ${result}`);
   }
@@ -1369,10 +1457,18 @@
     // TODO: 실서비스에서는 POST /api/admin/members/{no}/benefits/{kind} 호출 후 서버 응답으로 내역 갱신
     const list = m.ledger[kind];
     // 마일리지는 저장해 혜택 > 마일리지 내역에도 남김 (member-data.js addMileage, 수동 지급·차감)
-    if (kind === 'mileage') MemberData.addMileage(m.no, { delta: minus ? -amount : amount, reason, by: AdminUtil.ADMIN_NAME, type: typeLabel, source: 'manual', history: false });
-    else pushEntry(list, { at: fmtDateTime(new Date()), type: typeLabel, item, reason, by: '관리자', delta: minus ? -amount : amount });
+    //   상품권·쿠폰은 회원 상세 저장소에 보관 (member-data.js saveAdminEdit, 새로고침해도 유지)
+    const benefitLog = `${b.label} ${typeLabel}: ${target} (사유: ${reason})`;
+    if (kind === 'mileage') {
+      MemberData.addMileage(m.no, { delta: minus ? -amount : amount, reason, by: AdminUtil.ADMIN_NAME, type: typeLabel, source: 'manual', history: false });
+      MemberData.saveAdminEdit(m.no, { logs: [benefitLog] }, ADMIN_NAME);   // 변경 히스토리만
+    } else {
+      const entry = { at: fmtDateTime(new Date()), type: typeLabel, item, reason, by: '관리자', delta: minus ? -amount : amount };
+      MemberData.saveAdminEdit(m.no, { ledger: { kind, entry }, logs: [benefitLog] }, ADMIN_NAME);
+      pushEntry(list, entry);
+    }
     m[kind] = list[list.length - 1].balance;
-    addHistory(m, `${b.label} ${typeLabel}: ${target} (사유: ${reason})`);
+    addHistory(m, benefitLog);
 
     closeAdjust();
     renderBenefit();
@@ -1460,6 +1556,70 @@
     renderPwStatus(m);
     toast('패스워드가 변경되었습니다.');
   }
+
+  // ===== 관리자 탈퇴 처리 (회원 상세 > 탈퇴 처리, 요구사항 PRD_MEM_010) =====
+  //   탈퇴구분: 회원 유형 관리 > 탈퇴회원의 '관리자 처리' 구분(강제탈퇴 등) + 자진탈퇴(전화·이메일로 받은 회원 요청을 관리자가 대리 처리)
+  //   사유·처리 메모 규칙은 탈퇴구분 설정을 따름 (대리 처리는 본인 확인 근거를 위해 처리 메모 필수)
+  //   진행 중인 주문이 있으면 처리 불가 (마이페이지 탈퇴와 같은 기준). 처리 즉시 개인정보 파기 (member-data.js withdraw)
+  // TODO: 실서비스에서는 POST /api/admin/members/{no}/withdraw
+  const WS = MemberTypeStore.WithdrawStore;
+  let wData = null;
+  const wTypeOf = () => wData.types.find(t => t.code === $('wType').value);
+  const wNoteRequired = t => t.actor !== 'admin' || !!t.cond.memoRequired;
+  function renderWithdrawReasons() {
+    const t = wTypeOf(), c = t.cond;
+    const reasons = wData.reasons.filter(r => r.type === t.code && !r.hidden);
+    $('wTypeDesc').textContent = t.actor === 'admin' ? '' : '회원 요청을 관리자가 대리 처리';
+    $('wReasonReq').hidden = c.reasonMode !== 'required';
+    $('wNoteReq').hidden = !wNoteRequired(t);
+    $('wReasons').innerHTML = c.reasonMode === 'auto'
+      ? `<span class="readonly">자동 지정: ${esc(reasons[0] ? reasons[0].name : '-')}</span>`
+      : reasons.map(r => `<label class="check-chip"><input type="${c.multi ? 'checkbox' : 'radio'}" name="wReason" value="${esc(r.code)}"> ${esc(r.name)}</label>`).join('') || '<span class="readonly">등록된 사유 없음</span>';
+  }
+  function openWithdraw() {
+    const m = state.editing;
+    if (!m || m.withdrawn) return;
+    wData = WS.load();
+    const types = wData.types.filter(t => !t.hidden && (t.actor === 'admin' || t.code === 'voluntary'));
+    $('wType').innerHTML = types.map(t => `<option value="${esc(t.code)}">${esc(t.name)}${t.actor === 'admin' ? '' : ' (회원 요청 대리 처리)'}</option>`).join('');
+    $('wTarget').textContent = `${m.name} (${m.userId}) · No.${m.no}`;
+    $('wNote').value = '';
+    $('eWithdraw').classList.remove('show');
+    renderWithdrawReasons();
+    // 탈퇴 전 확인: 진행 중인 주문(처리 불가) · 소멸되는 혜택
+    const chk = MemberData.withdrawCheck(m);
+    $('wBlock').hidden = !chk.blocking.length;
+    $('wBlock').innerHTML = chk.blocking.length ? `<b>탈퇴 처리 불가</b> 진행 중인 주문 ${chk.blocking.length}건 (${chk.blocking.map(o => esc(o.orderNo)).join(', ')})<div class="banner-sub">주문을 취소하거나 배송이 시작된 뒤 처리할 수 있습니다.</div>` : '';
+    $('btnWSubmit').disabled = !!chk.blocking.length;
+    $('wInfo').textContent = `개인정보 즉시 파기 · 마일리지 ${chk.mileage.toLocaleString()}P · 쿠폰 ${chk.coupons}장 · 상품권 ${chk.giftCard.toLocaleString()}원 소멸 · 주문 기록은 5년간 분리 보관`;
+    $('wModal').classList.add('open');
+    $('wType').focus();
+  }
+  const closeWithdraw = () => $('wModal').classList.remove('open');
+  function submitWithdraw(e) {
+    e.preventDefault();
+    const m = state.editing, t = wTypeOf(), c = t.cond;
+    const reasons = wData.reasons.filter(r => r.type === t.code && !r.hidden);
+    const picked = c.reasonMode === 'auto' ? reasons.slice(0, 1) : [...document.querySelectorAll('input[name=wReason]:checked')].map(i => reasons.find(r => r.code === i.value));
+    const note = $('wNote').value.trim();
+    const msg = c.reasonMode === 'required' && !picked.length ? '탈퇴 사유를 선택하세요.' : wNoteRequired(t) && !note ? '처리 메모(처리 근거)를 입력하세요.' : '';
+    $('eWithdraw').textContent = msg;
+    $('eWithdraw').classList.toggle('show', !!msg);
+    if (msg) return;
+    if (!confirm(`${m.name}(${m.userId}) 회원을 '${t.name}'(으)로 탈퇴 처리하시겠습니까?\n개인정보가 즉시 파기되며 되돌릴 수 없습니다.`)) return;
+    const r = MemberData.withdraw(m.no, { typeCode: t.code, reasonCodes: picked.map(x => x.code), reasonLabels: picked.map(x => x.name), channel: '관리자', by: ADMIN_NAME, note });
+    if (r.error) { $('eWithdraw').textContent = r.error; $('eWithdraw').classList.add('show'); return; }
+    closeWithdraw();
+    applyFilter();
+    render();
+    openModal(m.no);   // 탈퇴 회원 상세(조회 전용)로 다시 표시
+    toast(`${m.no}번 회원을 탈퇴 처리했습니다.`);
+  }
+  $('btnWithdraw').addEventListener('click', openWithdraw);
+  $('wType').addEventListener('change', renderWithdrawReasons);
+  $('wForm').addEventListener('submit', submitWithdraw);
+  document.querySelectorAll('[data-wclose]').forEach(b => b.addEventListener('click', closeWithdraw));
+  $('wModal').addEventListener('click', ev => { if (ev.target === $('wModal')) closeWithdraw(); });
 
   function closeModal() {
     $('modal').classList.remove('open');
@@ -1549,9 +1709,10 @@
     const postpay = readPostpay();
     if (!postpay) return;
     // 종류가 있는 구분은 종류까지 선택해야 저장
+    //   구분을 바꿀 때만 확인: 회원 유형 관리에서 기존 구분에 종류를 새로 추가해도, 그 구분 회원의 다른 항목 저장은 막지 않음
     const selCode = $('fCategory').value;
     const selCat = catOf(selCode);
-    if (!$('fSubCategory').disabled && !$('fSubCategory').value && subsOf(selCode).length) {
+    if (selCode !== m.categoryCode && !$('fSubCategory').disabled && !$('fSubCategory').value && subsOf(selCode).length) {
       toast(`'${selCat ? selCat.label : selCode}'의 종류를 선택하세요.`);
       $('fSubCategory').focus();
       return;
@@ -1561,14 +1722,15 @@
       category: selCat ? selCat.name : m.category,   // 표시명 (숨김·삭제된 기존 값이면 그대로)
       subCategory: $('fSubCategory').disabled ? '' : $('fSubCategory').value,
       grade: $('fGrade').value,
+      gradeLocked: $('fGradeLock').checked,
       gender: $('fGender').value,
       marketingSms: document.querySelector('input[name=fMkSms]:checked').value,
       marketingEmail: document.querySelector('input[name=fMkEmail]:checked').value,
       ...postpay
     };
-    const changes = [['gender', '성별', v => v || '미입력'], ['grade', '회원등급', String],
+    const changes = [['gender', '성별', v => v || '미입력'], ['grade', '회원등급', String], ['gradeLocked', '등급 고정', v => (v ? '고정' : '자동 산정')],
       ['marketingSms', 'SMS 수신', mkText], ['marketingEmail', '메일 수신', mkText]]
-      .filter(([k]) => (m[k] ?? '') !== (next[k] ?? ''))   // 성별 값이 없는 회원(undefined)과 미입력('')은 같은 값으로 봄
+      .filter(([k]) => (k === 'gradeLocked' ? !!m[k] !== next[k] : (m[k] ?? '') !== (next[k] ?? '')))   // 성별 값이 없는 회원(undefined)과 미입력('')은 같은 값으로 봄
       .map(([k, label, f]) => `${label} 변경: ${f(m[k])} → ${f(next[k])}`);
     if (m.categoryCode !== next.categoryCode || (m.subCategory || '') !== next.subCategory) {
       const after = selCat ? selCat.label : next.category;
@@ -1579,17 +1741,24 @@
 
     if (!changes.length && !memoText) { toast('변경된 내용이 없습니다.'); return; }
 
+    // 등급을 직접 바꿨는데 고정하지 않았으면: 다음 자동 산정 때 바뀔 수 있음을 알림
+    if (m.grade !== next.grade && !next.gradeLocked && nextGradeRun()
+      && !confirm(`회원등급을 '${next.grade}'(으)로 바꿉니다.\n자동 등급 산정을 사용 중이라 다음 산정일(${nextGradeRun()})에 주문 실적 기준으로 다시 바뀔 수 있습니다.\n계속하시겠습니까? (유지하려면 취소 후 '등급 고정'을 체크하세요)`)) return;
+
     // 단체(사업자 정보 보유) → 일반: 승인 때 등록된 사업자 정보 삭제
     const dropBusiness = m.business && m.categoryCode !== 'normal' && next.categoryCode === 'normal';
     if (dropBusiness && !confirm(`회원구분을 '${NORMAL_NAME}'(으)로 바꾸면 등록된 사업자 정보(${m.business.companyName})가 삭제됩니다.\n계속하시겠습니까?`)) return;
 
     // TODO: 실서비스에서는 PUT /api/admin/members/{no} 호출 (서버에서 히스토리 기록)
+    // 저장소에 먼저 저장 (새로고침해도 유지, member-data.js saveAdminEdit)
+    const logs = changes.slice();
+    if (dropBusiness) logs.push(`사업자 정보 삭제: ${m.business.companyName} (${m.business.bizNo}) - 회원구분 ${NORMAL_NAME} 변경`);
+    if (changes.length && !MemberData.saveAdminEdit(m.no, { fields: next, dropBusiness, logs }, ADMIN_NAME)) { toast('저장소를 사용할 수 없어 저장하지 못했습니다.'); return; }
     Object.assign(m, next);
     changes.forEach(c => addHistory(m, c));
     if (dropBusiness) {
-      const b = m.business;
       revokeBusiness(m, ADMIN_NAME);
-      addHistory(m, `사업자 정보 삭제: ${b.companyName} (${b.bizNo}) - 회원구분 ${NORMAL_NAME} 변경`);
+      addHistory(m, logs[logs.length - 1]);
       fillBusiness(m);
     }
     if (memoText) addMemo(m, memoText);
@@ -1601,8 +1770,10 @@
 
   // 관리자 메모 추가 (메모 옆 저장 버튼 / 회원 정보 저장 공통)
   function addMemo(m, text) {
-    m.memos.push({ text, at: nowText(), by: ADMIN_NAME });
-    addHistory(m, `관리자 메모 작성: ${text.length > 30 ? text.slice(0, 30) + '…' : text}`);
+    const memo = { text, at: nowText(), by: ADMIN_NAME }, log = `관리자 메모 작성: ${text.length > 30 ? text.slice(0, 30) + '…' : text}`;
+    if (!MemberData.saveAdminEdit(m.no, { memo, logs: [log] }, ADMIN_NAME)) toast('저장소를 사용할 수 없어 메모가 새로고침 후 사라질 수 있습니다.');
+    m.memos.push(memo);
+    addHistory(m, log);
     $('fMemo').value = '';
     renderMemos(m);
   }
@@ -1617,8 +1788,49 @@
   });
 
   // ===== 엑셀(CSV) 다운로드 =====
-  function downloadExcel() {
+  // 다운로드 전 모달에서 개인정보 포함 여부·사유를 받고, 다운로드 이력(일시·인원·검색 조건·사유·담당자)을 남김
+  //   마스킹: 이름 가운데·이메일 아이디 뒷부분·휴대폰 가운데·아이디 뒷부분을 가림. 생일은 연도만
+  // TODO: 실서비스에서는 서버가 다운로드 이력을 기록하고, 전체 포함은 권한 레벨·파일 비밀번호 설정을 함께 적용
+  const EXCEL_LOG_KEY = 'stopbook.memberExcelLogs.v1';
+  const readExcelLogs = () => { try { return JSON.parse(localStorage.getItem(EXCEL_LOG_KEY)) || []; } catch (e) { return []; } };
+  const maskName = s => (s.length <= 1 ? s : s.length === 2 ? `${s[0]}*` : `${s[0]}${'*'.repeat(s.length - 2)}${s[s.length - 1]}`);
+  const maskEmailX = s => { const [l, d] = String(s).split('@'); return d ? `${l.slice(0, 2)}${'*'.repeat(Math.max(3, l.length - 2))}@${d}` : s; };
+  const maskPhoneX = s => String(s).replace(/^(\d{3})-?(\d{3,4})-?(\d{4})$/, '$1-****-$3');
+  const maskId = s => (String(s).includes('@') ? maskEmailX(s) : `${String(s).slice(0, 3)}${'*'.repeat(Math.max(3, String(s).length - 3))}`);
+  function openExcel() {
     if (!state.filtered.length) { toast('다운로드할 데이터가 없습니다.'); return; }
+    $('xForm').reset();
+    $('xTarget').textContent = `현재 검색 결과 ${state.filtered.length.toLocaleString()}명`;
+    $('eExcel').classList.remove('show');
+    $('xHistory').innerHTML = readExcelLogs().slice(-10).reverse().map(x => `<tr><td>${esc(x.at)}</td><td>${x.count.toLocaleString()}명</td><td>${x.pii === 'full' ? '<b>전체 포함</b>' : '마스킹'}</td><td class="left">${esc(x.reason)}</td><td>${esc(x.by)}</td></tr>`).join('')
+      || '<tr><td colspan="5" class="empty">다운로드 이력이 없습니다.</td></tr>';
+    $('xModal').classList.add('open');
+    $('xReasonType').focus();
+  }
+  const closeExcel = () => $('xModal').classList.remove('open');
+  function submitExcel(e) {
+    e.preventDefault();
+    const type = $('xReasonType').value, detail = $('xReason').value.trim(), pii = document.querySelector('input[name=xPii]:checked').value;
+    const msg = !type ? '다운로드 사유를 선택하세요.' : (type === '기타' || pii === 'full') && detail.length < 2 ? '구체적인 사유를 입력하세요. (기타 사유 또는 개인정보 전체 포함 시 필수)' : '';
+    $('eExcel').textContent = msg;
+    $('eExcel').classList.toggle('show', !!msg);
+    if (msg) return;
+    if (pii === 'full' && !confirm(`${state.filtered.length.toLocaleString()}명의 개인정보(이름·이메일·휴대폰 등)를 가리지 않고 내려받습니다.\n파일은 업무 목적 외로 쓰거나 외부에 보내지 말고, 사용 후 바로 삭제해 주세요. 계속하시겠습니까?`)) return;
+    const reason = detail ? `${type} - ${detail}` : type;
+    const logs = readExcelLogs();
+    logs.push({ at: nowText(), count: state.filtered.length, pii, reason, by: ADMIN_NAME });
+    try { localStorage.setItem(EXCEL_LOG_KEY, JSON.stringify(logs.slice(-200))); } catch (err) { toast('저장소를 사용할 수 없어 다운로드 이력을 남기지 못했습니다.'); return; }
+    closeExcel();
+    downloadExcel(pii === 'full');
+  }
+  $('xForm').addEventListener('submit', submitExcel);
+  document.querySelectorAll('[data-xclose]').forEach(b => b.addEventListener('click', closeExcel));
+  $('xModal').addEventListener('click', ev => { if (ev.target === $('xModal')) closeExcel(); });
+
+  function downloadExcel(full) {
+    if (!state.filtered.length) { toast('다운로드할 데이터가 없습니다.'); return; }
+    // 마스킹 다운로드: 개인 식별 항목만 가림 (탈퇴 회원은 이미 파기·마스킹된 값)
+    const pii = { name: maskName, email: maskEmailX, phone: maskPhoneX, userId: maskId, birth: s => (s ? `${String(s).slice(0, 4)}-**-**` : ''), nickname: () => '' };
     const cols = [
       ['no', '번호'], ['status', '회원상태'], ['withdrawDate', '탈퇴일'], ['category', '회원구분'], ['subCategory', '종류'], ['memberType', '가입유형'], ['name', '이름'], ['email', '이메일'], ['phone', '휴대폰'], ['userId', '아이디'],
       ['nickname', '닉네임'], ['gender', '성별'], ['birth', '생일'], ['age', '나이(만)'],   // 미입력은 빈칸
@@ -1651,6 +1863,7 @@
       lines.push(cols.map(([k]) => {
         if (k in usage) return cell(usage[k]);
         if (k === 'marketingSms' || k === 'marketingEmail') return cell(m[k] === 'Y' ? '동의' : '거부');
+        if (!full && !m.withdrawn && k in pii) return cell(k === 'phone' ? '\t' + pii.phone(m.phone) : pii[k](m[k] || ''));
         if (k === 'phone') return cell(m.withdrawn ? m[k] : '\t' + m[k]);  // 엑셀에서 앞자리 0 유지 (탈퇴 회원은 '파기됨')
         if (k === 'memos') return cell(m.memos.map(x => `${x.text} (${x.at} ${x.by})`).join(' / '));
         if (k === 'age') return cell(ageOf(m.birth) ?? '');   // 숫자만 → 엑셀 정렬·필터 가능
@@ -1660,7 +1873,7 @@
     const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `회원목록_${fmtDate(new Date()).replace(/-/g, '')}.csv`;
+    a.download = `회원목록${full ? '' : '_마스킹'}_${fmtDate(new Date()).replace(/-/g, '')}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1716,16 +1929,21 @@
     document.querySelectorAll('#searchForm [data-days]').forEach(x => x.classList.toggle('btn-adjust', x === b));
   });
   ['sFrom', 'sTo'].forEach(id => $(id).addEventListener('input', () => document.querySelectorAll('#searchForm [data-days]').forEach(x => x.classList.remove('btn-adjust'))));
+  // 기간 기본값: 전체 (회원 목록은 가입일과 상관없이 전체 회원을 봐야 하므로 최근 1개월로 자르지 않음)
+  const setAllRange = () => {
+    $('sFrom').value = ''; $('sTo').value = '';
+    document.querySelectorAll('#searchForm [data-days]').forEach(x => x.classList.toggle('btn-adjust', x.dataset.days === 'all'));
+  };
   $('btnReset').addEventListener('click', () => {
     $('searchForm').reset();
-    AdminUtil.setDefaultRange();   // 초기화하면 기간은 기본값(가입일 최근 1개월)으로
+    setAllRange();   // 초기화하면 기간은 기본값(전체)으로
     updateDetailCount();
     applyFilter(); state.page = 1; render();
   });
   $('pageSize').addEventListener('change', e => {
     state.size = Number(e.target.value); state.page = 1; render();
   });
-  $('btnExcel').addEventListener('click', downloadExcel);
+  $('btnExcel').addEventListener('click', openExcel);
 
   document.querySelector('thead').addEventListener('click', e => {
     const th = e.target.closest('th.sortable');
@@ -1766,6 +1984,8 @@
     if (e.key !== 'Escape') return;
     if ($('uModal').classList.contains('open')) closeUsage();      // 위에 떠 있는 모달부터 닫기
     else if ($('aModal').classList.contains('open')) closeAlimtalk();
+    else if ($('wModal').classList.contains('open')) closeWithdraw();
+    else if ($('xModal').classList.contains('open')) closeExcel();
     else if (bState.kind) closeBenefit();
     else if (state.editing) closeModal();
   });
@@ -1782,7 +2002,7 @@
   }));
 
   // 초기 로드
-  AdminUtil.setDefaultRange();   // 처음 열면 최근 1개월 (관리자가 바꿔 검색 가능)
+  setAllRange();   // 처음 열면 전체 기간 (관리자가 바꿔 검색 가능)
   applyFilter();
   render();
   // ?member=회원번호 → 그 회원의 상세 모달을 바로 엶 (주문 상세 > 회원정보 버튼에서 사용)
@@ -1795,7 +2015,11 @@
     toast('회원 정보를 찾을 수 없습니다.');
     if (window.parent !== window) setTimeout(() => window.parent.postMessage({ type: 'member-modal-close' }, '*'), 1200);
   }
-  if (gradeRun.ran && gradeRun.changes.length) toast(`회원등급 자동 산정 실행: ${gradeRun.changes.length}명의 회원등급이 변경되었습니다.`);
+  // 오늘 처음 실행된 자동 처리 결과 안내 (등급 자동 산정 · 장기미이용 탈퇴 예정 안내·자동 탈퇴, member-data.js)
+  const dr = MemberData.dormantRun;
+  const autoText = [gradeRun.ran && gradeRun.changes.length ? `회원등급 자동 산정: ${gradeRun.changes.length}명 등급 변경` : '',
+    dr.noticed ? `장기미이용 탈퇴 예정 안내 ${dr.noticed}명` : '', dr.withdrawn ? `장기미이용 자동 탈퇴 ${dr.withdrawn}명` : ''].filter(Boolean).join(' · ');
+  if (autoText) toast(autoText);
 })();
 </script>
 </body>
