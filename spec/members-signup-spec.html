@@ -97,7 +97,7 @@
         <tr><td>B9</td><td class="wrap">마이페이지 · 로그인 모달</td><td class="wrap">로그아웃 상태로 <code>user/mypage.html</code> (모달 자동 열림)</td><td class="wrap">크롬 확장</td></tr>
         <tr><td>B10</td><td class="wrap">회원정보 수정 · 비밀번호 확인</td><td class="wrap">로그인한 상태로 <code>user/mypage.html#edit</code> (또는 첫 화면 [회원정보 수정])</td><td class="wrap">크롬 확장</td></tr>
         <tr><td>B11~B14</td><td class="wrap">회원정보 수정 · 본인 인증 · 우편번호 검색 · 저장 결과</td><td class="wrap">비밀번호 확인 통과 후 각 버튼을 눌러 진행</td><td class="wrap">크롬 확장</td></tr>
-        <tr><td>B15~B16</td><td class="wrap">회원 탈퇴 · 탈퇴 완료</td><td class="wrap">로그인한 상태로 <code>user/mypage.html#withdraw</code> (회원정보 수정 하단 [회원 탈퇴], 관리자 탈퇴 회원 관리의 [[사용자] 회원 탈퇴]) → 비밀번호 확인 후. 탈퇴하면 되돌릴 수 없으므로 캡처용 회원으로 진행</td><td class="wrap">크롬 확장</td></tr>
+        <tr><td>B15~B16</td><td class="wrap">회원 탈퇴 · 탈퇴 완료</td><td class="wrap">로그인한 상태로 <code>user/mypage.html#withdraw</code> (회원정보 수정 하단 [회원 탈퇴]) → 비밀번호 확인 후. 탈퇴하면 되돌릴 수 없으므로 캡처용 회원으로 진행</td><td class="wrap">크롬 확장</td></tr>
       </tbody>
     </table>
     <p class="note">샘플 로그인: user001 또는 user1@example.com / stopbook1! · 관리자 화면과 쇼핑몰 화면은 같은 주소(둘 다 GitHub Pages, 또는 둘 다 <code>프로토타입 실행.bat</code>의 localhost)에서 열어야 데이터가 연동됩니다 → C3.</p>
@@ -116,9 +116,9 @@
       <table>
         <thead><tr><th>영역</th><th>내용</th></tr></thead>
         <tbody>
-          <tr><td>상단 바</td><td class="wrap">대메뉴(홈·회원·주문/배송·게시판·혜택), 프로토타입 버전, 관리자명, 로그아웃</td></tr>
+          <tr><td>상단 바</td><td class="wrap">대메뉴(홈·회원·주문/배송·게시판·혜택), [사용자페이지 바로가기], 프로토타입 버전, 관리자명, 로그아웃</td></tr>
           <tr><td>사이드 메뉴</td><td class="wrap">회원관리 펼침, "통합 회원 관리" 선택 표시. 카테고리명을 누르면 하위 메뉴 접기/펼치기</td></tr>
-          <tr><td>제목 줄</td><td class="wrap">왼쪽 "통합 회원 관리" + 설명. 오른쪽 브레드크럼(홈 &gt; 회원관리 &gt; 통합 회원 관리)과 그 아래 바로가기 2개 [[사용자] 회원가입/로그인] [[사용자] 회원정보수정]</td></tr>
+          <tr><td>제목 줄</td><td class="wrap">왼쪽 "통합 회원 관리" + 설명. 오른쪽 브레드크럼(홈 &gt; 회원관리 &gt; 통합 회원 관리)</td></tr>
           <tr><td>탭</td><td class="wrap">리스트(검색 결과 수 표시) / 분석</td></tr>
           <tr><td>검색 영역</td><td class="wrap">두 탭이 함께 씀. 같은 검색 조건이 리스트와 분석에 동시에 적용 → A2</td></tr>
           <tr><td>탭 본문</td><td class="wrap">리스트 → A3·A4 / 분석 → A13</td></tr>
@@ -128,9 +128,7 @@
       <h4>바로가기 버튼</h4>
       <table>
         <tbody>
-          <tr><td>[사용자] 회원가입/로그인</td><td class="wrap">누르면 <b>새 창(탭)</b>으로 user/signup.html → B1</td></tr>
-          <tr><td>[사용자] 회원정보수정</td><td class="wrap">회원가입/로그인 바로 아래. 누르면 <b>새 창(탭)</b>으로 <code>user/mypage.html#edit</code> (회원정보 수정). 새 탭은 로그인 상태가 이어지지 않아 보통 로그인 모달(B9)부터 뜨고, 로그인하면 바로 회원정보 수정(B11)</td></tr>
-          <tr><td>모양 (두 버튼 공통)</td><td class="wrap">빨간색(#dc2626) 직사각형(라운딩 없음), 글자 11px 굵게. 세로로 쌓고 <b>긴 버튼 폭에 맞춰 같은 크기</b>, 글자는 왼쪽 정렬. 이 화면에만 있음</td></tr>
+          <tr><td>[사용자페이지 바로가기]</td><td class="wrap"><b>모든 관리자 화면</b> 상단 바의 프로토타입 버전 왼쪽 (공통 스크립트 member-type-store.js가 넣음). 누르면 <b>새 창(탭)</b>으로 user/signup.html → B1. 빨간색(#dc2626) 직사각형(라운딩 없음), 글자 11px 굵게. 화면별로 따로 두던 [사용자] 바로가기(통합 회원 관리의 회원가입/로그인·회원정보수정, 탈퇴 회원 관리의 회원 탈퇴)는 이 하나로 통합</td></tr>
           <tr><td>피드백 입력</td><td class="wrap">구분(오류/개선/기타)·내용(1,000자)·확인자명 → 구글 시트 전송, 실패 시 보관 후 재전송. 쇼핑몰 화면(B)에도 같은 버튼 → C3</td></tr>
         </tbody>
       </table>
@@ -199,12 +197,11 @@
     <div class="card-body">
       <p class="capture"><b>캡처</b> admin/members.html (리스트 탭)</p>
       <p class="lead">목록 위 왼쪽 "검색결과 <b>N</b>명 / 전체 M명", 오른쪽 [페이지당 건수] [엑셀 다운로드]. 탭 이름 옆에도 검색 결과 수 표시.</p>
-      <h4>열 (12개)</h4>
+      <h4>열 (11개)</h4>
       <table>
         <thead><tr><th>열</th><th>표시 · 동작</th><th>정렬</th></tr></thead>
         <tbody>
           <tr><td>번호</td><td class="wrap">회원번호</td><td>숫자</td></tr>
-          <tr><td>회원상태</td><td class="wrap">정상 / 탈퇴 배지. 탈퇴는 마우스를 올리면 "탈퇴일 · 탈퇴구분". <b>탈퇴 회원 행은 흐리게</b>, 이메일·휴대폰은 마스킹·"파기됨", 마케팅 "-", 최근접속일 자리에 "탈퇴 YYYY-MM-DD" → C4</td><td>-</td></tr>
           <tr><td>이름</td><td class="wrap">링크. 누르면 회원 상세 창 → A5</td><td>가나다</td></tr>
           <tr><td>이메일</td><td class="wrap">길면 말줄임, 마우스를 올리면 전체 표시</td><td>-</td></tr>
           <tr><td>휴대폰</td><td class="wrap">010-0000-0000</td><td>-</td></tr>
@@ -217,6 +214,7 @@
           <tr><td>최근접속일</td><td class="wrap">YYYY-MM-DD</td><td>날짜</td></tr>
         </tbody>
       </table>
+      <p class="note" style="margin-top:6px">상태 열은 두지 않음. 탈퇴 회원도 목록에 남으며 <b>행을 흐리게</b> 표시하고 이메일·휴대폰은 마스킹·"파기됨", 마케팅 "-", 최근접속일 자리에 "탈퇴 YYYY-MM-DD" (정상/탈퇴 구분 검색은 상세검색 &gt; 회원상태) → C4</p>
       <h4>정렬</h4>
       <ul>
         <li>기본: 번호 내림차순 (최근 가입 회원이 위)</li>
@@ -984,7 +982,7 @@
         <tbody>
           <tr><td>[취소]</td><td class="wrap">확인 창 "입력한 내용을 취소하고 저장된 정보로 되돌릴까요?" → 저장된 값으로 되돌림, 민감정보 다시 잠금</td></tr>
           <tr><td>[저장하기]</td><td class="wrap">→ B14</td></tr>
-          <tr><td>회원 탈퇴</td><td class="wrap">맨 아래 "더 이상 스탑북을 이용하지 않으시나요? [회원 탈퇴]" → 회원 탈퇴 화면(<code>mypage.html#withdraw</code>, PRD_MEM_010). <b>사이드 메뉴에는 두지 않고 이 링크로만 들어감</b> (탈퇴 화면에서도 사이드 메뉴는 '회원정보 수정' 선택 표시). 관리자 탈퇴 회원 관리 오른쪽 위 [[사용자] 회원 탈퇴]로도 열 수 있음 (새 탭)</td></tr>
+          <tr><td>회원 탈퇴</td><td class="wrap">맨 아래 "더 이상 스탑북을 이용하지 않으시나요? [회원 탈퇴]" → 회원 탈퇴 화면(<code>mypage.html#withdraw</code>, PRD_MEM_010). <b>사이드 메뉴에는 두지 않고 이 링크로만 들어감</b> (탈퇴 화면에서도 사이드 메뉴는 '회원정보 수정' 선택 표시)</td></tr>
         </tbody>
       </table>
       <p class="note">입력칸 오류는 칸 아래 빨간 글씨 + 빨간 테두리. 저장 시 첫 오류 칸으로 이동.</p>
@@ -1087,7 +1085,7 @@
     <div class="card-head"><span class="id">B15</span><h3>회원 탈퇴 (PRD_MEM_010)</h3></div>
     <div class="card-body">
       <p class="capture"><b>캡처</b> 회원정보 수정 하단 [회원 탈퇴] → 비밀번호 확인 후</p>
-      <p class="lead">제목 "회원 탈퇴", 설명 "탈퇴 전 안내 사항을 꼭 확인해 주세요." 사이드 메뉴에는 없고 회원정보 수정 하단 링크(또는 관리자 [[사용자] 회원 탈퇴])로만 들어감. 들어올 때마다 비밀번호 확인(B10).</p>
+      <p class="lead">제목 "회원 탈퇴", 설명 "탈퇴 전 안내 사항을 꼭 확인해 주세요." 사이드 메뉴에는 없고 회원정보 수정 하단 링크로만 들어감. 들어올 때마다 비밀번호 확인(B10).</p>
       <h4>구성 (위에서 아래로)</h4>
       <table>
         <thead><tr><th>카드</th><th>내용</th></tr></thead>
@@ -1300,8 +1298,8 @@
       <table>
         <thead><tr><th>화면</th><th>결과</th></tr></thead>
         <tbody>
-          <tr><td>통합 회원 관리</td><td class="wrap">회원상태 '탈퇴'로 목록에 남음 (A2 검색 · A3 목록 · A4 엑셀 · A5 조회 전용 상세). 분석·등급 산정에서 제외</td></tr>
-          <tr><td>탈퇴 회원 관리</td><td class="wrap">샘플 탈퇴 기록 뒤에 실제 탈퇴 기록을 이어 붙여 목록·분석에 함께 표시. 상세에 "회원번호 No.n (통합 회원 관리 '탈퇴' 상태)" · 재가입 제한 기간. 탈퇴 이후 삭제된 사유는 탈퇴 시점 이름 + "(삭제됨)". 오른쪽 위 [[사용자] 회원 탈퇴] → 새 탭으로 mypage.html#withdraw</td></tr>
+          <tr><td>통합 회원 관리</td><td class="wrap">회원상태 '탈퇴'로 목록에 남음 (A2 상세검색 · A3 흐린 행, 상태 열 없음 · A4 엑셀 · A5 조회 전용 상세). 분석·등급 산정에서 제외</td></tr>
+          <tr><td>탈퇴 회원 관리</td><td class="wrap">샘플 탈퇴 기록 뒤에 실제 탈퇴 기록을 이어 붙여 목록·분석에 함께 표시. 상세에 "회원번호 No.n (통합 회원 관리 '탈퇴' 상태)" · 재가입 제한 기간. 탈퇴 이후 삭제된 사유는 탈퇴 시점 이름 + "(삭제됨)"</td></tr>
           <tr><td>회원 유형 관리 &gt; 탈퇴회원</td><td class="wrap">'자진탈퇴'의 사유 선택 방식(필수/선택/자동 지정)·복수 선택·사유 목록·의견 입력·재가입 제한 일수가 마이페이지 탈퇴 화면(B15)에 바로 반영</td></tr>
           <tr><td>마일리지 등 혜택</td><td class="wrap">탈퇴 회원은 지급·차감 불가 (취소·반품 마일리지 환불도 다른 환불 수단으로 처리)</td></tr>
         </tbody>
