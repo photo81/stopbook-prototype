@@ -1,0 +1,184 @@
+/* 쇼핑몰(고객) 화면 공통 — index·signup·mypage·support가 각 화면 <style> 다음에 불러옴 (화면별 기본 스타일을 덮어씀)
+   디자인 콘셉트 (popsa.com 메인 참고, 2026-10-26)
+     · 흑백 UI + 색은 사진이 담당: 흰 면 · 옅은 회색 띠(#F4F4F4) · 차콜 글자/버튼(#2E2E2E) · 어두운 띠/하단(#1C1C1C)
+     · 브랜드 브라운(#63302B)은 로고에만. 주 버튼·체크·선택 표시는 차콜
+     · 크고 굵은 제목(Pretendard 800, 좁은 자간) · 알약 모양 버튼 · 크게 둥근 사진 카드(24px)
+   화면 폭: 상단·하단·메인 내용 최대 1280px (IA 의견 "폭 넓게" 반영), 좌우 여백 32px(480px 이하 16px) */
+
+:root {
+  --bg: #F4F4F4; --surface: #FFFFFF; --band: #1C1C1C; --night: #1C1C1C; --night-2: #262626;
+  --util: #FFFFFF; --util-line: #E6E6E6; --util-ink: #585858;
+  /* 글자: 본문 / 보조 / 흐린 안내(흰·회색 바탕 4.5:1 이상) / 장식용 / 입력 예시 */
+  --ink: #2E2E2E; --ink-2: #585858; --ink-3: #6B6B6B; --ink-4: #A8A8A8; --placeholder: #9A9A9A;
+  --line: #EBEBEB; --line-2: #DADADA;
+  --field: #F2F2F2; --field-hover: #EBEBEB; --tonal: #EFEFEF; --tonal-hover: #E4E4E4; --hover: #F8F8F8;
+  --brand: #2E2E2E; --brand-dark: #1C1C1C; --brand-soft: #EFEFEF;
+  --accent1: #C23B29; --accent1-ink: #2E2E2E; --accent1-soft: #F3F3F3; --gold: #6B6B6B;   /* 필수 표시(*)는 빨강, 그 밖의 강조는 차콜 */
+  --ring: rgba(46,46,46,.14);
+  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px rgba(46,46,46,.6);
+  --radius: 24px; --radius-md: 14px; --radius-sm: 10px; --pill: 999px;   /* 카드·모달 / 입력칸·박스 / 작은 표시 / 버튼·칩 */
+  --shadow-card: none; --shadow-raised: 0 1px 3px rgba(0,0,0,.1);
+  --wrap: 1280px; --main: #63302B; --ease: .15s ease;
+}
+html { background: var(--night); }   /* 내용이 짧은 화면(회원가입 등)에서 하단 아래 빈 곳도 하단 색으로 */
+body { font-size: 15px; letter-spacing: -.015em; }
+::selection { background: rgba(46,46,46,.16); color: var(--ink); }
+
+/* ===== 상단: 얇은 프로토타입 띠 + 흰 바(로고 · 상품 메뉴 · 이용 메뉴) ===== */
+.proto-band { background: var(--night); color: rgba(255,255,255,.7); font-size: 11.5px; font-weight: 600; padding: 4px 16px; letter-spacing: .01em; }
+.util { background: rgba(255,255,255,.94); -webkit-backdrop-filter: saturate(1.4) blur(14px); backdrop-filter: saturate(1.4) blur(14px); border-bottom: 1px solid var(--util-line); transition: background var(--ease), border-color var(--ease), color var(--ease); }
+.util-in { display: flex; align-items: center; justify-content: flex-start; gap: 6px 36px; max-width: var(--wrap); min-height: 72px; margin: 0 auto; padding: 0 32px; }
+.brand { flex: none; display: block; line-height: 0; border-radius: 4px; }
+.brand img { width: 128px; height: auto; transition: filter var(--ease); }
+.util .gnb { flex: 1; min-width: 0; display: flex; align-items: center; gap: 28px; }   /* 왼쪽 상품 카테고리 + 오른쪽(gnb-side) 편집대행·이벤트 */
+.util .gnb ul { gap: 28px; font-size: 15px; font-weight: 700; color: var(--ink); }
+.util .gnb .gnb-side { margin-left: auto; padding-left: 28px; border-left: 1px solid var(--util-line); gap: 22px; }
+.util .gnb a, .util .gnb button { white-space: nowrap; }
+.util .util-menu { flex: none; margin-left: auto; }
+.util .util-menu ul { gap: 24px; font-size: 14px; color: var(--util-ink); }
+.util button:hover, .util a:hover { color: var(--ink); }
+.util .gnb a:hover, .util .gnb button:hover { opacity: .7; }
+.util .me, .util .login, .util [aria-current="page"], .util #openAuth { color: var(--ink); font-weight: 700; }
+/* 두 줄 상단(메인): 1줄 이용 메뉴(얇게, 오른쪽) / 2줄 로고 + 대메뉴 */
+.util.two-row .util-top { min-height: 34px; justify-content: flex-end; border-bottom: 1px solid var(--util-line); }
+.util.two-row .util-top .util-menu ul { font-size: 13px; gap: 20px; }
+.util.two-row .util-in:not(.util-top) { min-height: 64px; }
+.util .logout { font-size: 13px; color: var(--ink-3); }
+@media (max-width: 1080px) {
+  /* 상품 메뉴는 둘째 줄 가로 스크롤 */
+  .util-in { flex-wrap: wrap; min-height: 0; padding-top: 14px; }
+  .util .gnb { order: 3; flex-basis: 100%; overflow-x: auto; scrollbar-width: none; margin: 0 -32px; padding: 4px 32px 12px; }
+  .util .gnb::-webkit-scrollbar { display: none; }
+  .util .gnb ul { gap: 22px; font-size: 14.5px; }
+  .util .gnb .gnb-side { padding-left: 22px; }
+  .util.two-row .util-top { padding-top: 0; min-height: 34px; }
+  .util.two-row .util-in:not(.util-top) { padding-top: 10px; }
+}
+@media (max-width: 480px) {
+  .util-in { padding: 12px 16px 0; gap: 6px 12px; }
+  .brand img { width: 104px; }
+  .util .util-menu ul { gap: 14px; font-size: 12.5px; }
+  .util .gnb { margin: 0 -16px; padding: 4px 16px 10px; }
+}
+
+/* ===== 하단 (어두운 띠) ===== */
+.foot { background: var(--night); color: rgba(255,255,255,.72); font-size: 14px; line-height: 1.7; }
+.foot-in { max-width: var(--wrap); margin: 0 auto; padding: 72px 32px 44px; }
+.foot-top { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)) minmax(0, 1.3fr); gap: 32px; }
+.foot-brand img { width: 128px; height: auto; filter: brightness(0) invert(1); }
+.foot-brand p { margin: 16px 0 0; max-width: 22em; }
+.foot h2 { margin: 0 0 14px; font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0; }
+.foot ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.foot a, .foot button { background: none; border: 0; padding: 0; color: inherit; text-decoration: none; cursor: pointer; font: inherit; border-radius: 4px; }
+.foot a:hover, .foot button:hover { color: #fff; }
+.foot .cs b { display: block; font-size: 24px; font-weight: 800; color: #fff; letter-spacing: -.02em; line-height: 1.3; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.foot-legal { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 56px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.12); }
+.foot-legal button:first-child + button { color: #fff; font-weight: 700; }   /* 개인정보처리방침 강조 (법정 표기 관행) */
+.foot-info { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 16px 0 0; font-size: 12.5px; color: rgba(255,255,255,.55); }
+.foot-copy { margin: 8px 0 0; font-size: 12.5px; color: rgba(255,255,255,.55); }
+.foot a:focus-visible, .foot button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: none; }
+@media (max-width: 1080px) { .foot-top { grid-template-columns: repeat(3, minmax(0, 1fr)); } .foot-brand, .foot .cs { grid-column: 1 / -1; } }
+@media (max-width: 560px) { .foot-in { padding: 56px 16px 36px; } .foot-top { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; } }
+
+/* ===== 공통 요소 톤 (화면별 기본 스타일 위에) ===== */
+/* 버튼: 알약 모양, 주 버튼 52px · 입력칸 옆 버튼 48px. 보조 버튼은 테두리 없는 회색 면 */
+.btn { height: 52px; padding: 0 24px; border-radius: var(--pill); font-size: 15px; font-weight: 700; }
+.btn-line, .auth-main .btn-line { background: var(--tonal); border-color: transparent; color: var(--ink); }
+.btn-line:hover, .auth-main .btn-line:hover, .btn-line:where(:hover:not(:disabled)) { background: var(--tonal-hover); border-color: transparent; }
+.btn-sm, .cs-strip .acts .btn, .faq-search .btn { height: 48px; font-size: 14px; }
+.btn-sm { padding: 0 18px; }
+.btn-text { font-size: 14px; }
+.btn-prov, .exists .btn, .hq-acts .btn { border-radius: var(--pill); }
+/* 입력칸: 48px, 모서리 14px */
+input[type=text], input[type=email], input[type=password], input[type=tel], input[type=search], select.sel { height: 48px; padding-left: 16px; font-size: 15px; }
+textarea, .wd-etc { padding: 12px 16px; font-size: 15px; }
+.field > label, .field > .label { font-size: 14px; }
+.form-inline .field > label, .form-inline .field > .label { min-height: 48px; }
+.chip-row { min-height: 48px; }
+.radio-row { border-radius: var(--pill); }
+.radio-row span { height: 40px; font-size: 14px; border-radius: var(--pill); }
+/* 선택 칩 · 필터: 회색 알약 → 선택 시 차콜 */
+.chip-check span { height: 36px; padding: 0 16px; border-color: transparent; border-radius: var(--pill); background: var(--tonal); font-size: 13.5px; }
+.chip-check span:hover { border-color: transparent; background: var(--tonal-hover); }
+.chip-check input:checked + span { border-color: var(--ink); background: var(--ink); color: #fff; }
+.chip-check input:checked + span:hover { border-color: var(--night); background: var(--night); }
+.htag, .chips span, .faq-chip, .hq-status, .mock-tag { border-radius: var(--pill); }
+
+/* ===== 서브 화면 (마이페이지 · 고객센터): 넓은 폭 · 큰 제목 · 굵은 탭 · 그림자 없는 흰 카드 ===== */
+.my-wrap, .cs-wrap { max-width: var(--wrap); padding: 56px 32px 96px; }
+.my-main > h1, .cs-wrap > h1 { margin-bottom: 10px; font-size: 40px; font-weight: 800; line-height: 1.25; letter-spacing: -.04em; }
+.page-sub { font-size: 16px; color: var(--ink-2); }
+.my-tabs, .cs-tabs { margin-bottom: 28px; }
+.my-tabs ul, .cs-tabs ul { gap: 0; border-bottom-color: var(--line-2); }
+.my-tabs a, .cs-tabs a { padding: 14px 2px; margin-right: 28px; font-size: 17px; font-weight: 700; color: var(--ink-3); }
+.my-tabs a[aria-current="page"], .cs-tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
+.my-tabs a:hover:not([aria-current="page"]), .cs-tabs a:hover:not([aria-current="page"]) { color: var(--ink); border-bottom-color: transparent; }
+.card { padding: 36px 40px; box-shadow: none; }
+.card + .card, .home-tiles, .home-tiles + .card { margin-top: 16px; }
+.card > h2, .card-title-row h2 { font-size: 22px; font-weight: 800; letter-spacing: -.035em; }
+.card-sub { font-size: 14.5px; }
+.tile, .card.mini { padding: 28px 40px; box-shadow: none; }
+.tile .k i { background: var(--tonal); color: var(--ink-2); }
+.tile .v { font-size: 28px; }
+.hero-avatar { width: 64px; height: 64px; font-size: 24px; background: var(--ink); }
+.hero-hi { font-size: 24px; letter-spacing: -.035em; }
+.hero-hi b { color: inherit; }
+.order-flow b { font-size: 30px; }
+.order-flow b.on { color: var(--ink); }
+.order-flow a { display: block; padding: 6px 0; border-radius: var(--radius-md); text-decoration: none; }   /* 단계별 주문 보기 링크: 밑줄 없이 칸 전체 */
+.order-flow a:hover { background: var(--hover); }
+.order-flow a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+/* 고객센터 */
+.cs-strip { padding: 28px 32px; }
+.cs-strip .ico { width: 52px; height: 52px; background: var(--tonal); color: var(--ink); }
+.cs-strip .txt b { font-size: 22px; }
+.faq-search { margin: 24px 0 18px; }
+.faq-cats { gap: 8px; margin-bottom: 22px; }
+.faq-cats button { height: 40px; padding: 0 18px; border-color: transparent; background: var(--tonal); color: var(--ink-2); font-size: 14px; font-weight: 600; }
+.faq-cats button:hover { border-color: transparent; background: var(--tonal-hover); color: var(--ink); }
+.faq-cats button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: #fff; }
+.faq-cats button:active:not([aria-pressed="true"]) { background: var(--line-2); }
+.faq-count { margin-bottom: 12px; font-size: 14px; }
+.faq-list, .hq-list { border-top: 2px solid var(--ink); }
+.faq-q { gap: 14px; padding: 22px 8px; font-size: 16.5px; }
+.faq-q .qa, .faq-a .qa { width: 22px; height: 26px; border-radius: 0; background: none; font-size: 18px; font-weight: 800; }
+.faq-q .qa { color: var(--ink); }
+.faq-a .qa { color: var(--ink-3); }
+.faq-chip { height: 24px; padding: 0 10px; background: var(--tonal); font-size: 12px; }
+.faq-a { padding-left: 16px; padding-right: 16px; }
+.faq-a .ans { font-size: 15px; line-height: 1.8; }
+.hq-head { padding: 20px 8px; font-size: 15.5px; }
+.inq-tabs, .ip-seg { border-radius: var(--pill); }
+.inq-tabs button, .ip-seg button { border-radius: var(--pill); }
+.inq-tabs button { height: 42px; font-size: 15px; }
+.inq-tabs button[aria-selected="true"], .ip-seg button[aria-pressed="true"] { color: var(--ink); }
+.iq-form h2, .pt-form h2 { font-size: 18px; font-weight: 800; }
+/* 모달 · 레이어 · 알림 */
+.auth { border-radius: 16px; }   /* 로그인·회원가입 모달 (2026-10-26 28px → 16px) */
+.auth::backdrop { background: rgba(0,0,0,.5); }
+.auth-body { padding: 8px 36px 36px; }
+.view-title { font-size: 24px; font-weight: 800; letter-spacing: -.035em; }
+.steps li.done::before, .steps li.on::before { background: var(--ink); }
+.terms-dlg, .result-dlg, .zip-box { border-radius: var(--radius); }
+.toast { padding: 13px 24px; border-radius: var(--pill); background: rgba(28,28,28,.95); }
+.sns-circle.stopbook, .sns-circle.mini.stopbook { background: var(--main); }   /* 스탑북 가입 표시는 브랜드 색 유지 */
+
+@media (max-width: 760px) {
+  .my-wrap, .cs-wrap { padding: 32px 20px 72px; }
+  .my-main > h1, .cs-wrap > h1 { font-size: 30px; }
+  .my-tabs a, .cs-tabs a { padding: 12px 2px; margin-right: 20px; font-size: 16px; }
+  .card, .tile, .card.mini { padding: 24px 20px; }
+}
+@media (max-width: 560px) {
+  .auth { border-radius: 0; }
+  .auth-body { padding: 8px 20px 28px; }
+}
+@media (max-width: 480px) {
+  .my-wrap, .cs-wrap { padding-left: 16px; padding-right: 16px; }
+  .chip-check span { height: 40px; }
+  .faq-q { gap: 8px; padding: 18px 4px; }   /* support.html 좁은 화면 줄바꿈 계산(질문 폭)과 같은 간격 — 넓히면 화살표가 아래로 밀림 */
+  .faq-q .faq-chip { margin-left: 30px; }   /* Q 글자(22px) + 간격(8px) 만큼 들여 질문 제목과 맞춤 */
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

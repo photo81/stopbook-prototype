@@ -8,15 +8,24 @@
 <link rel="stylesheet" href="../admin/feedback.css?v=20261026-1"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
 <style>
   /* 쇼핑몰(고객) 화면 — 회원가입(signup.html)과 같은 톤앤매너·토큰·입력 요소 사용 */
+  /* 디자인 토큰 — support.html·mypage.html·signup.html 세 화면이 같은 이름·같은 값 사용 (바꿀 때 세 파일 모두) */
   :root {
     --base: #F5F0E8; --sub: #FCEDD2; --main: #63302B; --accent1: #D3775C; --accent2: #A56255;
-    --bg: var(--base); --surface: #FFFFFF; --band: var(--main); --util: var(--sub);
-    --ink: #1F1B19; --ink-2: #6B6460; --ink-3: #A39C97; --line: #EEEAE6; --line-2: #DDD7D2;
-    --field: #F6F4F2; --tonal: #F1EDEA; --tonal-hover: #E9E4E0;
-    --brand: var(--main); --brand-dark: #4C221E; --brand-soft: #F5EDEB; --ring: rgba(99,48,43,.14);
-    --danger: #D64532; --danger-soft: #FDF1EF; --ok: #2F8A5B;
-    --radius: 12px; --radius-md: 8px; --radius-sm: 6px;   /* 모달·카드 / 버튼·박스 / 안내 박스 (너무 둥글지 않게) */
+    --bg: #F5F5F3; --surface: #FFFFFF; --band: #191919; --util: #FFFFFF; --util-line: #EBEBE9; --util-ink: #4E4E4C;   /* 바탕은 중립 회색, 상단은 흰 바 (베이지·크림은 팔레트 원본으로만 보관) */
+    /* 글자: 본문 / 보조 / 흐린 안내(흰·회색 바탕에서 4.5:1 이상, WCAG AA) / 장식용(화살표·구분 — 글자에는 쓰지 않음) / 입력 예시 */
+    --ink: #191919; --ink-2: #4E4E4C; --ink-3: #6E6E6B; --ink-4: #ADADAA; --placeholder: #9A9A97;
+    --line: #EDEDEB; --line-2: #DEDEDB;
+    --field: #F3F3F1; --field-hover: #EEEEEC; --tonal: #F1F1EF; --tonal-hover: #E7E7E4; --hover: #FAFAF9;
+    --brand: var(--main); --brand-dark: #4C221E; --brand-soft: #F7F0EF; --accent1-soft: #FBEEE8; --accent1-ink: #AB4B2B;   /* accent1-ink: 연한 바탕 위 테라코타 글자 */
+    --ring: rgba(46,46,46,.14); --ring-danger: rgba(194,59,41,.14);   /* 입력칸 포커스 번짐 */
+    --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px rgba(46,46,46,.6);   /* 키보드 포커스 (버튼·탭·칩·체크 공통) */
+    --danger: #C23B29; --danger-dark: #A3301F; --danger-soft: #FDF1EF; --ok: #277550; --ok-soft: #EEF7F1;
+    --radius: 20px; --radius-md: 12px; --radius-sm: 8px;   /* 모달·카드 / 버튼·입력칸·박스 / 안내 박스·작은 표시 */
+    --shadow-card: none; --shadow-raised: 0 1px 3px rgba(0,0,0,.08);
+    --shadow-pop: 0 8px 24px rgba(0,0,0,.18); --shadow-modal: 0 30px 80px rgba(0,0,0,.22), 0 2px 8px rgba(0,0,0,.06);
+    --ease: .15s ease;
   }
+
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body { background: var(--bg); color: var(--ink); font: 14px/1.6 "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.01em; }
@@ -26,36 +35,37 @@
 
   /* 쇼핑몰 공통 상단 */
   .proto-band { background: var(--band); color: var(--sub); text-align: center; font-size: 12px; font-weight: 700; padding: 5px 16px; letter-spacing: .02em; }
-  .util { background: var(--util); border-bottom: 1px solid #F1E2C6; }
-  .util ul { display: flex; justify-content: flex-end; gap: 22px; list-style: none; max-width: 1136px; margin: 0 auto; padding: 8px 16px; font-size: 12px; color: #7E5A4E; }
+  .util { background: var(--util); border-bottom: 1px solid var(--util-line); }
+  /* 상단 한 줄: 로고(왼쪽) + 이용 메뉴(오른쪽) */
+  .util-in { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; max-width: 1136px; min-height: 52px; margin: 0 auto; padding: 0 16px; }
+  .brand { display: block; line-height: 0; }
+  .brand img { width: 112px; height: auto; }   /* 배경 투명 PNG, 원본 376×54 */
+  .util ul { display: flex; align-items: center; gap: 22px; list-style: none; margin: 0; padding: 0; font-size: 13px; color: var(--util-ink); }
   .util button, .util a { background: none; border: 0; padding: 0; cursor: pointer; color: inherit; text-decoration: none; }
-  .util button:hover, .util a:hover { color: var(--accent1); }
+  .util button:hover, .util a:hover { color: var(--accent1-ink); }
   .util .me, .util .login, .util [aria-current="page"] { color: var(--main); font-weight: 700; }
   .util .logout { color: var(--ink-3); margin-left: 8px; font-size: 12px; }
 
   /* 마이페이지 레이아웃: 왼쪽 메뉴 + 본문 */
-  .my-wrap { max-width: 1136px; margin: 0 auto; padding: 36px 16px 80px; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .my-wrap { max-width: 1136px; margin: 0 auto; padding: 36px 16px 80px; }   /* 고객센터와 같은 한 열 구성 (왼쪽 메뉴 대신 서브 탭) */
   /* 상단(프로토타입 띠 + 상단 메뉴) 고정. 높이는 --top-h (실제 높이를 스크립트가 다시 넣음) */
   :root { --top-h: 65px; }
   html { scroll-padding-top: calc(var(--top-h) + 16px); }   /* 입력칸으로 이동할 때 상단에 가리지 않게 */
   .site-top { position: sticky; top: 0; z-index: 15; }
-  .my-nav { position: sticky; top: calc(var(--top-h) + 24px); }   /* 스크롤해도 왼쪽 메뉴 고정 (좁은 화면은 아래 미디어 쿼리에서 해제) */
-  .my-nav h2 { margin: 0 0 14px; font-size: 20px; font-weight: 800; color: var(--main); }
-  .my-user { font-size: 13px; color: var(--ink-2); margin-bottom: 18px; line-height: 1.5; }
-  .my-user b { display: block; font-size: 15px; color: var(--ink); }
-  .my-nav ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line-2); }
-  .my-nav li { border-bottom: 1px solid var(--line); }
-  .my-nav li button, .my-nav li a { display: block; width: 100%; padding: 12px 2px; background: none; border: 0; text-align: left; font-size: 14px; color: var(--ink-2); cursor: pointer; text-decoration: none; }
-  .my-nav li button:hover { color: var(--ink); }
-  .my-nav li [aria-current="page"] { color: var(--main); font-weight: 700; }
+  /* 서브 탭 (고객센터 .cs-tabs와 같은 모양): 상단 메뉴 아래 고정 */
+  .my-tabs { position: sticky; top: var(--top-h); z-index: 10; background: var(--bg); margin: 0 0 20px; padding: 6px 0 0; }
+  .my-tabs ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; border-bottom: 1px solid var(--line-2); }
+  .my-tabs a { display: block; padding: 12px 16px; font-size: 15px; font-weight: 600; color: var(--ink-2); text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .my-tabs a:hover { color: var(--ink); }
+  .my-tabs a[aria-current="page"] { color: var(--main); border-bottom-color: var(--main); }
   .my-main { min-width: 0; }   /* 본문은 오른쪽 끝까지 (상단 메뉴 '고객센터' 끝과 같은 선) */
-  .my-main > h1 { margin: 0 0 6px; font-size: 22px; font-weight: 800; }
-  .page-sub { margin: 0 0 22px; color: var(--ink-2); font-size: 13.5px; }
+  .my-main > h1 { margin: 0 0 16px; font-size: 26px; font-weight: 700; letter-spacing: -.03em; }
+  .page-sub { margin: 0 0 22px; color: var(--ink-2); font-size: 14px; }
 
-  .card { background: var(--surface); border-radius: var(--radius); padding: 24px 28px; box-shadow: 0 1px 2px rgba(20,14,12,.04); }
+  .card { background: var(--surface); border-radius: var(--radius); padding: 28px 32px; box-shadow: var(--shadow-card); }
   .card + .card { margin-top: 14px; }
-  .card > h2 { margin: 0 0 4px; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-  .card > h2 small { font-size: 11px; font-weight: 700; color: var(--accent1); background: #FBEDE8; border-radius: 999px; padding: 1px 8px; }
+  .card > h2 { margin: 0 0 6px; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card > h2 small { font-size: 11px; font-weight: 700; color: var(--accent1-ink); background: var(--accent1-soft); border-radius: 999px; padding: 1px 8px; }
   .card-sub { margin: 0 0 18px; color: var(--ink-3); font-size: 13px; line-height: 1.6; }
   .card-sub:last-child { margin-bottom: 0; }
 
@@ -64,7 +74,7 @@
   .btn-block { width: 100%; }
   .btn-primary { background: var(--brand); color: #fff; }
   .btn-primary:hover { background: var(--brand-dark); }
-  .btn-primary:disabled { background: var(--tonal); color: #BDB6B0; cursor: not-allowed; }
+  .btn-primary:disabled { background: var(--tonal); color: #A8A8A8; cursor: not-allowed; }
   .btn-line { background: var(--surface); border-color: var(--line-2); color: var(--ink); }
   .btn-line:hover { border-color: var(--ink-3); }
   .btn-sm { height: 44px; padding: 0 14px; font-size: 13px; white-space: nowrap; background: var(--tonal); border-color: transparent; color: var(--ink); }
@@ -95,12 +105,12 @@
   input[type=text], input[type=email], input[type=password], input[type=tel] {
     width: 100%; height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--radius-md); background: var(--field); outline: none; font-size: 14px; transition: border-color .15s, background .15s, box-shadow .15s;
   }
-  input::placeholder { color: #B9B2AC; }
-  input:hover { background: #F2EFEC; }
+  input::placeholder { color: var(--placeholder); }
+  input:hover { background: var(--field-hover); }
   input:focus { background: #fff; border-color: var(--brand); box-shadow: 0 0 0 3px var(--ring); }
   input:read-only, input:read-only:hover, input:read-only:focus { color: var(--ink-2); background: var(--field); border-color: transparent; box-shadow: none; }
   input.invalid { background: #fff; border-color: var(--danger); }
-  input.invalid:focus { box-shadow: 0 0 0 3px rgba(214,69,50,.12); }
+  input.invalid:focus { box-shadow: 0 0 0 3px var(--ring-danger); }
   .input-wrap { position: relative; }
   .input-wrap .timer { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--danger); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .msg { font-size: 12.5px; margin: 6px 2px 0; }
@@ -109,12 +119,12 @@
   .msg.ok { color: var(--ok); }
   .msg.info { color: var(--ink-3); }
   .hint { font-size: 12px; color: var(--ink-3); margin: 6px 2px 0; line-height: 1.5; }
-  .dev-code { display: inline-block; font-size: 11.5px; font-weight: 600; color: var(--accent2); background: var(--field); border-radius: 6px; padding: 3px 8px; margin-top: 8px; }
+  .dev-code { display: inline-block; font-size: 11.5px; font-weight: 600; color: var(--ink-3); background: var(--field); border-radius: 6px; padding: 3px 8px; margin-top: 8px; }
   .radio-row { display: flex; gap: 4px; padding: 4px; background: var(--field); border-radius: var(--radius-md); }
   .radio-row label { flex: 1; }
   .radio-row input { position: absolute; opacity: 0; }
   .radio-row span { display: flex; align-items: center; justify-content: center; height: 36px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--ink-2); transition: background .15s, box-shadow .15s; }
-  .radio-row input:checked + span { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(20,14,12,.1); }
+  .radio-row input:checked + span { background: #fff; color: var(--ink); font-weight: 600; box-shadow: var(--shadow-raised); }
   .radio-row input:focus-visible + span { box-shadow: 0 0 0 3px var(--ring); }
   .pw-field { position: relative; }
   .pw-field input { padding-right: 64px; }
@@ -162,7 +172,7 @@
   .sens-lock .txt { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-2); line-height: 1.55; }
   .sens-lock .txt b { display: block; color: var(--ink); font-size: 13.5px; }
   .sens-auth { margin-top: 12px; }
-  .sens-ok { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 10px 12px; border-radius: var(--radius-sm); background: #EEF7F1; color: var(--ok); font-size: 12.5px; font-weight: 600; }
+  .sens-ok { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--ok-soft); color: var(--ok); font-size: 12.5px; font-weight: 600; }
 
   /* 비밀번호 확인 (진입) */
   .gate { max-width: 460px; }
@@ -177,8 +187,8 @@
   .leave { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line-2); display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; color: var(--ink-3); }
 
   /* 저장 결과 레이어 */
-  .result-dlg { border: 0; border-radius: var(--radius); padding: 0; width: min(440px, calc(100vw - 32px)); color: var(--ink); box-shadow: 0 30px 80px rgba(20,14,12,.25); }
-  .result-dlg::backdrop { background: rgba(20,14,12,.36); }
+  .result-dlg { border: 0; border-radius: var(--radius); padding: 0; width: min(440px, calc(100vw - 32px)); color: var(--ink); box-shadow: 0 30px 80px rgba(0,0,0,.25); }
+  .result-dlg::backdrop { background: rgba(0,0,0,.36); }
   .result-dlg[open] { animation: pop .22s cubic-bezier(.2,.9,.3,1); }
   @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
   .result-body { padding: 28px 28px 8px; text-align: center; }
@@ -190,8 +200,6 @@
   .result-foot { padding: 16px 28px 24px; }
 
   /* ===== 마이페이지 첫 화면 (회원 정보 요약) ===== */
-  .my-nav h2 a { color: inherit; text-decoration: none; }
-  .my-nav h2 a:hover { color: var(--brand-dark); }
   .home-hero { display: flex; align-items: center; gap: 18px; }
   .hero-avatar { flex: none; width: 60px; height: 60px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 22px; font-weight: 800; }
   .hero-main { flex: 1; min-width: 0; }
@@ -206,7 +214,7 @@
   .hero-meta { margin: 8px 0 0; font-size: 12.5px; color: var(--ink-3); }
   .hero-edit { flex: none; }
   .home-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
-  .tile { background: var(--surface); border-radius: var(--radius); padding: 18px 20px; }
+  .tile { background: var(--surface); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow-card); }
   .tile .k { font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
   .tile .k i { width: 22px; height: 22px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 800; }
   .tile .v { margin-top: 8px; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
@@ -227,7 +235,7 @@
   .card.mini .k { font-size: 13px; color: var(--ink-2); }
   .card.mini .v { margin-top: 6px; font-size: 18px; font-weight: 800; }
   .card.mini .s { margin-top: 2px; font-size: 12.5px; color: var(--ink-3); }
-  .card.mini .s b { color: var(--accent1); }
+  .card.mini .s b { color: var(--accent1-ink); }
   .chips { display: flex; flex-wrap: wrap; gap: 4px; }
   .chips span { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: var(--radius-sm); background: var(--brand-soft); color: var(--brand); font-size: 12px; font-weight: 600; }
   .info-list dd .muted { color: var(--ink-3); font-weight: 400; }
@@ -246,12 +254,12 @@
   .chip-row { display: flex; flex-wrap: wrap; gap: 4px; }   /* 넓은 화면에서 12개가 한 줄. 좁으면 줄바꿈 */
   .chip-check { position: relative; }
   .chip-check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-  .chip-check span { display: inline-flex; align-items: center; height: 28px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: var(--radius-sm); background: #fff; font-size: 12px; white-space: nowrap; color: var(--ink-2); cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+  .chip-check span { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: var(--radius-sm); background: #fff; font-size: 12.5px; white-space: nowrap; color: var(--ink-2); cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
   .chip-check span:hover { border-color: var(--ink-3); }
   .chip-check input:checked + span { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); font-weight: 600; }
   .chip-check input:focus-visible + span { box-shadow: 0 0 0 3px var(--ring); }
-  .zip-layer { position: fixed; inset: 0; z-index: 20; background: rgba(20,14,12,.42); display: grid; place-items: center; padding: 16px; }
-  .zip-box { width: min(500px, 100%); height: min(560px, calc(100vh - 32px)); background: #fff; border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(20,14,12,.25); }
+  .zip-layer { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.42); display: grid; place-items: center; padding: 16px; }
+  .zip-box { width: min(500px, 100%); height: min(560px, calc(100vh - 32px)); background: #fff; border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,.25); }
   .zip-head { flex: none; display: flex; align-items: center; justify-content: space-between; height: 52px; padding: 0 10px 0 20px; border-bottom: 1px solid var(--line); font-size: 15px; }
   .zip-head button { width: 36px; height: 36px; border: 0; background: none; border-radius: 50%; font-size: 22px; line-height: 1; color: var(--ink-2); cursor: pointer; }
   .zip-head button:hover { background: var(--tonal); }
@@ -259,9 +267,9 @@
   .zip-note { flex: none; margin: 0; padding: 10px 20px; background: var(--danger-soft); color: var(--danger); font-size: 12.5px; line-height: 1.5; }
 
   /* ===== 로그인 모달 (signup.html 로그인/회원가입 모달과 같은 모양) ===== */
-  .auth { border: 0; padding: 0; border-radius: var(--radius); width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 48px); color: var(--ink); background: var(--surface); box-shadow: 0 30px 80px rgba(20,14,12,.22), 0 2px 8px rgba(20,14,12,.06); overflow: hidden; }
+  .auth { border: 0; padding: 0; border-radius: var(--radius); width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 48px); color: var(--ink); background: var(--surface); box-shadow: var(--shadow-modal); overflow: hidden; }
   .auth[open] { display: flex; flex-direction: column; animation: pop .22s cubic-bezier(.2,.9,.3,1); }
-  .auth::backdrop { background: rgba(20,14,12,.42); backdrop-filter: blur(3px); }
+  .auth::backdrop { background: rgba(0,0,0,.42); backdrop-filter: blur(3px); }
   body:has(dialog[open]) { overflow: hidden; }
   .auth-head { flex: none; display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; height: 56px; padding: 0 10px; }
   .auth-head button { background: none; border: 0; cursor: pointer; color: var(--ink-2); width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; transition: background .15s; }
@@ -297,7 +305,7 @@
   .sns-item .sns-circle { width: 50px; height: 50px; transition: transform .15s, box-shadow .15s; }
   .sns-item .sns-circle svg { width: 24px; height: 24px; display: block; }
   .sns-item .sns-circle.naver svg { width: 18px; height: 18px; }
-  .sns-item:hover .sns-circle { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(20,14,12,.12); }
+  .sns-item:hover .sns-circle { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,.12); }
   .sns-item:focus-visible { outline: none; }
   .sns-item:focus-visible .sns-circle { box-shadow: 0 0 0 3px var(--ring); }
   .prov { text-align: center; }
@@ -331,13 +339,14 @@
   .wd-reasons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; font-size: 13.5px; }
   .wd-reasons .check input[type=radio] + .box { border-radius: 50%; }
   .wd-etc { display: block; width: 100%; min-height: 88px; margin-top: 14px; padding: 10px 14px; border: 1px solid transparent; border-radius: var(--radius-md); background: var(--field); font: inherit; font-size: 13.5px; resize: vertical; outline: none; transition: border-color .15s, background .15s, box-shadow .15s; }
-  .wd-etc::placeholder { color: #B9B2AC; }
+  .wd-etc::placeholder { color: var(--placeholder); }
   .wd-etc:focus { background: #fff; border-color: var(--brand); box-shadow: 0 0 0 3px var(--ring); }
   .wd-etc.invalid { background: #fff; border-color: var(--danger); }
+  .wd-etc:hover:not(:focus) { background: var(--field-hover); }
   #wdEtcCount { text-align: right; }
   .btn-danger { background: var(--danger); color: #fff; }
-  .btn-danger:hover { background: #B83826; }
-  .btn-danger:disabled { background: var(--tonal); color: #BDB6B0; cursor: not-allowed; }
+  .btn-danger:hover { background: var(--danger-dark); }
+  .btn-danger:disabled { background: var(--tonal); color: #A8A8A8; cursor: not-allowed; }
   .actions .btn-danger { flex: 1; }
   .actions a.btn-line { color: var(--ink); }
   .wd-done { text-align: center; }
@@ -348,21 +357,20 @@
     .wd-policy th { width: 84px; }
   }
 
-  .toast { z-index: 10; position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 20px); background: rgba(31,27,25,.92); color: #fff; font-size: 13.5px; padding: 12px 18px; border-radius: var(--radius-md); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 32px); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+  .toast { z-index: 10; position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 20px); background: rgba(28,28,28,.95); color: #fff; font-size: 13.5px; padding: 12px 18px; border-radius: var(--radius-md); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 32px); text-align: center; box-shadow: var(--shadow-pop); }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
   @media (max-width: 760px) {
-    .my-wrap { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-top: 20px; }
-    .my-nav { position: static; }
-    .my-nav ul { display: flex; overflow-x: auto; border-top: 0; border-bottom: 1px solid var(--line-2); }
-    .my-nav li { border: 0; flex: none; }
-    .my-nav li button, .my-nav li a { padding: 10px 12px; white-space: nowrap; }
-    .my-nav li [aria-current="page"] { box-shadow: inset 0 -2px 0 var(--main); }
-    .my-user { display: none; }
+    .my-wrap { padding-top: 20px; }
+    .my-tabs ul { overflow-x: auto; scrollbar-width: none; }
+    .my-tabs ul::-webkit-scrollbar { display: none; }
+    .my-tabs a { padding: 10px 12px; font-size: 14px; }
     .card { padding: 20px; }
   }
   @media (max-width: 480px) {
-    .util ul { gap: 16px; }
+    .util-in { flex-wrap: wrap; padding: 10px 16px; }
+    .brand img { width: 96px; }
+    .util ul { gap: 14px; font-size: 12.5px; }
     .form-inline .field, .info-list { grid-template-columns: minmax(0, 1fr); }
     .form-inline .field > label, .form-inline .field > .label { min-height: 0; margin-bottom: 6px; word-break: keep-all; }
     /* 한 열로 쌓을 때 입력 요소도 1열에 (2열로 두면 암시적 열이 생겨 라벨이 한 글자씩 줄바꿈됨) */
@@ -377,32 +385,340 @@
     .sens-lock { flex-wrap: wrap; }
     .sens-lock .btn { width: 100%; }
   }
+
+  /* ===== 공통 다듬기: 글자 흐름 · 상호작용 상태 · 접근성 (support·mypage·signup 같은 내용) ===== */
+  body { word-break: keep-all; overflow-wrap: break-word; }   /* 한글은 단어 단위 줄바꿈, 긴 영문·주소는 칸 안에서 줄바꿈 */
+  h1, h2, h3 { letter-spacing: -.02em; }
+  ::selection { background: rgba(46,46,46,.16); color: var(--ink); }
+  /* 키보드 포커스: 브랜드 색 링 하나로 통일 (마우스 클릭에는 표시 안 됨) */
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .btn:focus-visible, .btn-text:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .btn-text { border-radius: 4px; }
+  .check input:focus-visible + .box, .chip-check input:focus-visible + span, .radio-row input:focus-visible + span { box-shadow: var(--focus-ring); }
+  /* 버튼: 누름 · 비활성 (:where로 우선순위를 낮춰 화면별 버튼 색은 그대로) */
+  .btn:where(:active:not(:disabled)) { transform: translateY(1px); }
+  .btn-primary:active:not(:disabled) { background: var(--brand-dark); }
+  .btn-line:where(:hover:not(:disabled)) { background: var(--hover); }
+  .btn-line:disabled { background: var(--field); border-color: var(--line); color: var(--ink-4); cursor: not-allowed; }
+  .btn-sm:where(:active:not(:disabled)) { background: var(--line-2); }
+  input:disabled, select:disabled, textarea:disabled { color: var(--ink-3); cursor: not-allowed; }
+  /* 스크롤 목록: 얇은 따뜻한 회색 스크롤바 */
+  .auth-body, .dlg-body { scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+  /* 움직임 줄이기 설정: 전환·등장 효과 끔 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  }
+
+  /* 서브 탭 상태 (고객센터 .cs-tabs와 같음) */
+  .my-tabs a { transition: color var(--ease), border-color var(--ease); }
+  .my-tabs a:hover:not([aria-current="page"]) { border-bottom-color: var(--line-2); }
+  .my-tabs a:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--brand); border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+  /* 칩 상태 (고객센터와 같음) */
+  .chip-check span:active { background: var(--field); }
+  .chip-check input:checked + span:hover { border-color: var(--brand-dark); }
+  /* 마이페이지 전용 포커스·상태 */
+  .auth-head button:focus-visible, .zip-head button:focus-visible, .pw-toggle:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .btn-later, .auth-links a, .login-links a { border-radius: 4px; }
+  .btn-later:focus-visible, .auth-links a:focus-visible, .login-links a:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .sns-item:focus-visible .sns-circle { box-shadow: var(--focus-ring); }
+  .sns-item:hover { color: var(--ink); }
+  .pw-toggle { transition: background var(--ease), color var(--ease); }
+  @media (max-width: 480px) {
+    .chip-check span { height: 36px; padding: 0 12px; }   /* 누르기 쉬운 높이 */
+    .pw-toggle { min-height: 36px; }
+  }
+
+  /* ===== 주문/배송 (목록 #orders · 상세 #orders?no= · 신청 모달 #odDlg) — 메인 콘셉트(shop.css): 흑백 · 알약 버튼 · 크게 둥근 흰 카드 =====
+     상태 표시(.st): 할 일이 있는 상태(입금대기·주문완료)는 테두리, 진행 중은 회색 면, 발송완료는 차콜 면, 처리 중 신청은 빨강 글자, 끝난 상태는 흐리게 */
+  /* 입력 요소 (주문 화면·모달에서만 쓰는 종류) */
+  input[type=search], input[type=date] { width: 100%; height: 48px; padding: 0 16px; border: 1px solid transparent; border-radius: var(--radius-md); background: var(--field); outline: none; font-size: 15px; transition: border-color var(--ease), background var(--ease), box-shadow var(--ease); }
+  input[type=search]:hover, input[type=date]:hover { background: var(--field-hover); }
+  input[type=search]:focus, input[type=date]:focus { background: #fff; border-color: var(--ink); box-shadow: 0 0 0 3px var(--ring); }
+  select.sel { width: 100%; padding: 0 44px 0 16px; border: 1px solid transparent; border-radius: var(--radius-md); background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%232E2E2E' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 16px center; -webkit-appearance: none; appearance: none; outline: none; cursor: pointer; transition: border-color var(--ease), background-color var(--ease), box-shadow var(--ease); }
+  select.sel:hover { background-color: var(--field-hover); }
+  select.sel:focus { background-color: #fff; border-color: var(--ink); box-shadow: 0 0 0 3px var(--ring); }
+  select.sel.invalid, textarea.ta.invalid { background-color: #fff; border-color: var(--danger); }
+  textarea.ta { display: block; width: 100%; min-height: 120px; border: 1px solid transparent; border-radius: var(--radius-md); background: var(--field); font: inherit; line-height: 1.6; resize: vertical; outline: none; transition: border-color var(--ease), background var(--ease), box-shadow var(--ease); }
+  textarea.ta::placeholder { color: var(--placeholder); }
+  textarea.ta:hover:not(:focus) { background: var(--field-hover); }
+  textarea.ta:focus { background: #fff; border-color: var(--ink); box-shadow: 0 0 0 3px var(--ring); }
+  .counter { text-align: right; }
+  .muted { color: var(--ink-3); font-weight: 400; }
+  .mono { font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+  .btn.btn-xs { height: 34px; padding: 0 14px; border-radius: var(--pill); background: var(--tonal); color: var(--ink); font-size: 13px; font-weight: 700; }
+  .btn.btn-xs:hover { background: var(--tonal-hover); }
+
+  /* 상태 표시 */
+  .st { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: var(--pill); background: var(--tonal); color: var(--ink); font-size: 13px; font-weight: 700; white-space: nowrap; vertical-align: middle; }
+  .st.wait { background: #fff; box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .st.ship { background: var(--ink); color: #fff; }
+  .st.claim { background: var(--danger-soft); color: var(--danger); }
+  .st.done { background: transparent; color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--line-2); }
+  .st.tag { height: 24px; padding: 0 10px; background: var(--bg); color: var(--ink-2); font-size: 12px; font-weight: 600; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* 주문 현황 카드: 상태별 건수(누르면 그 상태만) · 기간 · 상태 · 검색 */
+  .od-stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 8px; margin: 4px 0 20px; padding: 0; list-style: none; }
+  .od-stages button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 16px 18px; border: 0; border-radius: var(--radius-md); background: var(--bg); color: var(--ink-2); font-size: 13.5px; font-weight: 600; text-align: left; cursor: pointer; transition: background var(--ease), color var(--ease); }
+  .od-stages button b { font-size: 28px; font-weight: 800; line-height: 1.2; letter-spacing: -.03em; color: var(--ink-4); font-variant-numeric: tabular-nums; }
+  .od-stages button.has b { color: var(--ink); }
+  .od-stages button:hover { background: var(--tonal-hover); color: var(--ink); }
+  .od-stages button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .od-stages button[aria-pressed="true"] b { color: #fff; }
+  .od-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .od-tools .sel { flex: 0 0 168px; width: auto; }
+  .od-search { flex: 1 1 220px; min-width: 0; }
+  .seg { display: inline-flex; gap: 2px; padding: 4px; border-radius: var(--pill); background: var(--field); }
+  .seg button { height: 40px; padding: 0 16px; border: 0; border-radius: var(--pill); background: none; color: var(--ink-2); font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: background var(--ease), color var(--ease); }
+  .seg button:hover { color: var(--ink); }
+  .seg button[aria-pressed="true"] { background: #fff; color: var(--ink); font-weight: 700; box-shadow: var(--shadow-raised); }
+  .od-count { margin: 18px 0 0; font-size: 14px; color: var(--ink-2); }
+  .od-count b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .od-count small { display: block; margin-top: 2px; font-size: 13px; color: var(--ink-3); }
+
+  /* 주문 카드 */
+  .od-list { display: grid; gap: 16px; margin-top: 16px; }
+  .od-card { padding: 28px 40px 32px; border-radius: var(--radius); background: var(--surface); }
+  .od-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding-bottom: 18px; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--ink-3); }
+  .od-head b { font-size: 16px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .od-head .more { margin-left: auto; padding-bottom: 1px; border-bottom: 1.5px solid currentColor; color: var(--ink); font-weight: 700; text-decoration: none; }
+  .od-head .more:hover { opacity: .7; }
+  .od-main { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 32px; padding: 22px 0 0; }
+  .od-title { min-width: 0; }
+  .od-title strong { display: block; margin-top: 12px; font-size: 22px; font-weight: 800; line-height: 1.35; letter-spacing: -.035em; }
+  .od-title small { display: block; margin-top: 2px; font-size: 14px; color: var(--ink-3); }
+  .od-pay { flex: none; text-align: right; }
+  .od-pay small { display: block; font-size: 13px; color: var(--ink-3); }
+  .od-pay b { display: block; font-size: 26px; font-weight: 800; line-height: 1.3; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .od-foot { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+  .od-foot .btn { height: 44px; padding: 0 20px; font-size: 14px; }
+  .od-foot [data-cancel] { margin-left: auto; }
+
+  /* 안내 상자: 결제가 필요한 안내는 어두운 띠(메인 어두운 섹션과 같은 색), 신청 처리 중은 회색 면 */
+  .od-notes { display: grid; gap: 8px; margin-top: 20px; }
+  .od-note { display: flex; align-items: center; gap: 12px 20px; padding: 16px 20px; border-radius: var(--radius-md); background: var(--bg); font-size: 14px; line-height: 1.6; }
+  .od-note .txt { flex: 1; min-width: 0; }
+  .od-note .txt b { font-weight: 800; }
+  .od-note small { display: block; margin-top: 2px; font-size: 13px; color: var(--ink-3); }
+  .od-note .sep { margin: 0 6px; color: var(--ink-4); }
+  .od-note .btn { flex: none; }
+  .od-note .btn-sm { height: 40px; }
+  .od-note.warn { background: var(--night); color: #fff; }
+  .od-note.warn small, .od-note.warn .muted { color: rgba(255,255,255,.7); }
+  .od-note.warn .sep { color: rgba(255,255,255,.4); }
+  .od-note.warn .btn-sm, .od-note.warn .btn-xs { background: #fff; color: var(--ink); }
+  .od-note.warn .btn-sm:hover, .od-note.warn .btn-xs:hover { background: #E6E6E6; }
+  .od-note.warn .btn:focus-visible { box-shadow: 0 0 0 2px var(--night), 0 0 0 4px #fff; }
+  .od-note.claim { background: #fff; box-shadow: inset 0 0 0 1.5px var(--danger); }
+  .od-note.claim .txt b { color: var(--danger); }
+
+  .card.od-empty { padding: 56px 40px; text-align: center; font-size: 15px; color: var(--ink-2); }
+  .card.od-empty b { display: block; margin-bottom: 6px; font-size: 22px; font-weight: 800; letter-spacing: -.035em; color: var(--ink); }
+  .card.od-empty .btn { margin-top: 20px; }
+
+  /* 페이지 번호 */
+  .pager { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 32px; }
+  .pager:empty { display: none; }
+  .pager button { min-width: 44px; height: 44px; padding: 0 8px; border: 0; border-radius: var(--pill); background: none; color: var(--ink-2); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; transition: background var(--ease), color var(--ease); }
+  .pager button:hover:not(:disabled):not([aria-current]) { background: var(--tonal); color: var(--ink); }
+  .pager button[aria-current="page"] { background: var(--ink); color: #fff; }
+  .pager button:disabled { color: var(--ink-4); cursor: default; }
+  .pager .gap { color: var(--ink-4); }
+
+  /* 주문 상세 */
+  .od-back { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 16px; padding: 0 0 2px; border-bottom: 1.5px solid currentColor; font-size: 15px; font-weight: 700; text-decoration: none; }
+  .od-back:hover { opacity: .7; }
+  #viewOrderDetail .card > .od-foot { padding-top: 22px; border-top: 1px solid var(--line); }
+  .od-items { margin: 0; padding: 0; list-style: none; }
+  .od-item { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; gap: 20px; padding: 20px 0; border-top: 1px solid var(--line); }
+  .od-item:first-child { padding-top: 4px; border-top: 0; }
+  .od-thumb { display: grid; place-items: center; width: 72px; height: 72px; border-radius: var(--radius-md); background: var(--bg); color: var(--ink-2); font-size: 15px; font-weight: 800; letter-spacing: -.02em; }
+  .od-info { min-width: 0; }
+  .od-info b { display: block; font-size: 17px; font-weight: 800; letter-spacing: -.03em; }
+  .od-info small { display: block; margin-top: 2px; font-size: 13px; color: var(--ink-3); }
+  .od-info em { font-style: normal; font-weight: 700; color: var(--ink); }
+  .od-side { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .od-acts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+  .pay-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 48px; }
+  .od-subtitle { margin: 0 0 8px; font-size: 15px; font-weight: 800; }
+  .pay-table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  .pay-table th, .pay-table td { padding: 9px 0; text-align: left; vertical-align: top; }
+  .pay-table th { font-weight: 400; color: var(--ink-2); }
+  .pay-table td { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pay-table tr.sub th, .pay-table tr.sub td { padding-top: 0; font-size: 13px; font-weight: 400; color: var(--ink-3); }
+  .pay-table tr.sub th { padding-left: 14px; }
+  .pay-table tr.total th, .pay-table tr.total td { padding-top: 16px; border-top: 2px solid var(--ink); font-size: 18px; font-weight: 800; color: var(--ink); }
+  .pay-table tr.total td { font-size: 22px; letter-spacing: -.02em; }
+  .pay-table tr.total th, .pay-table tr.total td { vertical-align: baseline; }
+  .minus { color: var(--danger); }
+  .addr-list { display: grid; gap: 12px; }
+  .addr-box { padding: 18px 24px 8px; border-radius: var(--radius-md); background: var(--bg); }
+  .addr-box .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 34px; font-size: 15px; font-weight: 800; }
+  .addr-box .info-list { margin-top: 6px; }
+  .addr-box .info-list dt, .addr-box .info-list dd { border-top-color: var(--line-2); }
+  .hist { margin: 0; padding: 0; list-style: none; font-size: 14px; line-height: 1.7; color: var(--ink-2); }
+  .hist li { padding: 16px 0; border-top: 1px solid var(--line); }
+  .hist li:first-child { padding-top: 4px; border-top: 0; }
+  .hist .top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 4px; }
+  .hist .top b { font-size: 15px; font-weight: 800; color: var(--ink); }
+  .hist .when { margin-left: auto; font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .hist .reject { color: var(--danger); }
+
+  /* 신청 모달 (주문취소 · 교환/반품 · 배송지 변경 · 배송조회 · 증빙서류) — 로그인 모달과 같은 크게 둥근 흰 면 */
+  .dlg { border: 0; padding: 0; width: min(600px, calc(100vw - 32px)); max-height: calc(100vh - 48px); border-radius: 28px; background: var(--surface); color: var(--ink); box-shadow: 0 30px 80px rgba(0,0,0,.24); overflow: hidden; }
+  .dlg[open] { display: flex; flex-direction: column; animation: pop .22s cubic-bezier(.2,.9,.3,1); }
+  .dlg::backdrop { background: rgba(0,0,0,.5); }
+  .dlg > form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .dlg-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 24px 20px 12px 32px; }
+  .dlg-head h2 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.035em; outline: none; }
+  .dlg-head button { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; color: var(--ink-2); cursor: pointer; transition: background var(--ease); }
+  .dlg-head button:hover { background: var(--tonal); color: var(--ink); }
+  .dlg-head button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .dlg-body { flex: 1; min-height: 0; overflow: auto; padding: 4px 32px 20px; font-size: 14.5px; }
+  .dlg-body > .card-sub { margin-bottom: 16px; font-size: 14.5px; }
+  .dlg-body .field > label, .dlg-body .field > .label { color: var(--ink); font-weight: 700; }
+  .dlg-foot { flex: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 32px 28px; border-top: 1px solid var(--line); }
+  .dlg-foot .form-error { flex-basis: 100%; margin: 0 0 4px; }
+  .dlg-foot .btn { height: 52px; }
+  .dlg-foot .btn-line { flex: 0 0 120px; }
+  .dlg-foot .btn-primary { flex: 1; }
+  .dlg-foot .btn:only-of-type { flex: 1; }
+  .dlg-sub { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 28px 0 12px; font-size: 17px; font-weight: 800; }
+  .dlg-sub:first-child { margin-top: 4px; }
+  .dlg-sub small { font-size: 13px; font-weight: 400; color: var(--ink-3); }
+  .notice { margin: 0 0 18px; padding: 14px 18px; border-radius: var(--radius-md); background: var(--bg); font-size: 14px; line-height: 1.7; color: var(--ink-2); }
+  .notice b { color: var(--ink); }
+  .notice.warn { background: var(--danger-soft); color: var(--danger-dark); }
+  .notice.warn b { color: inherit; }
+  /* 상품 고르기 (취소 · 교환/반품) */
+  .pick-list { display: grid; gap: 8px; margin: 0 0 20px; border-radius: var(--radius-md); }
+  .pick-list.invalid { box-shadow: 0 0 0 1.5px var(--danger); }
+  .pick-row { display: grid; grid-template-columns: 22px 56px minmax(0, 1fr); align-items: center; gap: 14px; padding: 12px 16px; border-radius: var(--radius-md); background: var(--bg); box-shadow: inset 0 0 0 1.5px transparent; cursor: pointer; transition: background var(--ease), box-shadow var(--ease); }
+  .pick-row:hover { background: var(--tonal-hover); }
+  .pick-row.on { background: #fff; box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .pick-row.off { cursor: not-allowed; opacity: .6; }
+  .pick-row.off:hover { background: var(--bg); }
+  .pick-row input { width: 20px; height: 20px; margin: 0; accent-color: var(--ink); cursor: inherit; }
+  .pick-row .od-thumb { width: 56px; height: 56px; background: #fff; font-size: 13.5px; }
+  .pick-row.on .od-thumb { background: var(--bg); }
+  .pick-row .od-info b { font-size: 15px; }
+  .pick-row .why { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+  .sum-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; padding: 18px 22px; border-radius: var(--radius-md); background: var(--night); color: rgba(255,255,255,.8); font-size: 14.5px; }
+  .sum-box b { font-size: 24px; font-weight: 800; letter-spacing: -.02em; color: #fff; font-variant-numeric: tabular-nums; }
+  .file-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+  .file-chips:empty { display: none; }
+  .file-chips li { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 32px; padding: 0 4px 0 14px; border-radius: var(--pill); background: var(--tonal); font-size: 13px; }
+  .file-chips li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-chips button { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 50%; background: none; color: var(--ink-2); font-size: 16px; cursor: pointer; }
+  .file-chips button:hover { background: var(--tonal-hover); color: var(--ink); }
+  /* 배송조회: 단계 (순서가 있어 선으로 연결) */
+  .track-steps { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 8px 0 24px; padding: 0; list-style: none; text-align: center; }
+  .track-steps li { position: relative; padding-top: 36px; font-size: 14px; font-weight: 700; color: var(--ink-3); }
+  .track-steps li::before { content: ""; position: absolute; top: 4px; left: 50%; z-index: 1; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 2px var(--line-2); }
+  .track-steps li + li::after { content: ""; position: absolute; top: 13px; right: 50%; width: 100%; height: 2px; background: var(--line-2); }
+  .track-steps li.on { color: var(--ink); }
+  .track-steps li.on::before { background: var(--ink); box-shadow: none; }
+  .track-steps small { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .mini-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .mini-table th { padding: 10px 12px; background: var(--bg); color: var(--ink-2); font-weight: 600; text-align: left; }
+  .mini-table th:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+  .mini-table th:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+  .mini-table td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .mini-table .num { font-variant-numeric: tabular-nums; }
+  /* 증빙서류: 바로 발급 서류 버튼 */
+  .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .doc-grid .btn { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; height: auto; min-height: 72px; padding: 14px 18px; border-radius: var(--radius-md); font-size: 15px; white-space: normal; text-align: left; }
+  .doc-grid .btn small { font-size: 12.5px; font-weight: 400; color: var(--ink-3); }
+  .doc-grid .btn:disabled small { color: var(--ink-4); }
+
+  /* 마이페이지 첫 화면 장바구니 · 1:1 문의 요약 칸: 큰 숫자 */
+  .card.mini .k { font-size: 14px; font-weight: 600; }
+  .card.mini .v { font-size: 24px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .card.mini .s { font-size: 13.5px; }
+
+  /* 따뜻한 색 잔재 정리 (메인 콘셉트: 무채색) */
+  .result-dlg::backdrop, .zip-layer { background: rgba(0,0,0,.5); }
+  .zip-box { box-shadow: 0 30px 80px rgba(0,0,0,.24); }
+  .result-body h3 { font-size: 20px; font-weight: 800; letter-spacing: -.03em; }
+  .btn-primary:disabled, .btn-danger:disabled { color: var(--ink-4); }
+  .dev-code { color: var(--ink-2); }
+  .sns-item:hover .sns-circle { box-shadow: 0 8px 18px rgba(0,0,0,.12); }
+
+  @media (max-width: 760px) {
+    .od-card { padding: 22px 20px 24px; }
+    .od-main { flex-direction: column; align-items: stretch; }
+    .od-pay { text-align: left; }
+    .od-title strong { font-size: 19px; }
+    .od-tools .seg { width: 100%; overflow-x: auto; scrollbar-width: none; }
+    .od-tools .seg button { flex: 1; padding: 0 10px; }
+    .od-tools .sel { flex: 1 1 140px; }
+    .od-foot [data-cancel] { margin-left: 0; }
+    .od-item { grid-template-columns: 56px minmax(0, 1fr); gap: 14px; }
+    .od-item .od-thumb { width: 56px; height: 56px; }
+    .od-side { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+    .pay-grid { grid-template-columns: minmax(0, 1fr); }
+    .od-note { flex-wrap: wrap; }
+    .card.od-empty { padding: 40px 20px; }
+  }
+  @media (max-width: 560px) {
+    .dlg { width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0; }
+    .dlg-head { padding: 16px 12px 8px 20px; }
+    .dlg-body { padding: 4px 20px 16px; }
+    .dlg-foot { padding: 12px 20px 20px; }
+    .dlg-foot .btn-line { flex-basis: 96px; }
+    .od-stages { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .od-stages button { padding: 12px 14px; }
+    .od-stages button b { font-size: 22px; }
+  }
 </style>
+<link rel="stylesheet" href="shop.css?v=20261026-3"><!-- 쇼핑몰 공통: 색·상단·하단·버튼 톤 (popsa 콘셉트) — 이 화면 스타일을 덮어씀 -->
 </head>
 <body>
 <header class="site-top" id="siteTop">
 <div class="proto-band">PROTOTYPE - 마이페이지</div>
-<nav class="util" aria-label="이용 메뉴">
-  <ul>
-    <li id="authMenu"><button type="button" class="login" data-open-login>로그인/회원가입</button></li>
-    <li><a href="mypage.html" aria-current="page">마이페이지</a></li>
-    <li><button type="button" data-todo="장바구니">장바구니 (0)</button></li>
-    <li><button type="button" data-todo="고객센터">고객센터</button></li>
-  </ul>
-</nav>
+<div class="util two-row">
+<!-- 1줄: 이용 메뉴 (최상단 오른쪽) / 2줄: 로고 + 대메뉴 — 모든 쇼핑몰 화면 동일 (index.html과 같은 구조) -->
+<div class="util-in util-top">
+  <nav class="util-menu" aria-label="이용 메뉴">
+    <ul>
+      <li id="authMenu"><button type="button" class="login" data-open-login>로그인/회원가입</button></li>
+      <li><a href="mypage.html" aria-current="page">마이페이지</a></li>
+      <li><button type="button" data-todo="장바구니">장바구니 (<span id="utilCart">0</span>)</button></li>
+      <li><a href="support.html">고객센터</a></li>
+    </ul>
+  </nav>
+</div>
+<div class="util-in">
+  <a class="brand" href="index.html" aria-label="스탑북 메인으로"><img src="images/logo-stopbook.png" alt="STOPBOOK" width="128" height="18"></a>
+  <nav class="gnb" aria-label="상품 메뉴">
+    <ul>
+      <li><a href="#" data-todo="포토북">포토북</a></li>
+      <li><a href="#" data-todo="사진인화">사진인화</a></li>
+      <li><a href="#" data-todo="액자">액자</a></li>
+      <li><a href="#" data-todo="캘린더">캘린더</a></li>
+      <li><a href="#" data-todo="포토굿즈">포토굿즈</a></li>
+      <li><a href="#" data-todo="디자인샵">디자인샵</a></li>
+    </ul>
+    <ul class="gnb-side" aria-label="서비스 메뉴">
+      <li><a href="index.html#agency">편집대행</a></li>
+      <li><a href="#" data-todo="이벤트">이벤트</a></li>
+    </ul>
+  </nav>
+</div>
+</div>
 </header>
 
 <div class="my-wrap">
-  <aside class="my-nav" aria-label="마이페이지 메뉴">
-    <h2><a href="mypage.html" id="navHome">마이페이지</a></h2>
-    <div class="my-user" id="myUser"></div>
-    <ul>
-      <li><a href="mypage.html#edit" id="navEdit">회원정보 수정</a></li>
-    </ul>
-  </aside>
-
   <main class="my-main">
-    <h1 id="pageTitle">마이페이지</h1>
+    <h1>마이페이지</h1>
+    <!-- 서브 탭 (고객센터와 같은 모양): 마이페이지(요약) · 주문/배송(#orders, 주문 상세 #orders?no= 포함) · 회원정보 수정(#edit, 회원 탈퇴 #withdraw 포함) -->
+    <nav class="my-tabs" aria-label="마이페이지 메뉴">
+      <ul>
+        <li><a href="mypage.html" id="navHome">마이페이지</a></li>
+        <li><a href="mypage.html#orders" id="navOrders">주문/배송</a></li>
+        <li><a href="mypage.html#edit" id="navEdit">회원정보 수정</a></li>
+      </ul>
+    </nav>
     <p class="page-sub" id="pageSub">고객님의 혜택과 정보를 한눈에 확인할 수 있습니다.</p>
 
     <!-- 로그인 필요 -->
@@ -441,6 +757,28 @@
         <dl class="info-list" id="hInfo"></dl>
       </section>
     </div>
+
+    <!-- 주문/배송: 주문 목록 (#orders) — IA 마이페이지 > 나의 주문내역 (주문내역 R35 · 주문내역(상품단위) R36)
+         주문 기준 카드에 상품 행을 묶어 표시. 상태별 건수 · 기간 · 주문상태 · 검색 · 페이지(주문 10건씩) -->
+    <div id="viewOrders" hidden>
+      <section class="card">
+        <div class="card-title-row"><h2>주문 현황</h2><span class="card-aside" id="odAside"></span></div>
+        <ul class="od-stages" id="odStages" aria-label="주문상태별 건수"></ul>
+        <div class="od-tools">
+          <div class="seg" id="odMonths" role="group" aria-label="조회 기간"></div>
+          <select class="sel" id="odState" aria-label="주문상태"></select>
+          <div class="od-search"><input type="search" id="odQ" maxlength="50" placeholder="주문번호 또는 상품명 검색" aria-label="주문내역 검색" enterkeyhint="search"></div>
+        </div>
+        <p class="od-count" id="odCount" aria-live="polite"></p>
+      </section>
+      <div class="od-list" id="odList"></div>
+      <section class="card od-empty" id="odEmpty" hidden></section>
+      <nav class="pager" id="odPager" aria-label="주문 목록 페이지"></nav>
+    </div>
+
+    <!-- 주문/배송: 주문 상세 (#orders?no=주문번호) — IA 주문내역 상세(일반) R37
+         주문 정보 · 상품 정보 · 결제/할인/혜택 · 배송지 정보 · 취소/교환/반품 신청 내역 · 증빙서류 신청/발급 내역 -->
+    <div id="viewOrderDetail" hidden></div>
 
     <!-- 진입 확인 (요구사항 PRD_MEM_009: 진입 시 비밀번호 재확인) -->
     <section class="card gate" id="viewGate" hidden>
@@ -758,14 +1096,65 @@
   <div class="result-foot"><button type="button" class="btn btn-primary btn-block" id="resultClose">확인</button></div>
 </dialog>
 
+<!-- 주문/배송 모달 (하나를 돌려 씀): 주문 취소 · 교환/반품 신청 · 배송지 변경(IA R38) · 배송조회(IA R39) · 증빙서류 발급(IA R43)
+     제목·본문·버튼은 열 때 스크립트가 채움 (openDlg) -->
+<dialog class="dlg" id="odDlg" aria-labelledby="odDlgTitle">
+  <div class="dlg-head">
+    <h2 id="odDlgTitle"></h2>
+    <button type="button" data-dlg-close aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <form id="odDlgForm" novalidate>
+    <div class="dlg-body" id="odDlgBody"></div>
+    <div class="dlg-foot">
+      <div class="form-error" id="odDlgErr" role="alert" hidden></div>
+      <span id="odDlgFoot" style="display:contents"></span>
+    </div>
+  </form>
+</dialog>
+
+<!-- 하단 정보 (index·signup·mypage·support 같은 내용 — 모양은 shop.css, 회사 정보: admin/doc-forms.js SUPPLIER와 같은 값) -->
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <img src="images/logo-stopbook.png" alt="STOPBOOK" width="128" height="18">
+        <p>사진으로 남기는 기록, 포토북·캘린더·사진인화·액자·포토굿즈 제작 서비스</p>
+      </div>
+      <nav aria-labelledby="fProd"><h2 id="fProd">상품</h2><ul>
+        <li><button type="button" data-todo="포토북">포토북</button></li><li><button type="button" data-todo="캘린더">캘린더</button></li><li><button type="button" data-todo="사진인화">사진인화</button></li><li><button type="button" data-todo="액자">액자</button></li><li><button type="button" data-todo="포토굿즈">포토굿즈</button></li>
+      </ul></nav>
+      <nav aria-labelledby="fSvc"><h2 id="fSvc">서비스</h2><ul>
+        <li><a href="index.html#agency">편집대행</a></li><li><button type="button" data-todo="디자인">디자인</button></li><li><button type="button" data-todo="이벤트">이벤트</button></li><li><button type="button" data-todo="대량 구매 할인">대량 구매 할인</button></li><li><a href="mypage.html">마이페이지</a></li>
+      </ul></nav>
+      <nav aria-labelledby="fCs"><h2 id="fCs">고객센터</h2><ul>
+        <li><a href="support.html#faq">FAQ</a></li><li><a href="support.html#inquiry">1:1 문의</a></li><li><a href="support.html#partner">제휴문의</a></li><li><button type="button" data-todo="공지사항">공지사항</button></li>
+      </ul></nav>
+      <div class="cs"><h2>고객행복센터</h2><b class="ft-tel">080-860-1119</b><span class="ft-hours">평일 10:00~17:00 (점심 12:00~13:00)</span><br><span>주말·공휴일 휴무</span></div>
+    </div>
+    <div class="foot-legal">
+      <button type="button" data-todo="이용약관">이용약관</button>
+      <button type="button" data-todo="개인정보처리방침">개인정보처리방침</button>
+      <button type="button" data-todo="회사 소개">회사 소개</button>
+    </div>
+    <p class="foot-info"><span>상호 한국학술정보㈜</span><span>대표 채종준</span><span>사업자등록번호 111-81-26181</span><span>경기도 파주시 회동길 230 (문발동)</span><span>이메일 <span class="ft-mail">stopbook@kstudy.com</span></span></p>
+    <p class="foot-copy">© 2026 STOPBOOK. All rights reserved.</p>
+  </div>
+</footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <!-- 회원 데이터·로그인 정보는 관리자 화면(admin)과 같은 저장소(localStorage) 사용 → 수정 내용이 관리자 회원 상세·변경 히스토리에 반영
      TODO: 실서비스에서는 회원 API로 대체 -->
-<script src="../admin/member-type-store.js?v=20261026-1"></script>
+<script src="../admin/member-type-store.js?v=20261026-6"></script>
 <script src="../admin/mileage-types.js?v=20261026-1"></script>
-<script src="../admin/message-store.js?v=20261026-1"></script>
-<script src="../admin/member-data.js?v=20261026-1"></script>
+<script src="../admin/message-store.js?v=20261026-2"></script>
+<script src="../admin/member-data.js?v=20261026-7"></script>
+<!-- 주문/배송: 관리자 주문·클레임·서류 발급 데이터를 그대로 사용 (같은 localStorage → 고객 신청이 관리자 화면에 바로 보이고, 관리자 처리 결과가 여기 반영)
+     claim-data.js·document-data.js는 member-type-store.js의 AdminUtil(처리 대기 샘플·새 신청 알림)을 씀. 관리자 화면 전용 요소가 없으면 그냥 넘어감
+     서류 양식(doc-forms.js · doc-form-assets.js 직인·로고)은 크기가 커서 증빙서류를 처음 내려받을 때 불러옴 (loadForms)
+     TODO: 실서비스에서는 고객용 주문 API (GET /api/members/me/orders 등) -->
+<script src="../admin/order-data.js?v=20261026-1"></script>
+<script src="../admin/claim-data.js?v=20261026-2"></script>
+<script src="../admin/document-data.js?v=20261026-5"></script>
 <script src="../admin/feedback.js?v=20261026-1"></script>
 <!-- 카카오 우편번호 서비스: https://postcode.map.kakao.com/guide (file://에서도 열리도록 https 사용)
      가이드 기준 현재 주소(t1.kakaocdn.net)·이름(kakao.Postcode) 사용 (예전 다음 주소 t1.daumcdn.net에서는 결과 선택이 되지 않는 문제가 있었음) -->
@@ -834,31 +1223,37 @@
   const validPhone = v => /^01[016789]\d{7,8}$/.test(digits(v));
   const validEmail = v => /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(v);
   const maskPhone = p => String(p).replace(/^(\d{3})-?\d{3,4}-?(\d{4})$/, '$1-****-$2');
-  const show = view => ['viewNeedLogin', 'viewHome', 'viewGate', 'editForm', 'viewWithdraw', 'viewWithdrawDone'].forEach(id => { $(id).hidden = id !== view; });
+  const show = view => ['viewNeedLogin', 'viewHome', 'viewOrders', 'viewOrderDetail', 'viewGate', 'editForm', 'viewWithdraw', 'viewWithdrawDone'].forEach(id => { $(id).hidden = id !== view; });
 
-  // ===== 화면 주소: mypage.html = 마이페이지 첫 화면(요약) / #edit = 회원정보 수정 / #withdraw = 회원 탈퇴 =====
-  const routeOf = () => (location.hash === '#edit' ? 'edit' : location.hash === '#withdraw' ? 'withdraw' : 'home');
+  // ===== 화면 주소: mypage.html = 마이페이지 첫 화면(요약) / #orders = 주문/배송(주문 목록) / #orders?no=주문번호 = 주문 상세
+  //                  #edit = 회원정보 수정 / #withdraw = 회원 탈퇴 =====
+  const hashPath = () => location.hash.split('?')[0];
+  const hashQuery = () => new URLSearchParams(location.hash.split('?')[1] || '');
+  const routeOf = () => { const h = hashPath(); return h === '#edit' ? 'edit' : h === '#withdraw' ? 'withdraw' : h === '#orders' ? (hashQuery().get('no') ? 'order' : 'orders') : 'home'; };
   const isEditRoute = () => routeOf() === 'edit';
   const PAGES = {
     home: ['마이페이지', '고객님의 혜택과 정보를 한눈에 확인할 수 있습니다.'],
+    orders: ['주문/배송', '주문 내역과 배송 현황을 확인하고, 취소·교환·반품과 증빙서류를 신청할 수 있습니다.'],
+    order: ['주문 상세', '주문·결제·배송 정보를 확인할 수 있습니다.'],
     edit: ['회원정보 수정', '고객님의 정보를 확인하고 수정할 수 있습니다.'],
     withdraw: ['회원 탈퇴', '탈퇴 전 안내 사항을 꼭 확인해 주세요.']
   };
-  // 회원 탈퇴는 사이드 메뉴 없이 회원정보 수정 하단 링크로만 들어감 → 탈퇴 화면에서도 '회원정보 수정' 선택 표시
-  const NAV = { home: 'navHome', edit: 'navEdit', withdraw: 'navEdit' };
+  // 회원 탈퇴는 탭 없이 회원정보 수정 하단 링크로만 들어감 → 탈퇴 화면에서도 '회원정보 수정' 탭 선택 표시. 주문 상세는 '주문/배송' 탭
+  const NAV = { home: 'navHome', orders: 'navOrders', order: 'navOrders', edit: 'navEdit', withdraw: 'navEdit' };
   function setPage(r) {
-    $('pageTitle').textContent = PAGES[r][0];
     $('pageSub').textContent = PAGES[r][1];
     document.title = `스탑북 마이페이지${r === 'home' ? '' : ` - ${PAGES[r][0]}`}`;
-    ['navHome', 'navEdit'].forEach(id => { if (NAV[r] === id) $(id).setAttribute('aria-current', 'page'); else $(id).removeAttribute('aria-current'); });
+    ['navHome', 'navOrders', 'navEdit'].forEach(id => { if (NAV[r] === id) $(id).setAttribute('aria-current', 'page'); else $(id).removeAttribute('aria-current'); });
   }
-  // 로그인 상태에서 주소에 맞는 화면 열기. 회원정보 수정·회원 탈퇴는 들어올 때마다 비밀번호 확인(B9)
+  // 로그인 상태에서 주소에 맞는 화면 열기. 회원정보 수정·회원 탈퇴는 들어올 때마다 비밀번호 확인(B9). 주문/배송은 로그인만 확인
+  const OPEN_ROUTES = ['home', 'orders', 'order'];   // 비밀번호 재확인 없이 여는 화면
   function route() {
     const r = routeOf();
     setPage(r);
+    if ($('odDlg').open) $('odDlg').close();   // 주소가 바뀌면 열려 있던 주문 모달은 닫음
     if (me && MD.isWithdrawnStored(me.no)) { signOutWithdrawn(); return; }   // 다른 탭에서 탈퇴한 경우
     if (!me) { show('viewNeedLogin'); return; }
-    if (r === 'home') renderHome(); else openGate();
+    if (r === 'home') renderHome(); else if (r === 'orders') renderOrders(); else if (r === 'order') renderOrder(hashQuery().get('no')); else openGate();
     window.scrollTo(0, 0);
   }
   // 비밀번호(간편 로그인은 SNS 계정) 확인 뒤 주소에 맞는 화면으로
@@ -878,7 +1273,6 @@
     $('authMenu').innerHTML = me
       ? `<span class="me">${esc(me.name)}님</span> <button type="button" id="logoutBtn" class="logout">로그아웃</button>`
       : '<button type="button" class="login" data-open-login>로그인/회원가입</button>';
-    $('myUser').innerHTML = me ? `<b>${esc(me.name)}님</b>${esc(me.grade)} 등급 · ${esc(me.memberType)}` : '';
   }
   document.addEventListener('click', e => {
     if (e.target.closest('[data-open-login]')) openLogin();
@@ -955,7 +1349,7 @@
     renderUtil();
     // 방금 로그인으로 비밀번호(SNS 계정)를 확인했으므로 회원정보 수정·회원 탈퇴는 재확인 없이 바로 진입
     const r = routeOf();
-    if (r === 'home') route(); else { setPage(r); afterGate(); }
+    if (OPEN_ROUTES.includes(r)) route(); else { setPage(r); afterGate(); }
     toast(msg || `${m.name}님, 반갑습니다.`);
   }
 
@@ -966,7 +1360,7 @@
     if (!id) { loginError('이메일 또는 아이디를 입력해 주세요.'); $('lId').focus(); return; }
     if (!pw) { loginError('비밀번호를 입력해 주세요.'); $('lPw').focus(); return; }
     const res = A.login(id, pw, loginEnv());
-    if (res.error === 'locked') { markInvalid('lPw', true); loginError(`비밀번호를 ${A.LOCK_FAILS}회 잘못 입력해 <b>${esc(res.until.slice(11))}</b>까지 로그인이 제한됩니다.<small>비밀번호가 기억나지 않으면 비밀번호 찾기에서 임시 비밀번호를 받아 주세요.</small>`); return; }
+    if (res.error === 'locked') { markInvalid('lPw', true); loginError(`비밀번호를 ${A.LOCK_FAILS}회 잘못 입력해 <b>${esc(res.until.slice(11))}</b>까지 로그인이 제한됩니다.<small>비밀번호가 기억나지 않으면 비밀번호 찾기에서 새 비밀번호를 설정해 주세요.</small>`); return; }
     if (res.error) {
       // 없는 계정·간편 로그인 계정·비밀번호 틀림을 구분하지 않음 (가입 여부 노출 방지)
       markInvalid('lPw', true);
@@ -1090,8 +1484,8 @@
     const pw = $('gPw').value;
     if (!pw) { gateError('비밀번호를 입력해 주세요.'); $('gPw').focus(); return; }
     const r = A.verifyPassword(me.no, pw);
-    if (r.error === 'locked') { gateError(`비밀번호를 ${A.LOCK_FAILS}회 잘못 입력해 <b>${esc(r.until.slice(11))}</b>까지 확인이 제한됩니다.<small>비밀번호가 기억나지 않으면 로그인 화면의 비밀번호 찾기에서 임시 비밀번호를 받아 주세요.</small>`); return; }
-    if (r.error === 'unset') { gateError('비밀번호가 설정되지 않은 계정입니다.<small>로그인 화면의 비밀번호 찾기에서 임시 비밀번호를 받아 주세요.</small>'); return; }
+    if (r.error === 'locked') { gateError(`비밀번호를 ${A.LOCK_FAILS}회 잘못 입력해 <b>${esc(r.until.slice(11))}</b>까지 확인이 제한됩니다.<small>비밀번호가 기억나지 않으면 로그인 화면의 비밀번호 찾기에서 새 비밀번호를 설정해 주세요.</small>`); return; }
+    if (r.error === 'unset') { gateError('비밀번호가 설정되지 않은 계정입니다.<small>로그인 화면의 비밀번호 찾기에서 새 비밀번호를 설정해 주세요.</small>'); return; }
     if (r.error) { gateError(`비밀번호가 맞지 않습니다.${r.fails >= 2 ? ` (${r.fails}/${A.LOCK_FAILS}회)` : ''}<small>${A.LOCK_FAILS}회 틀리면 ${A.LOCK_MINUTES}분 동안 로그인과 확인이 제한됩니다.</small>`); $('gPw').select(); return; }
     afterGate();
   });
@@ -1115,9 +1509,9 @@
   // TODO: 실서비스에서는 GET /api/members/me/summary (혜택 잔액·주문 상태별 건수·문의·장바구니)
   const won = n => `${Number(n || 0).toLocaleString()}`;
   const maskEmail = e => { const [l, d] = String(e || '').split('@'); return d ? `${l.slice(0, Math.min(3, Math.max(1, l.length - 2)))}${'*'.repeat(Math.max(2, l.length - 3))}@${d}` : ''; };
-  // 주문 진행 단계: 결제상태가 전체취소인 주문 제외. 배송중(부분/전체)은 '배송중'으로 묶음
-  const FLOW = [['주문대기', '입금대기'], ['주문완료', '주문완료'], ['제작중', '제작중'], ['배송중', '배송중'], ['배송완료', '배송완료']];
-  const flowKey = s => (/^배송중/.test(s || '') ? '배송중' : s);
+  // 주문 진행 단계: 주문/배송 탭과 같은 고객 화면 상태(orderState)로 셈. 단계를 누르면 그 상태의 주문 목록(#orders?state=…)
+  //   [단계 이름, 포함하는 고객 화면 상태]. 주문완료(후결제)는 결제완료 단계에, 취소·교환·반품 진행 중은 마지막 단계에 묶음
+  const FLOW = [['입금대기', ['입금대기']], ['주문/결제완료', ['주문완료', '결제완료']], ['제작중', ['제작중']], ['발송완료', ['발송완료']], ['취소·교환·반품', ['취소처리중', '교환처리중', '반품처리중']]];
   function renderHome() {
     const m = me, code = sns();
     $('hAvatar').textContent = String(m.name).trim().charAt(0);
@@ -1133,12 +1527,15 @@
     $('hTiles').innerHTML = [['P', '마일리지', won(m.mileage), 'P'], ['%', '쿠폰', won(m.coupon), '장'], ['원', '상품권', won(m.giftCard), '원']]
       .map(([i, k, v, u]) => `<div class="tile"><div class="k"><i aria-hidden="true">${i}</i>${k}</div><div class="v">${v}<small>${u}</small></div></div>`).join('');
 
-    // 주문/배송 현황 (최근 1년 샘플 주문 기준)
-    const orders = MD.validOrders(m);
-    const count = key => orders.filter(o => flowKey(o.status) === key).length;
-    $('hFlow').innerHTML = FLOW.map(([key, label]) => { const n = count(key); return `<li><b class="${n ? 'on' : ''}">${n}</b><span>${label}</span></li>`; }).join('');
-    const total = orders.reduce((s, o) => s + (o.amount || 0), 0);
-    $('hOrderSum').textContent = orders.length ? `전체 ${orders.length}건 · ${won(total)}원` : '주문 내역이 없습니다';
+    // 주문/배송 현황 (주문/배송 탭과 같은 주문 데이터·상태 — 전체취소 주문은 건수·금액에서 제외)
+    const states = myOrders().map(o => ({ o, s: orderState(o) }));
+    const live = states.filter(x => x.o.payStatus !== '전체취소');
+    $('hFlow').innerHTML = FLOW.map(([label, sts]) => {
+      const n = states.filter(x => sts.includes(x.s)).length;
+      return `<li><a href="#orders?state=${encodeURIComponent(sts.join(','))}" aria-label="${esc(label)} ${n}건 주문 보기"><b class="${n ? 'on' : ''}">${n}</b><span>${esc(label)}</span></a></li>`;
+    }).join('');
+    const total = live.reduce((s, x) => s + (x.o.payment.total || 0), 0);
+    $('hOrderSum').innerHTML = `${live.length ? `전체 ${live.length}건 · ${won(total)}원` : '주문 내역이 없습니다'}<a class="btn-text" href="#orders">주문/배송 조회</a>`;
 
     // 1:1 문의 · 장바구니
     const inq = m.inquiries || [], waiting = inq.filter(q => q.status === '답변대기').length;
@@ -1322,7 +1719,8 @@
     setMsg('mAddr', '저장하면 등록된 주소가 삭제됩니다.', 'info');
     syncAddrClear();
   });
-  const closeZip = () => { $('zipLayer').hidden = true; $('zipWrap').innerHTML = ''; };
+  let zipClosedAt = 0;   // Esc로 우편번호 레이어를 닫을 때 그 아래 모달(배송지 변경)까지 닫히지 않게 (odDlg cancel)
+  const closeZip = () => { if (!$('zipLayer').hidden) zipClosedAt = Date.now(); $('zipLayer').hidden = true; $('zipWrap').innerHTML = ''; };
   $('zipClose').addEventListener('click', closeZip);
   $('zipLayer').addEventListener('click', e => { if (e.target === $('zipLayer')) closeZip(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('zipLayer').hidden) closeZip(); });
@@ -1333,12 +1731,15 @@
     setMsg('mAddr', msg, kind);
     $('eZip').focus();
   };
-  $('btnZip').addEventListener('click', () => {
+  // 우편번호 검색 레이어 열기 (회원정보 수정 주소 · 주문 배송지 변경 공통). done({ zonecode, address }). 서비스를 불러오지 못하면 false
+  function openPostcode(done) {
     const Postcode = (window.kakao && kakao.Postcode) || (window.daum && daum.Postcode);
-    if (!Postcode) { manualAddress('우편번호 서비스를 불러오지 못했습니다. 우편번호와 주소를 직접 입력해 주세요.'); return; }
+    if (!Postcode) return false;
     // 파일로 직접 연 화면(file://): 카카오 검색 화면이 결과를 이 페이지 주소(origin)로 보내는데 file://은 받을 수 없음 → 검색은 되지만 선택이 안 됨
     //   프로젝트 폴더의 '프로토타입 실행.bat'(http://localhost)로 열거나 웹 서버(깃허브 페이지 등)에 올리면 정상 동작. 파일로 열면 검색 창 안에 안내
     $('zipNote').hidden = location.protocol !== 'file:';
+    // 모달(배송지 변경) 위에서 열면 레이어를 모달 안으로 옮김 (모달은 최상위 레이어라 바깥 레이어가 가려짐)
+    ([...document.querySelectorAll('dialog[open]')].pop() || document.body).appendChild($('zipLayer'));
     $('zipLayer').hidden = false;
     new Postcode({
       width: '100%', height: '100%',
@@ -1349,15 +1750,22 @@
           const extra = [/[동|로|가]$/g.test(data.bname) ? data.bname : '', data.buildingName && data.apartment === 'Y' ? data.buildingName : ''].filter(Boolean).join(', ');
           if (extra) addr += ` (${extra})`;
         }
-        $('eZip').value = data.zonecode;
-        $('eAddr1').value = addr;
-        $('eAddr2').value = '';
         closeZip();
-        setMsg('mAddr', '상세 주소를 입력해 주세요.', 'info');
-        syncAddrClear();
-        $('eAddr2').focus();
+        done({ zonecode: data.zonecode, address: addr });
       }
     }).embed($('zipWrap'));
+    return true;
+  }
+  $('btnZip').addEventListener('click', () => {
+    const ok = openPostcode(({ zonecode, address }) => {
+      $('eZip').value = zonecode;
+      $('eAddr1').value = address;
+      $('eAddr2').value = '';
+      setMsg('mAddr', '상세 주소를 입력해 주세요.', 'info');
+      syncAddrClear();
+      $('eAddr2').focus();
+    });
+    if (!ok) manualAddress('우편번호 서비스를 불러오지 못했습니다. 우편번호와 주소를 직접 입력해 주세요.');
   });
   ['eZip', 'eAddr1'].forEach(id => $(id).addEventListener('input', syncAddrClear));
   function checkAddress() {
@@ -1673,8 +2081,737 @@
     window.scrollTo(0, 0);
   });
 
+  // ===== 4) 주문/배송 (IA 마이페이지 > 나의 주문내역) =====
+  //   주문내역 R35 · 주문내역(상품단위) R36 · 주문내역 상세(일반) R37 · 배송지 변경 R38 · 배송조회 R39 · 증빙서류 발급 R43
+  //   데이터는 관리자 화면과 같음: 주문 OrderData(order-data.js) · 취소/교환/반품 ClaimData(claim-data.js) · 서류 발급 DocData(document-data.js)
+  //     고객 신청(취소·교환/반품·배송지 변경·서류 발급)은 같은 localStorage에 저장 → 관리자 클레임관리·주문 상세·서류발급관리에 바로 보임
+  //     관리자 처리(입금처리·승인·반려·서류 발급 완료)는 다음에 화면을 열 때 이 화면의 상태·신청 내역에 반영
+  //   데이터에 없는 기능(편집본 썸네일·공유, 재주문, 리뷰, 편집대행 견적/시안, 실제 결제)은 '준비 중' 안내 (data-todo)
+  // TODO: 실서비스에서는 GET /api/members/me/orders?months=&state=&q=&page=, GET /api/members/me/orders/{orderNo} 와 각 신청 API
+  const OD = window.OrderData, CD = window.ClaimData, DD = window.DocData;
+  const ORDER_READY = !!(OD && OD.ORDERS && CD && CD.submitCancel && DD && DD.submitRequest);   // 예전 파일이 캐시돼 있으면 false
+  const p2 = n => String(n).padStart(2, '0');
+  const ymd = d => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+  const wonT = n => `${won(n)}원`;
+  const thumbOf = cat => esc(String(cat || '').replace(/[·\s]/g, '').slice(0, 2));
+  const CS_TEL = '080-860-1119';
+  // 로그인 회원의 주문 (주문일시 최신순)
+  const myOrders = () => (ORDER_READY && me ? OD.ORDERS.filter(o => o.member && o.member.no === me.no).sort((a, b) => b.orderedAt.localeCompare(a.orderedAt)) : []);
+  const findMine = no => myOrders().find(o => o.orderNo === no) || null;
+
+  // ----- 주문상태: 관리자 값 → 고객 화면 상태 (IA 일반주문상태값 — 유저페이지와 관리자의 상태값 통일) -----
+  //   관리자 값 (결제상태 payStatus · 제작상태 status · 클레임 신청)              → 고객 화면 상태
+  //   결제상태 전체취소                                                       → 환불완료
+  //   취소 요청 승인 대기 (결제상태 취소요청 포함)                              → 취소처리중
+  //   교환 신청 승인 대기 / 승인(재제작 진행)                                   → 교환처리중
+  //   교환 승인 + 재출고 완료                                                 → 교환완료
+  //   반품 신청 승인 대기                                                     → 반품처리중
+  //   반품 승인 (회수 · 환불)                                                 → 환불완료
+  //   결제상태 입금대기 (무통장입금 입금 전)                                    → 입금대기
+  //   제작상태 주문완료 + 후결제 입금 전(후결제대기 · 부분결제)                   → 주문완료 (+ '후결제' 표기)
+  //   제작상태 주문완료 + 결제완료 · 부분취소                                   → 결제완료
+  //   제작상태 제작중                                                         → 제작중 (후결제면 + '후결제')
+  //   제작상태 배송중(부분) · 배송중(전체) · 배송완료                            → 발송완료 (배송완료 여부는 배송조회에서, 일부만 출고면 '일부 발송' 표기. 배송중(부분)인데 출고 상품이 모두 취소됐으면 제작중)
+  //   반려된 신청은 상태에 넣지 않음 (신청 내역에 반려 사유 표시). 상품 행도 같은 기준 (취소된 상품 → 환불완료, 신청에 들어 있는 상품 → 취소처리중 등)
+  const STATUSES = ['입금대기', '주문완료', '결제완료', '제작중', '발송완료', '취소처리중', '교환처리중', '교환완료', '반품처리중', '환불완료'];
+  const TONE = { '입금대기': 'wait', '주문완료': 'wait', '결제완료': 'paid', '제작중': 'make', '발송완료': 'ship', '취소처리중': 'claim', '교환처리중': 'claim', '반품처리중': 'claim', '교환완료': 'done', '환불완료': 'done' };
+  const stBadge = s => `<span class="st ${TONE[s] || ''}">${esc(s)}</span>`;
+  const tagBadge = t => `<span class="st tag">${esc(t)}</span>`;
+  const reqsOf = o => CD.requestsOf(o.orderNo);
+  const pendingCancel = o => reqsOf(o).cancel.find(q => q.status === '대기') || null;
+  const pendingExchange = o => reqsOf(o).exchange.find(q => q.status === '대기') || null;
+  const activeExchange = o => reqsOf(o).exchange.find(q => q.status !== '반려') || null;   // 가장 최근의 반려 아닌 교환·반품 신청
+  const exState = q => (q.type === '교환' ? (q.status === '승인' && q.result === '재출고 완료' ? '교환완료' : '교환처리중') : (q.status === '승인' ? '환불완료' : '반품처리중'));
+  const postpayUnpaid = o => ['후결제대기', '부분결제'].includes(o.payStatus);
+  const baseState = (o, st) => (st === '주문대기' ? (o.payStatus === '입금대기' ? '입금대기' : '주문완료')
+    : st === '주문완료' ? (postpayUnpaid(o) ? '주문완료' : '결제완료')
+    : st === '제작중' ? '제작중' : /^배송/.test(st || '') ? '발송완료' : '');
+  function orderState(o) {
+    if (o.payStatus === '전체취소') return '환불완료';
+    if (pendingCancel(o)) return '취소처리중';
+    const ex = activeExchange(o);
+    if (ex) return exState(ex);
+    if (o.payStatus === '입금대기') return '입금대기';
+    // 배송중(부분): 취소되지 않은 상품 중 출고된 상품이 있으면 발송완료, 없으면(출고 상품이 취소된 경우) 제작중
+    if (o.status === '배송중(부분)') return o.items.some(shipped) ? '발송완료' : '제작중';
+    return baseState(o, o.status) || '결제완료';
+  }
+  function itemState(o, it, i) {
+    if (it.payStatus === '취소') return '환불완료';
+    const pc = pendingCancel(o);
+    if (pc && pc.items.includes(i)) return '취소처리중';
+    const ex = activeExchange(o);
+    if (ex && ex.items.includes(i)) return exState(ex);
+    if (o.payStatus === '입금대기') return '입금대기';
+    return baseState(o, it.status) || orderState(o);
+  }
+  // 주문 상태 옆 보조 표기: 후결제(IA: 후결제는 주문완료·제작중·발송완료에 따로 표기) · 일부 취소 · 일부 발송
+  function stateTags(o, s) {
+    const out = [];
+    if (OD.isPostpayOrder(o) && ['주문완료', '제작중', '발송완료'].includes(s)) out.push('후결제');
+    if (o.payStatus === '부분취소' || (o.payStatusBefore === '부분취소' && o.payStatus === '취소요청')) out.push('일부 취소');
+    if (s === '발송완료' && o.items.some(it => it.payStatus !== '취소' && !shipped(it))) out.push('일부 발송');
+    return out;
+  }
+  // 결제상태 고객 표기
+  const PAY_TEXT = { '입금대기': '입금대기', '후결제대기': '결제대기 (후결제)', '부분결제': '부분결제 (후결제)', '결제완료': '결제완료', '부분취소': '결제완료 (일부 취소)', '전체취소': '결제취소' };
+  const payText = o => (o.payStatus === '취소요청' ? `${PAY_TEXT[o.payStatusBefore] || '결제완료'} · 취소 요청 중` : PAY_TEXT[o.payStatus] || o.payStatus);
+  const unpaid = o => ['입금대기', '후결제대기', '부분결제'].includes(o.payStatus);
+
+  // ----- 무통장입금(가상계좌) 입금 정보 -----
+  //   주문 데이터(order-data.js payMethodInfo)에 가상계좌 번호·입금기한이 없어 주문번호로 정해 표시 (은행·계좌번호는 주문번호 해시, 입금기한 = 주문일 + 3일 23:59)
+  // TODO: 실서비스에서는 PG 가상계좌 발급 결과(은행·계좌번호·예금주·입금기한) 사용
+  const VA_BANKS = ['국민은행', '신한은행', '우리은행', '하나은행', '농협은행', '기업은행'];
+  function vaccountOf(o) {
+    const h = [...o.orderNo].reduce((x, c) => (x * 31 + c.charCodeAt(0)) % 2147483647, 7);
+    const d = (String(h).padStart(10, '0') + o.orderNo.replace(/\D/g, '')).slice(0, 14);
+    const due = new Date(`${o.orderDate}T00:00`); due.setDate(due.getDate() + 3);
+    return { bank: VA_BANKS[h % VA_BANKS.length], account: `${d.slice(0, 3)}-${d.slice(3, 9)}-${d.slice(9, 14)}`, holder: '한국학술정보㈜', due: `${ymd(due)} 23:59` };
+  }
+  // 클립보드 복사 (https·localhost가 아니면 예전 방식으로)
+  function copyText(text, done) {
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      ([...document.querySelectorAll('dialog[open]')].pop() || document.body).appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { /* 복사 불가 */ }
+      ta.remove();
+      done(ok);
+    };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(() => done(true), fallback); else fallback();
+  }
+
+  // ----- 할 수 있는 일 (IA R36 주문상태별 버튼: 제작 전 → 주문취소·배송지변경 / 발송 전 → 배송지변경 / 배송완료 → 교환·반품(수령상품 문의) / 취소주문 → 재주문) -----
+  //   취소: 공정이 리핑완료(외주: 의뢰완료)까지인 상품 (ClaimData.canCancelItem, 관리자 취소 요청 관리와 같은 기준) + 승인 대기 중인 취소 요청이 없을 때
+  //   배송지 변경: 입금(결제) 전(입금대기·후결제 미결제)이고 출고 전인 택배·퀵 주문. 고객은 기본 배송지만 바꿀 수 있음 (분할 배송지는 고객센터)
+  //   교환·반품: 배송완료된 상품이 있고 승인 대기 중인 교환·반품 신청이 없을 때
+  //   재주문: 주문 이후 언제든 — 주문 상품(취소된 상품 제외, 전부 취소된 주문은 전체)을 장바구니에 복사
+  const cancellableIdx = o => o.items.map((it, i) => i).filter(i => CD.canCancelItem(o.items[i]));
+  const canCancel = o => o.payStatus !== '전체취소' && !pendingCancel(o) && cancellableIdx(o).length > 0;
+  const canChangeAddr = o => o.payStatus !== '전체취소' && o.shipMethod !== '방문수령' && unpaid(o) && o.delivery.status === '배송준비중';
+  const previewUrlOf = () => MemberData.viewerUrl(MemberData.VIEWER_SAMPLE.mskey, MemberData.VIEWER_SAMPLE.userId);   // TODO: 실서비스에서는 주문 상품의 작업 키(mskey)·회원 아이디
+  const deliveredIdx = o => o.items.map((it, i) => i).filter(i => o.items[i].payStatus !== '취소' && o.items[i].status === '배송완료');
+  const canExchange = o => deliveredIdx(o).length > 0 && !pendingExchange(o) && !pendingCancel(o);
+  const shipped = it => it.payStatus !== '취소' && /^배송/.test(it.status || '');
+  const liveCount = o => o.items.filter(it => it.payStatus !== '취소').length;
+
+  // ----- 화면 조각: 안내 상자 · 상품 행 · 버튼 -----
+  function notesHtml(o, detail) {
+    const out = [], p = o.payment, pc = pendingCancel(o);
+    // 결제 안내(입금계좌·후결제·추가결제)는 취소 요청을 처리하는 동안에는 숨김
+    if (!pc && o.payStatus === '입금대기' && OD.isUnpaid(o)) {
+      const va = vaccountOf(o);
+      // 입금계좌·입금기한만 한 줄로 (금액은 결제예정금액에 이미 표시). 복사 버튼은 작은 크기
+      out.push(`<div class="od-note warn bank"><div class="txt"><b>입금계좌</b> ${esc(va.bank)} <span class="mono">${esc(va.account)}</span> (예금주 ${esc(va.holder)}) <span class="sep" aria-hidden="true">·</span> <b>입금기한</b> ${esc(va.due)}까지
+        <small>입금이 확인되어야 제작이 시작됩니다. 입금기한이 지나면 주문이 자동 취소될 수 있습니다.</small></div>
+        <button type="button" class="btn btn-xs" data-copy="${esc(`${va.bank} ${va.account}`)}">입금계좌 복사</button></div>`);
+    }
+    if (!pc && postpayUnpaid(o)) {
+      const left = o.deposit ? o.deposit.remaining : p.total;
+      out.push(`<div class="od-note warn"><div class="txt"><b>후결제</b> 결제기한 ${esc(o.member.postpayTo || '-')}까지 (후결제 이용 기간 종료일) · <b>결제하실 금액</b> ${wonT(left)}${o.deposit ? ` <span class="muted">(입금 ${wonT(o.deposit.paid)})</span>` : ''}
+        <small>후결제 회원은 상품을 먼저 받고 결제 기한까지 결제합니다.</small></div>
+        <button type="button" class="btn btn-sm" data-pay="후결제">결제하기</button></div>`);
+    }
+    (pc ? [] : p.extraRequests || []).filter(x => x.status === '결제대기').forEach(x => {
+      out.push(`<div class="od-note warn"><div class="txt"><b>추가결제</b> ${esc(x.reason || '추가 비용')} · ${wonT(x.amount)}
+        <small>추가결제가 끝나야 배송이 진행됩니다.</small></div>
+        <button type="button" class="btn btn-sm" data-pay="추가결제">결제하기</button></div>`);
+    });
+    if (pc) out.push(`<div class="od-note claim"><div class="txt"><b>취소 요청 접수</b> ${esc(pc.reqNo)} · ${esc(pc.at)} · 상품 ${pc.items.length}건
+      <small>담당자가 확인한 뒤 처리 결과를 알려 드립니다. 승인되기 전에는 제작이 계속 진행될 수 있습니다.</small></div></div>`);
+    const ex = activeExchange(o);
+    if (ex && ex.status === '대기') out.push(`<div class="od-note claim"><div class="txt"><b>${esc(ex.type)} 신청 접수</b> ${esc(ex.reqNo)} · ${esc(ex.at)} · ${esc(ex.reason)}<small>담당자가 확인한 뒤 처리 결과를 알려 드립니다.</small></div></div>`);
+    else if (ex && ex.type === '교환') out.push(`<div class="od-note"><div class="txt"><b>교환 ${ex.result === '재출고 완료' ? '완료' : '진행 중'}</b> ${esc(ex.reqNo)} · ${esc(ex.result || '재제작 진행')}<small>불량 상품을 같은 사양으로 다시 만들어 보내 드립니다 (무상).</small></div></div>`);
+    // 최근 반려: 목록에는 짧게, 상세는 신청 내역에서 사유까지
+    const all = reqsOf(o).cancel.concat(reqsOf(o).exchange).sort((a, b) => b.at.localeCompare(a.at));
+    if (!detail && all[0] && all[0].status === '반려') out.push(`<div class="od-note"><div class="txt"><b>${esc(all[0].type)} 신청이 반려되었습니다.</b> ${esc(all[0].rejectReason || '')}</div></div>`);
+    return out.length ? `<div class="od-notes">${out.join('')}</div>` : '';
+  }
+  function itemRow(o, it, i, detail) {
+    const s = itemState(o, it, i), sp = it.spec || {};
+    const pages = sp.basePages ? `${sp.basePages}p${sp.addPages ? `(+${sp.addPages}p)` : ''}` : '';
+    const opts = detail ? [sp.size, sp.form, sp.cover, sp.coating, pages, sp.finishing].filter(Boolean).join(' · ') : '';
+    const acts = [];
+    if (shipped(it)) acts.push(`<button type="button" class="btn btn-xs" data-track="${i}">배송조회</button>`);
+    // 상품별 부분취소 버튼은 없음 (일부 상품만 취소하려면 [주문취소]에서 상품을 골라 신청). 편집본 미리보기 = 스탑북 뷰어 새 창 (관리자 회원 상세 > 장바구니 미리보기와 같은 샘플 작업물)
+    if (detail) acts.push(`<a class="btn btn-xs" href="${esc(previewUrlOf(it))}" target="_blank" rel="noopener" title="${esc(it.name)} 편집본을 새 창에서 미리보기">편집본 미리보기</a>`);
+    if (detail && ['포토북', '캘린더'].includes(it.category)) acts.push('<button type="button" class="btn btn-xs" data-todo="편집본 공유">편집본 공유</button>');
+    return `<li class="od-item">
+      <span class="od-thumb" aria-hidden="true">${thumbOf(it.category)}</span>
+      <span class="od-info"><b>${esc(it.name)}</b>
+        <small>${esc(it.category)} · 정상가 ${wonT(it.price ? it.price.unitPrice : Math.round(it.listPrice / it.qty))} × ${it.qty}부 · <em>${wonT(it.listPrice)}</em>${it.discount ? ` · 할인 후 ${wonT(it.listPrice - it.discount)}` : ''}${it.cancel ? ` · 취소 ${wonT(it.cancel)}` : ''}</small>
+        ${opts ? `<small>${esc(opts)}</small>` : ''}
+        <small>제작번호 ${esc(sp.makeNo || '-')}</small></span>
+      <span class="od-side">${stBadge(s)}${acts.length ? `<span class="od-acts">${acts.join('')}</span>` : ''}</span>
+    </li>`;
+  }
+  function actionsHtml(o, detail) {
+    const s = orderState(o), b = [];
+    if (o.payStatus !== '전체취소') b.push('<button type="button" class="btn btn-line" data-docs>증빙서류 발급</button>');
+    if (canChangeAddr(o)) b.push('<button type="button" class="btn btn-line" data-addr="base">배송지 변경</button>');
+    if (canExchange(o)) b.push('<button type="button" class="btn btn-line" data-exchange>교환/반품 신청</button>');
+    if (deliveredIdx(o).length) b.push('<button type="button" class="btn btn-line" data-todo="리뷰 작성">리뷰 작성</button>');
+    b.push('<button type="button" class="btn btn-line" data-reorder>재주문</button>');   // 주문 이후 언제든: 같은 상품을 장바구니에 복사
+    if (['발송완료', '교환처리중', '반품처리중', '취소처리중'].includes(s)) b.push('<a class="btn btn-line" href="support.html#inquiry">1:1 문의</a>');
+    if (canCancel(o)) b.push(`<button type="button" class="btn ${detail ? 'btn-line' : 'btn-line'}" data-cancel="all">주문취소</button>`);
+    return b.length ? `<div class="od-foot">${b.join('')}</div>` : '';
+  }
+  const titleOf = o => `${o.items[0] ? o.items[0].name : o.title}${o.items.length > 1 ? ` 외 ${o.items.length - 1}종` : ''}`;
+  function cardHtml(o) {
+    const s = orderState(o), p = o.payment;
+    return `<article class="od-card" data-order="${esc(o.orderNo)}">
+      <header class="od-head"><b>${esc(o.orderDate)}</b><span>주문번호 ${esc(o.orderNo)}</span>
+        <a class="more" href="#orders?no=${encodeURIComponent(o.orderNo)}" aria-label="${esc(o.orderNo)} 주문 상세 보기">주문상세 ›</a></header>
+      <div class="od-main">
+        <div class="od-title"><div class="badges">${stBadge(s)}${stateTags(o, s).map(tagBadge).join('')}</div>
+          <strong>${esc(titleOf(o))}</strong><small>총 ${o.items.length}종 ${o.qty}개</small></div>
+        <div class="od-pay"><small>${unpaid(o) ? '결제예정금액' : '결제금액'}</small><b>${wonT(p.total)}</b><small>${esc(o.payMethod)} · ${esc(payText(o))}</small></div>
+      </div>
+      ${notesHtml(o, false)}
+      ${actionsHtml(o, false)}
+    </article>`;   // 상품별 내역(상품 행·배송조회·부분취소)은 주문상세에서만 표시
+  }
+
+  // ----- 주문 목록 (#orders) -----
+  //   기간: 1개월·3개월·6개월·1년(기본, 샘플 주문이 1년치)·5년(최대, 주문·결제 기록 법정 보관 5년) / 주문상태: 고객 화면 상태 / 검색: 주문번호·상품명 / 주문 10건씩 페이지
+  //   상태별 건수는 고른 기간 안에서 셈. 첫 화면 주문/배송 현황에서 들어오면(#orders?state=…) 기간 5년 + 그 상태로 조회
+  const OD_PAGE = 10;
+  const MONTHS = [[1, '1개월'], [3, '3개월'], [6, '6개월'], [12, '1년'], [60, '5년(최대)']];
+  const OD_MAX_MONTHS = 60;
+  const od = { months: 12, state: [], q: '', page: 1 };
+  const sinceOf = months => { const d = new Date(); d.setMonth(d.getMonth() - months); return ymd(d); };
+  const notReady = () => '<h2>주문 정보를 불러오지 못했습니다</h2><p class="card-sub">브라우저에 예전 파일이 남아 있습니다. <b>Ctrl+F5</b>(맥: <b>Cmd+Shift+R</b>)로 새로 고쳐 주세요.</p>';
+  $('odMonths').innerHTML = MONTHS.map(([m, t]) => `<button type="button" data-months="${m}" aria-pressed="false">${t}</button>`).join('');
+  function renderOrders() {
+    if (!ORDER_READY) { $('odList').innerHTML = ''; $('odEmpty').innerHTML = notReady(); $('odEmpty').hidden = false; show('viewOrders'); return; }
+    const q = hashQuery();
+    if (q.has('state')) {   // 첫 화면에서 단계를 눌러 들어온 경우: 조건을 그 상태로 맞추고 주소는 #orders로 정리
+      Object.assign(od, { months: OD_MAX_MONTHS, state: q.get('state').split(',').filter(s => STATUSES.includes(s)), q: '', page: 1 });
+      history.replaceState(null, '', '#orders');
+    }
+    const all = myOrders().map(o => ({ o, s: orderState(o) }));
+    const since = sinceOf(od.months);
+    const inPeriod = all.filter(x => x.o.orderDate >= since);
+    // 상태별 건수: 전체 + 기본 단계(입금대기·결제완료·제작중·발송완료) + 건수가 있는 상태
+    const stages = [['', '전체', inPeriod.length]].concat(STATUSES.map(s => [s, s, inPeriod.filter(x => x.s === s).length]).filter(([s, , n]) => n || ['입금대기', '결제완료', '제작중', '발송완료'].includes(s)));
+    const pressed = k => (k === '' ? !od.state.length : od.state.length === 1 && od.state[0] === k);
+    $('odStages').innerHTML = stages.map(([k, t, n]) => `<li><button type="button" data-stage="${esc(k)}" class="${n ? 'has' : ''}" aria-pressed="${pressed(k)}" aria-label="${esc(t)} ${n}건"><b>${n}</b>${esc(t)}</button></li>`).join('');
+    document.querySelectorAll('#odMonths [data-months]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.months) === od.months)));
+    const multi = od.state.length > 1 ? `<option value="${esc(od.state.join(','))}" selected>${esc(od.state.join('·'))}</option>` : '';
+    $('odState').innerHTML = `<option value="">전체 상태</option>${multi}` + STATUSES.map(s => `<option value="${esc(s)}"${od.state.length === 1 && od.state[0] === s ? ' selected' : ''}>${esc(s)}</option>`).join('');
+    if ($('odQ').value !== od.q && document.activeElement !== $('odQ')) $('odQ').value = od.q;
+    // 조건에 맞는 주문
+    const kw = od.q.toLowerCase().replace(/\s+/g, ''), kwNo = kw.replace(/-/g, '');
+    const rows = inPeriod.filter(x => (!od.state.length || od.state.includes(x.s))
+      && (!kw || (kwNo && x.o.orderNo.replace(/-/g, '').includes(kwNo)) || x.o.items.some(it => it.name.toLowerCase().replace(/\s+/g, '').includes(kw))));
+    const pages = Math.max(1, Math.ceil(rows.length / OD_PAGE));
+    od.page = Math.min(Math.max(1, od.page), pages);
+    const shown = rows.slice((od.page - 1) * OD_PAGE, od.page * OD_PAGE);
+    const period = MONTHS.find(([m]) => m === od.months)[1].replace('(최대)', '');   // 안내 문구에는 '5년'만
+    const filtered = !!(od.state.length || od.q);
+    $('odAside').textContent = all.length ? `전체 주문 ${all.length.toLocaleString()}건` : '';
+    $('odCount').innerHTML = `최근 ${period} 주문 <b>${rows.length.toLocaleString()}</b>건${filtered ? ' (검색 결과)' : ''}${pages > 1 ? ` · ${od.page}/${pages}쪽` : ''}<small>상품별 내역·배송 현황과 결제 상세는 주문상세에서 확인할 수 있습니다.</small>`;
+    $('odList').innerHTML = shown.map(x => cardHtml(x.o)).join('');
+    $('odEmpty').hidden = rows.length > 0;
+    $('odEmpty').innerHTML = !all.length
+      ? '<b>아직 주문 내역이 없습니다.</b>스탑북에서 나만의 포토북·캘린더를 만들어 보세요.<br><button type="button" class="btn btn-primary" data-todo="상품 둘러보기">상품 둘러보기</button>'
+      : `<b>조건에 맞는 주문이 없습니다.</b>기간을 늘리거나 다른 주문번호·상품명으로 검색해 주세요.<br><button type="button" class="btn btn-line" data-od-reset>조건 초기화</button>`;
+    // 페이지 번호: ‹ 1 … 4 5 6 … 14 › (고객센터 주문 선택과 같음)
+    const p = od.page, n = pages;
+    const nums = [...new Set([1, p - 1, p, p + 1, n])].filter(x => x >= 1 && x <= n).sort((a, b) => a - b);
+    $('odPager').innerHTML = n <= 1 ? '' : `<button type="button" data-page="${p - 1}" aria-label="이전 페이지"${p === 1 ? ' disabled' : ''}>‹</button>`
+      + nums.map((x, i) => `${i && x - nums[i - 1] > 1 ? '<span class="gap" aria-hidden="true">…</span>' : ''}<button type="button" data-page="${x}" aria-label="${x}쪽"${x === p ? ' aria-current="page"' : ''}>${x}</button>`).join('')
+      + `<button type="button" data-page="${p + 1}" aria-label="다음 페이지"${p === n ? ' disabled' : ''}>›</button>`;
+    show('viewOrders');
+  }
+  $('odStages').addEventListener('click', e => { const b = e.target.closest('[data-stage]'); if (!b) return; od.state = b.dataset.stage ? [b.dataset.stage] : []; od.page = 1; renderOrders(); });
+  $('odMonths').addEventListener('click', e => { const b = e.target.closest('[data-months]'); if (!b) return; od.months = Number(b.dataset.months); od.page = 1; renderOrders(); });
+  $('odState').addEventListener('change', () => { od.state = $('odState').value ? $('odState').value.split(',') : []; od.page = 1; renderOrders(); });
+  let odTimer;
+  const applyOdSearch = () => { clearTimeout(odTimer); const v = $('odQ').value.trim(); if (v === od.q) return; od.q = v; od.page = 1; renderOrders(); };
+  $('odQ').addEventListener('input', () => { clearTimeout(odTimer); odTimer = setTimeout(applyOdSearch, 250); });
+  $('odQ').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); applyOdSearch(); } });
+  $('odPager').addEventListener('click', e => {
+    const b = e.target.closest('[data-page]'); if (!b || b.disabled) return;
+    od.page = Number(b.dataset.page); renderOrders();
+    $('viewOrders').scrollIntoView({ block: 'start' });
+    const cur = $('odPager').querySelector('[aria-current="page"]'); if (cur) cur.focus({ preventScroll: true });
+  });
+  $('odEmpty').addEventListener('click', e => { if (!e.target.closest('[data-od-reset]')) return; Object.assign(od, { months: 12, state: [], q: '', page: 1 }); $('odQ').value = ''; renderOrders(); });
+
+  // ----- 주문 상세 (#orders?no=주문번호) -----
+  const DOC_LABEL = { '거래내역서': '거래명세서' };   // 고객 화면 표기 (IA: 거래명세서)
+  const docLabel = t => DOC_LABEL[t] || t;
+  function renderOrder(no) {
+    const v = $('viewOrderDetail');
+    show('viewOrderDetail');
+    if (!ORDER_READY) { v.innerHTML = `<section class="card">${notReady()}</section>`; return; }
+    const o = findMine(no);
+    if (!o) { v.innerHTML = '<a class="od-back" href="#orders">‹ 주문 목록</a><section class="card od-empty"><b>주문 정보를 찾을 수 없습니다.</b>주문번호를 확인하거나 주문 목록에서 다시 선택해 주세요.</section>'; return; }
+    const s = orderState(o), p = o.payment, d = o.delivery;
+    document.title = `스탑북 마이페이지 - 주문 상세 ${o.orderNo}`;
+    // 주문 정보
+    const info = [
+      ['주문번호', esc(o.orderNo)], ['주문일시', esc(o.orderedAt)],
+      ['주문상태', `${stBadge(s)} ${stateTags(o, s).map(tagBadge).join(' ')}`],
+      ['결제', `${esc(o.payMethod)} · ${esc(payText(o))}`],
+      ['배송방법', esc(o.shipMethod)]
+    ];
+    // 결제/할인/혜택 (IA R37: 총 상품정가 · 총 할인 · 배송비 · 결제(예정)금액 · 결제상태 · 결제수단 · 할인상세 · 적립내역 · 총 혜택금액)
+    const discounts = (p.discounts || []).filter(([, n]) => n);
+    const row = (k, val, cls) => `<tr${cls ? ` class="${cls}"` : ''}><th scope="row">${k}</th><td>${val}</td></tr>`;
+    const payRows = [
+      row('총 상품정가', wonT(p.listPrice)),
+      p.optionExtra && o.items.some(it => it.price && it.price.extraItems.length) ? row('옵션 추가금액 포함', wonT(p.optionExtra), 'sub') : '',   // 페이지 추가·후가공이 있을 때만 (단가 끝전만 있으면 표시 안 함)
+      row('배송비', p.shipFee ? `+${wonT(p.shipFee)}` : '0원'),
+      p.extraShip ? row('도서산간 추가 배송비 포함', wonT(p.extraShip), 'sub') : '',
+      row('총 할인', p.discount ? `<span class="minus">-${wonT(p.discount)}</span>` : '0원'),
+      ...discounts.map(([k, n]) => row(k, `-${wonT(n)}`, 'sub')),
+      p.extraPay ? row('추가결제', `+${wonT(p.extraPay)}`) : '',
+      p.cancel ? row('취소·환불', `<span class="minus">-${wonT(p.cancel)}</span>`) : '',
+      row(unpaid(o) ? '결제예정금액' : '결제금액', wonT(p.total), 'total')
+    ].join('');
+    const mileageUsed = (discounts.find(([k]) => k === '마일리지') || [, 0])[1];
+    const benefitRows = [
+      row('결제상태', esc(payText(o))), row('결제수단', esc(o.payMethod)),
+      row('결제일시', esc(p.paidDateTime || (unpaid(o) ? '결제 전' : '-'))),
+      p.docType ? row('결제 시 증빙 요청', `${esc(p.docType)}${p.docPurpose ? `(${esc(p.docPurpose)})` : ''} · ${esc(p.docStatus)}`) : '',
+      row('사용 마일리지', mileageUsed ? `${won(mileageUsed)}P` : '0P'),
+      row('적립 마일리지', p.point ? `${won(p.point)}P` : unpaid(o) ? '결제 완료 후 적립' : '0P'),
+      row('총 혜택금액', wonT(p.discount + p.point), 'total')
+    ].join('');
+    // 배송지 정보 (여러 건이면 목록, 수령인이 비면 '입력대기')
+    const addrHtml = o.shipMethod === '방문수령'
+      ? `<div class="addr-box"><div class="head">방문수령</div><dl class="info-list"><dt>수령 장소</dt><dd>${esc(d.pickupPlace)}</dd><dt>수령인</dt><dd>${esc(d.recipient || '입력대기')}</dd><dt>연락처</dt><dd>${esc(d.phone || '-')}</dd></dl></div>`
+      : (d.addresses || []).map(a => `<div class="addr-box"><div class="head">${esc(a.label)}${a.id === 'base' && canChangeAddr(o) ? '<button type="button" class="btn btn-xs" data-addr="base">배송지 변경</button>' : ''}</div>
+          <dl class="info-list"><dt>수령인</dt><dd>${a.recipient ? esc(a.recipient) : '<span class="muted">입력대기</span>'}</dd><dt>연락처</dt><dd>${esc(a.phone || '-')}</dd>
+          <dt>배송주소</dt><dd>${a.address ? `(${esc(a.zip)}) ${esc(a.address)} ${esc(a.detail || '')}` : '-'}</dd><dt>배송메모</dt><dd>${esc(a.request || '-')}</dd>
+          ${d.addresses.length > 1 ? `<dt>배송 상품</dt><dd>${esc(a.items.map(i => o.items[i] && o.items[i].name).filter(Boolean).join(', ') || '-')}</dd>` : ''}</dl></div>`).join('');
+    const shipNote = o.payStatus === '전체취소' ? '' : o.shipMethod === '방문수령' ? '' : !canChangeAddr(o)
+      ? `<p class="hint">배송지는 입금(결제) 전까지만 바꿀 수 있습니다. 고객센터(${CS_TEL})로 문의해 주세요.</p>`
+      : d.addresses && d.addresses.length > 1 ? `<p class="hint">나누어 보내는 추가 배송지는 고객센터(${CS_TEL})에서 바꿀 수 있습니다.</p>` : '';
+    const shipLine = `<dl class="info-list" style="margin-bottom:12px"><dt>배송상태</dt><dd>${esc(d.status)}${o.items.some(shipped) ? ' <button type="button" class="btn btn-xs" data-track="">배송조회</button>' : ''}</dd>
+      ${d.courier ? `<dt>${o.shipMethod === '퀵서비스' ? '퀵 업체' : '택배사'}</dt><dd>${esc(d.courier)}${d.waybill ? ` · 운송장 ${esc(d.waybill)}` : ''}</dd>` : ''}</dl>`;
+    // 취소·교환·반품 신청 내역
+    const reqs = reqsOf(o).cancel.concat(reqsOf(o).exchange).sort((a, b) => b.at.localeCompare(a.at));
+    const reqHtml = reqs.length ? `<ul class="hist">${reqs.map(q => {
+      const tone = q.status === '대기' ? 'claim' : q.status === '반려' ? 'done' : 'ship';
+      const names = q.items.map(i => o.items[i] && o.items[i].name).filter(Boolean).join(', ');
+      const result = q.status === '승인' ? (q.type === '교환' ? (q.result || '재제작 진행') : `환불 ${wonT(q.refundAmount)}${q.refund ? ` (${esc(q.refund.method)})` : ''}`) : '';
+      return `<li><div class="top"><b>${esc(q.type === '취소' ? `취소 요청${q.scope ? `(${q.scope})` : ''}` : `${q.type} 신청`)}</b><span class="st ${tone}">${esc(CD.STATUS_TEXT[q.status] || q.status)}</span><span class="muted">${esc(q.reqNo)}</span><span class="when">${esc(q.at)}</span></div>
+        상품 ${esc(names)} · 사유 ${esc(q.reason)}${q.detail ? ` — ${esc(q.detail)}` : ''}
+        ${q.refund && q.status !== '승인' ? `<br>환불 ${esc(q.refund.method)}${q.refund.bank ? ` (${esc(q.refund.bank)} ${esc(q.refund.account)})` : ''}` : ''}
+        ${result ? `<br>처리 결과: ${result}${q.processedAt ? ` · ${esc(q.processedAt)}` : ''}` : ''}
+        ${q.status === '반려' ? `<br><span class="reject">반려 사유: ${esc(q.rejectReason || '-')}</span>` : ''}</li>`;
+    }).join('')}</ul>` : '<p class="card-sub">취소·교환·반품 신청 내역이 없습니다.</p>';
+    // 증빙서류 신청·발급 내역
+    const docReqs = DD.requests.filter(q => q.orderNo === o.orderNo);
+    const docIssues = DD.issues.filter(x => x.orderNo === o.orderNo);
+    const docRows = docReqs.map(q => ({ at: q.at, html: `<li><div class="top"><b>${esc(DD.typesOf(q).map(docLabel).join(', '))} 발급 신청</b><span class="st ${q.status === '대기' ? 'wait' : q.status === '반려' ? 'done' : 'ship'}">${esc(DD.STATUS_TEXT[q.status] || q.status)}</span><span class="muted">${esc(q.reqNo)}</span><span class="when">${esc(q.at)}</span></div>
+        ${esc(q.receiveBy)} 수령${q.receiveTo ? ` (${esc(q.receiveTo)})` : ''}${q.wantBy ? ` · 희망일 ${esc(q.wantBy)}` : ''}${q.status === '완료' && q.processedAt ? ` · 발급 ${esc(q.processedAt)}` : ''}
+        ${q.status === '반려' ? `<br><span class="reject">반려 사유: ${esc(q.rejectReason || '-')}</span>` : ''}</li>` }))
+      .concat(docIssues.map(x => ({ at: x.at, html: `<li><div class="top"><b>${esc(docLabel(x.docType))}${x.purpose ? ` (${esc(x.purpose)})` : ''}</b><span class="st ship">발급 완료</span><span class="muted">${esc(x.channel)}</span><span class="when">${esc(x.at)}</span>
+        ${DD.INSTANT_TYPES.includes(x.docType) ? `<button type="button" class="btn btn-xs" data-redl="${esc(x.docType)}">다시 받기</button>` : ''}</div></li>` })))
+      .sort((a, b) => b.at.localeCompare(a.at));
+    const docHtml = docRows.length ? `<ul class="hist">${docRows.map(x => x.html).join('')}</ul>` : '<p class="card-sub">증빙서류 신청·발급 내역이 없습니다.</p>';
+
+    v.innerHTML = `<a class="od-back" href="#orders">‹ 주문 목록</a>
+      <section class="card" data-order="${esc(o.orderNo)}">
+        <div class="card-title-row"><h2>주문 정보</h2><span class="card-aside">${esc(titleOf(o))} · 총 ${o.items.length}종 ${o.qty}개</span></div>
+        <dl class="info-list">${info.map(([k, val]) => `<dt>${k}</dt><dd>${val}</dd>`).join('')}</dl>
+        ${notesHtml(o, true)}
+        ${actionsHtml(o, true)}
+      </section>
+      <section class="card" data-order="${esc(o.orderNo)}"><div class="card-title-row"><h2>상품 정보</h2><span class="card-aside">상품별 주문상태</span></div>
+        <ul class="od-items">${o.items.map((it, i) => itemRow(o, it, i, true)).join('')}</ul></section>
+      <section class="card"><div class="card-title-row"><h2>결제 · 할인 · 혜택</h2></div>
+        <div class="pay-grid"><div><h3 class="od-subtitle">결제 정보</h3><table class="pay-table">${payRows}</table></div>
+          <div><h3 class="od-subtitle">결제 수단 · 혜택</h3><table class="pay-table">${benefitRows}</table></div></div></section>
+      <section class="card" data-order="${esc(o.orderNo)}"><div class="card-title-row"><h2>배송 정보</h2></div>${shipLine}<div class="addr-list">${addrHtml}</div>${shipNote}</section>
+      <section class="card"><div class="card-title-row"><h2>취소 · 교환 · 반품 신청 내역</h2></div>${reqHtml}</section>
+      <section class="card" data-order="${esc(o.orderNo)}"><div class="card-title-row"><h2>증빙서류 신청 · 발급 내역</h2>${o.payStatus !== '전체취소' ? '<button type="button" class="btn-text" data-docs>증빙서류 발급</button>' : ''}</div>${docHtml}</section>`;
+  }
+  // 신청·변경 후 지금 화면 다시 그리기 (스크롤 위치 유지)
+  const rerender = () => { if (routeOf() === 'order') renderOrder(hashQuery().get('no')); else if (routeOf() === 'orders') renderOrders(); };
+
+  // ----- 모달 공통 (하나의 dialog를 돌려 씀) -----
+  const dlg = $('odDlg');
+  let dlgSubmit = null, dlgChanged = false;
+  const CLOSE_BTN = '<button type="button" class="btn btn-line" data-dlg-close>닫기</button>';
+  function openDlg(title, body, foot, submit) {
+    $('odDlgTitle').textContent = title;
+    $('odDlgBody').innerHTML = body;
+    $('odDlgFoot').innerHTML = foot;
+    $('odDlgErr').hidden = true;
+    dlgSubmit = submit || null;
+    if (!dlg.open) dlg.showModal();
+    $('odDlgBody').scrollTop = 0;
+    const first = $('odDlgBody').querySelector('input:not([disabled]):not([type=hidden]), select, textarea');
+    (first || $('odDlgTitle')).focus({ preventScroll: true });
+  }
+  // 오류: 버튼 위 안내 + 해당 입력칸 표시·포커스
+  function dlgError(msg, id) {
+    $('odDlgErr').textContent = msg; $('odDlgErr').hidden = !msg;
+    $('odDlgBody').querySelectorAll('.invalid').forEach(x => x.classList.remove('invalid'));
+    const el = id && $(id);
+    if (el) { el.classList.add('invalid'); el.scrollIntoView({ block: 'center' }); if (el.focus) el.focus({ preventScroll: true }); }
+  }
+  $('odDlgForm').addEventListener('submit', e => { e.preventDefault(); if (dlgSubmit) dlgSubmit(); });
+  dlg.addEventListener('click', e => { if (e.target.closest('[data-dlg-close]')) dlg.close(); });
+  dlg.addEventListener('cancel', e => { if (!$('zipLayer').hidden || Date.now() - zipClosedAt < 300) { e.preventDefault(); closeZip(); } });
+  dlg.addEventListener('close', () => { closeZip(); document.body.appendChild($('zipLayer')); dlgSubmit = null; if (dlgChanged) { dlgChanged = false; rerender(); } });
+  $('odDlgBody').addEventListener('input', e => { if (e.target.classList) e.target.classList.remove('invalid'); });
+  const refundFields = o => {
+    const kind = CD.refundKindOf(o);
+    if (kind === 'none') return '<p class="notice">결제 전 주문이라 환불할 금액이 없습니다.</p>';
+    if (kind === 'original') return `<p class="notice"><b>환불 수단</b> 원결제수단 취소 (${esc(o.payMethod)})<br>승인되면 결제한 수단으로 취소됩니다. 카드사·결제사에 따라 3~7영업일이 걸릴 수 있습니다.</p>`;
+    return `<p class="notice"><b>환불 계좌</b> ${esc(o.payMethod)} 결제는 입력하신 계좌로 환불해 드립니다.</p>
+      <div class="form-inline">
+        <div class="field"><label for="rfBank">은행<span class="req">*</span></label><select class="sel" id="rfBank"><option value="">은행 선택</option>${CD.REFUND_BANKS.map(b => `<option>${esc(b)}</option>`).join('')}</select></div>
+        <div class="field"><label for="rfAccount">계좌번호<span class="req">*</span></label><input type="text" id="rfAccount" maxlength="20" inputmode="numeric" placeholder="숫자만 입력 (- 없이)"></div>
+        <div class="field"><label for="rfHolder">예금주<span class="req">*</span></label><input type="text" id="rfHolder" maxlength="20" value="${esc(me.name)}"></div>
+      </div>`;
+  };
+  const refundInput = () => ($('rfBank') ? { bank: $('rfBank').value, account: $('rfAccount').value.trim(), holder: $('rfHolder').value.trim() } : null);
+  const RF_FIELD = { bank: 'rfBank', account: 'rfAccount', holder: 'rfHolder' };
+  const pickRow = (o, it, i, ok, why, checked) => `<label class="pick-row${ok ? '' : ' off'}${checked ? ' on' : ''}"><input type="checkbox" value="${i}"${ok ? '' : ' disabled'}${checked ? ' checked' : ''} aria-label="${esc(it.name)}">
+    <span class="od-thumb" aria-hidden="true">${thumbOf(it.category)}</span><span class="od-info"><b>${esc(it.name)}</b><small>${it.qty}부 · 결제 ${wonT(it.paid)} · ${esc(itemState(o, it, i))}</small>${why ? `<span class="why">${esc(why)}</span>` : ''}</span></label>`;
+  const picked = () => [...$('odDlgBody').querySelectorAll('.pick-list input:checked')].map(c => Number(c.value));
+  $('odDlgBody').addEventListener('change', e => { const c = e.target.closest('.pick-row input'); if (c) { c.closest('.pick-row').classList.toggle('on', c.checked); c.closest('.pick-list').classList.remove('invalid'); } });
+
+  // ----- 주문 취소 / 부분취소 (관리자 클레임관리 > 취소 요청 관리로 접수) -----
+  function openCancel(o, only) {
+    if (!canCancel(o)) { toast(pendingCancel(o) ? '이미 취소 요청이 접수되어 처리 중입니다.' : '제작이 시작되어 취소할 수 있는 상품이 없습니다.'); return; }
+    const can = cancellableIdx(o);
+    const rows = o.items.map((it, i) => {
+      const ok = can.includes(i);
+      const why = ok ? '' : it.payStatus === '취소' ? '이미 취소된 상품입니다.' : shipped(it) ? '출고된 상품은 취소할 수 없습니다. 받은 뒤 교환/반품을 신청해 주세요.' : '제작이 시작되어 취소할 수 없습니다.';
+      return pickRow(o, it, i, ok, why, ok && (only == null || only === i));
+    }).join('');
+    const body = `<p class="card-sub">취소할 상품을 선택해 주세요. 제작이 시작된 상품은 취소할 수 없습니다. 담당자가 확인한 뒤 취소가 확정됩니다.</p>
+      <div class="pick-list" id="ccItems">${rows}</div>
+      <div class="field"><label for="ccReason">취소 사유<span class="req">*</span></label><select class="sel" id="ccReason"><option value="">사유를 선택해 주세요</option>${CD.CANCEL_REASONS.map(r => `<option>${esc(r)}</option>`).join('')}</select></div>
+      <div class="field"><label for="ccDetail">상세 사유<span class="opt" id="ccOpt">(선택)</span></label><textarea class="ta" id="ccDetail" maxlength="${CD.DETAIL_MAX}" placeholder="취소 사유를 자세히 적어 주시면 빠르게 처리해 드립니다."></textarea><p class="hint counter" id="ccCount">0 / ${CD.DETAIL_MAX}</p></div>
+      ${refundFields(o)}
+      <div class="sum-box"><span>환불 예정 금액</span><b id="ccAmount">0원</b></div>
+      <p class="hint">배송비·할인(쿠폰·마일리지)이 반영된 최종 환불 금액은 담당자 확인 후 정해집니다.</p>`;
+    openDlg(only == null ? '주문 취소' : '상품 부분취소', body, `${CLOSE_BTN}<button type="submit" class="btn btn-primary">취소 요청</button>`, () => submitCancelForm(o));
+    const sync = () => { $('ccAmount').textContent = CD.refundKindOf(o) === 'none' ? '0원 (결제 전)' : wonT(picked().reduce((t, i) => t + o.items[i].paid, 0)); };
+    sync();
+    $('ccItems').addEventListener('change', sync);
+    $('ccReason').addEventListener('change', () => { $('ccOpt').textContent = $('ccReason').value === '기타' ? '(필수)' : '(선택)'; $('ccReason').classList.remove('invalid'); });
+    $('ccDetail').addEventListener('input', () => { $('ccCount').textContent = `${$('ccDetail').value.length} / ${CD.DETAIL_MAX}`; });
+  }
+  function submitCancelForm(o) {
+    const idxs = picked(), reason = $('ccReason').value;
+    if (!idxs.length) { dlgError('취소할 상품을 선택해 주세요.', 'ccItems'); return; }
+    if (!reason) { dlgError('취소 사유를 선택해 주세요.', 'ccReason'); return; }
+    if (!confirm(`선택한 상품 ${idxs.length}건의 취소를 요청할까요?\n담당자가 확인한 뒤 처리 결과를 알려 드립니다.`)) return;
+    const r = CD.submitCancel(o.orderNo, idxs, reason, $('ccDetail').value, refundInput(), me.no);
+    if (!r.ok) { dlgError(r.error, { items: 'ccItems', reason: 'ccReason', detail: 'ccDetail' }[r.field] || RF_FIELD[r.field]); return; }
+    dlgChanged = true;
+    dlg.close();
+    toast(`취소 요청이 접수되었습니다. (신청번호 ${r.req.reqNo})`);
+  }
+
+  // ----- 교환/반품 신청 (배송완료 상품, 관리자 클레임관리 > 교환 반품 관리로 접수) -----
+  const PHOTO_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'];
+  let exPhotos = [];
+  function openExchange(o) {
+    if (!canExchange(o)) { toast(pendingExchange(o) ? '이미 교환·반품 신청이 접수되어 처리 중입니다.' : '배송이 완료된 상품만 교환·반품을 신청할 수 있습니다.'); return; }
+    const can = deliveredIdx(o);
+    exPhotos = [];
+    const rows = o.items.map((it, i) => pickRow(o, it, i, can.includes(i), can.includes(i) ? '' : it.payStatus === '취소' ? '취소된 상품입니다.' : '아직 배송이 완료되지 않은 상품입니다.', can.length === 1 && can.includes(i))).join('');
+    const body = `<p class="notice">맞춤 제작 상품이라 <b>단순 변심에 의한 교환·반품은 어렵습니다.</b> 받은 상품에 불량이 있으면 사진과 함께 알려 주세요.<br>교환은 같은 사양으로 다시 만들어 보내 드리며(무상), 반품은 상품을 돌려받은 뒤 환불해 드립니다.</p>
+      <div class="field"><span class="label" id="exTypeLabel">신청 구분<span class="req">*</span></span>
+        <div class="radio-row" role="radiogroup" aria-labelledby="exTypeLabel"><label><input type="radio" name="exType" value="교환" checked><span>교환 (재제작)</span></label><label><input type="radio" name="exType" value="반품"><span>반품 (환불)</span></label></div></div>
+      <div class="pick-list" id="exItems">${rows}</div>
+      <div class="field"><label for="exReason">불량 유형<span class="req">*</span></label><select class="sel" id="exReason"><option value="">불량 유형을 선택해 주세요</option>${CD.DEFECTS.map(r => `<option>${esc(r)}</option>`).join('')}</select></div>
+      <div class="field"><label for="exDetail">불량 내용<span class="req">*</span></label><textarea class="ta" id="exDetail" maxlength="${CD.DETAIL_MAX}" placeholder="어느 부분이 어떻게 불량인지 적어 주세요. (${CD.DEFECT_DETAIL_MIN}자 이상)"></textarea><p class="hint counter" id="exCount">0 / ${CD.DETAIL_MAX}</p></div>
+      <div class="field"><span class="label">사진 첨부<span class="opt">(선택, 최대 ${CD.PHOTO_MAX}장 · 장당 10MB)</span></span>
+        <div><button type="button" class="btn btn-sm" id="exPhotoBtn">사진 선택</button><input type="file" id="exPhoto" accept="image/*" multiple hidden>
+        <ul class="file-chips" id="exPhotoList"></ul><p class="hint">불량 부분이 잘 보이는 사진을 올려 주시면 빠르게 확인할 수 있습니다.</p></div></div>
+      <div id="exRefund" hidden>${refundFields(o)}</div>`;
+    openDlg('교환/반품 신청', body, `${CLOSE_BTN}<button type="submit" class="btn btn-primary">신청하기</button>`, () => submitExchangeForm(o));
+    const syncType = () => { $('exRefund').hidden = exType() !== '반품'; };
+    $('odDlgBody').querySelectorAll('input[name=exType]').forEach(r => r.addEventListener('change', syncType));
+    $('exDetail').addEventListener('input', () => { $('exCount').textContent = `${$('exDetail').value.length} / ${CD.DETAIL_MAX}`; });
+    $('exPhotoBtn').addEventListener('click', () => $('exPhoto').click());
+    $('exPhoto').addEventListener('change', e => {
+      const files = [...e.target.files]; e.target.value = '';
+      for (const f of files) {
+        const ext = (f.name.split('.').pop() || '').toLowerCase();
+        if (!PHOTO_EXT.includes(ext)) { dlgError(`사진 파일(${PHOTO_EXT.join(', ')})만 첨부할 수 있습니다: ${f.name}`); continue; }
+        if (f.size > 10 * 1024 * 1024) { dlgError(`10MB 이하 사진만 첨부할 수 있습니다: ${f.name}`); continue; }
+        if (exPhotos.length >= CD.PHOTO_MAX) { dlgError(`사진은 최대 ${CD.PHOTO_MAX}장까지 첨부할 수 있습니다.`); break; }
+        exPhotos.push(f.name);
+      }
+      renderPhotos();
+    });
+    $('exPhotoList').addEventListener('click', e => { const b = e.target.closest('[data-unphoto]'); if (!b) return; exPhotos.splice(Number(b.dataset.unphoto), 1); renderPhotos(); });
+  }
+  const exType = () => (document.querySelector('input[name=exType]:checked') || {}).value || '';
+  const renderPhotos = () => { $('exPhotoList').innerHTML = exPhotos.map((n, i) => `<li><span>${esc(n)}</span><button type="button" data-unphoto="${i}" aria-label="${esc(n)} 첨부 취소">&times;</button></li>`).join(''); };
+  function submitExchangeForm(o) {
+    const type = exType(), idxs = picked(), reason = $('exReason').value, detail = $('exDetail').value.trim();
+    if (!idxs.length) { dlgError(`${type}할 상품을 선택해 주세요.`, 'exItems'); return; }
+    if (!reason) { dlgError('불량 유형을 선택해 주세요.', 'exReason'); return; }
+    if (detail.length < CD.DEFECT_DETAIL_MIN) { dlgError(`불량 내용을 ${CD.DEFECT_DETAIL_MIN}자 이상 적어 주세요.`, 'exDetail'); return; }
+    if (!confirm(`선택한 상품 ${idxs.length}건의 ${type}을 신청할까요?`)) return;
+    const r = CD.submitExchange(o.orderNo, type, idxs, reason, detail, exPhotos.slice(), type === '반품' ? refundInput() : null, me.no);
+    if (!r.ok) { dlgError(r.error, { items: 'exItems', reason: 'exReason', detail: 'exDetail', photos: 'exPhotoBtn' }[r.field] || RF_FIELD[r.field]); return; }
+    dlgChanged = true;
+    dlg.close();
+    toast(`${type} 신청이 접수되었습니다. (신청번호 ${r.req.reqNo})`);
+  }
+
+  // ----- 배송지 변경 (IA R38, 입금 전만) — 관리자 주문 상세 > 배송정보와 같은 저장소(OrderData.saveAddress) -----
+  //   변경하면 주문 히스토리에 '배송지' 이력(처리자 고객)을 남김. 지역별 배송비 차액은 고객센터에서 수동 처리 (IA: 차액 발생 시 수동처리)
+  //   '회원정보 주소로도 저장'을 고르면 회원정보 주소도 바꿈 (IA '신규 배송지로 등록' — 배송지 목록 기능이 없어 회원정보 주소로 대신)
+  function openAddr(o) {
+    if (!canChangeAddr(o)) { toast('배송지는 입금(결제) 전까지만 바꿀 수 있습니다. 고객센터로 문의해 주세요.'); return; }
+    const a = o.delivery.addresses.find(x => x.id === 'base') || o.delivery;
+    const body = `<div class="notice"><b>현재 배송지</b><br>${esc(a.recipient || '입력대기')} · ${esc(a.phone || '-')}<br>${a.address ? `(${esc(a.zip)}) ${esc(a.address)} ${esc(a.detail || '')}` : '-'}${a.request ? `<br>배송메모: ${esc(a.request)}` : ''}</div>
+      <div class="form-inline">
+        <div class="field"><label for="adName">수령인<span class="req">*</span></label><input type="text" id="adName" maxlength="20" value="${esc(a.recipient || '')}" autocomplete="name"></div>
+        <div class="field"><label for="adPhone">연락처<span class="req">*</span></label><input type="tel" id="adPhone" maxlength="13" inputmode="numeric" value="${esc(a.phone || '')}" autocomplete="tel"></div>
+        <div class="field"><span class="label" id="adAddrLabel">배송주소<span class="req">*</span></span>
+          <div role="group" aria-labelledby="adAddrLabel"><div class="row zip-row"><input type="text" id="adZip" readonly maxlength="5" inputmode="numeric" placeholder="우편번호" aria-label="우편번호" value="${esc(a.zip || '')}"><button type="button" class="btn btn-line btn-sm" id="adZipBtn">우편번호 검색</button></div>
+          <input type="text" id="adAddr1" readonly maxlength="100" placeholder="우편번호를 검색하면 기본 주소가 입력됩니다" aria-label="기본 주소" value="${esc(a.address || '')}" style="margin-top:8px">
+          <input type="text" id="adAddr2" maxlength="100" placeholder="상세 주소 (동·호수 등)" aria-label="상세 주소" value="${esc(a.detail || '')}" style="margin-top:8px"></div></div>
+        <div class="field"><label for="adReq">배송메모<span class="opt">(선택)</span></label><input type="text" id="adReq" maxlength="50" placeholder="예) 문 앞에 놓아 주세요" value="${esc(a.request || '')}"></div>
+      </div>
+      <label class="check" style="margin:4px 0 14px"><input type="checkbox" id="adSave"><span class="box" aria-hidden="true"></span><span>회원정보 주소로도 저장</span></label>
+      <p class="notice warn">배송지를 바꿔 지역별 배송비(도서산간 추가 배송비 등)에 차액이 생기면 고객센터(${CS_TEL})에서 따로 안내해 드립니다.<br>상품이 출고된 뒤에는 배송지를 바꿀 수 없습니다.</p>`;
+    openDlg('배송지 변경', body, `${CLOSE_BTN}<button type="submit" class="btn btn-primary">변경 요청</button>`, () => submitAddr(o, a));
+    $('adPhone').addEventListener('input', e => { e.target.value = fmtPhone(e.target.value); });
+    $('adZipBtn').addEventListener('click', () => {
+      const ok = openPostcode(({ zonecode, address }) => { $('adZip').value = zonecode; $('adAddr1').value = address; $('adAddr2').value = ''; $('adAddr2').focus(); });
+      if (!ok) { $('adZip').readOnly = $('adAddr1').readOnly = false; dlgError('우편번호 서비스를 불러오지 못했습니다. 우편번호와 주소를 직접 입력해 주세요.', 'adZip'); }
+    });
+  }
+  function submitAddr(o, a) {
+    const data = { recipient: $('adName').value.trim(), phone: fmtPhone($('adPhone').value), zip: $('adZip').value.trim(), address: $('adAddr1').value.trim(), detail: $('adAddr2').value.trim(), request: $('adReq').value.trim() };
+    if (!/^[가-힣a-zA-Z][가-힣a-zA-Z .'-]{0,19}$/.test(data.recipient) || data.recipient.length < 2) { dlgError('수령인 이름을 한글 또는 영문 2~20자로 입력해 주세요.', 'adName'); return; }
+    if (!/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(data.phone)) { dlgError('연락처를 정확히 입력해 주세요.', 'adPhone'); return; }
+    if (!data.address) { dlgError('우편번호 검색으로 배송주소를 입력해 주세요.', 'adAddr1'); return; }
+    if (!/^\d{5}$/.test(data.zip)) { dlgError('우편번호 5자리를 확인해 주세요.', 'adZip'); return; }
+    if (!data.detail) { dlgError('상세 주소를 입력해 주세요.', 'adAddr2'); return; }
+    const changes = OD.ADDRESS_FIELDS.filter(([k]) => (a[k] || '') !== data[k]).map(([k, label]) => `${label} ${a[k] || '-'} → ${data[k] || '-'}`);
+    if (!changes.length && !$('adSave').checked) { toast('변경된 내용이 없습니다.'); return; }
+    if (changes.length) {
+      const r = OD.saveAddress(o.orderNo, 'base', data);
+      if (!r.ok) { dlgError('일시적인 오류로 배송지를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
+      OD.addHistory(o.orderNo, '배송지', `고객 배송지 변경 (마이페이지): ${changes.join(', ')}`, '고객');
+      Object.assign(o.delivery, data);
+      Object.assign(o.delivery.addresses.find(x => x.id === 'base') || {}, data);
+    }
+    // 회원정보 주소로도 저장 (회원정보 수정과 같은 저장 · 회원 히스토리)
+    if ($('adSave').checked) {
+      const addr = { zipcode: data.zip, address1: data.address, address2: data.detail };
+      if (MD.addressText(addr) !== MD.addressText(me)) MD.updateProfile(me.no, addr, [`주소 변경: ${MD.addressText(me) || '미입력'} → ${MD.addressText(addr)} (주문 ${o.orderNo} 배송지 변경에서 저장)`], '회원');
+    }
+    dlgChanged = true;
+    dlg.close();
+    toast(changes.length ? '배송지가 변경되었습니다.' : '회원정보 주소로 저장했습니다.');
+  }
+
+  // ----- 배송조회 (IA R39): 택배사 · 운송장 · 배송상태 · 상품별 출고 내역 + 택배사 조회 페이지(새 창) -----
+  function openTrack(o, idx) {
+    const d = o.delivery, it = idx != null && idx !== '' ? o.items[idx] : null;
+    const steps = [['출고 전', !d.shippedAt], ['배송중', !!d.shippedAt && d.status !== '배송완료'], ['배송완료', d.status === '배송완료']];
+    const times = [o.orderDate, d.shippedAt, d.doneAt];
+    let body = `<ol class="track-steps">${steps.map(([t, on], k) => `<li class="${on ? 'on' : ''}">${t}<small>${esc((k && times[k]) || (k === 0 ? `주문 ${times[0]}` : '-'))}</small></li>`).join('')}</ol>`;
+    body += `<dl class="info-list" style="margin:0 0 14px"><dt>배송방법</dt><dd>${esc(o.shipMethod)}</dd>
+      ${o.shipMethod === '방문수령' ? `<dt>수령 장소</dt><dd>${esc(d.pickupPlace)}</dd>` : `<dt>${o.shipMethod === '퀵서비스' ? '퀵 업체' : '택배사'}</dt><dd>${esc(d.courier || '-')}</dd>`}
+      ${d.waybill ? `<dt>운송장번호</dt><dd>${esc(d.waybill)}</dd>` : ''}
+      <dt>배송상태</dt><dd>${esc(d.status)}</dd>${d.shippedAt ? `<dt>집하</dt><dd>${esc(d.shippedAt)}</dd>` : ''}${d.doneAt ? `<dt>배송완료</dt><dd>${esc(d.doneAt)}</dd>` : ''}</dl>`;
+    if (!d.waybill && o.shipMethod === '택배') body += '<p class="notice">출고 전입니다. 상품이 출고되면 운송장번호를 알려 드립니다.</p>';
+    body += `<table class="mini-table"><thead><tr><th>상품</th><th>제작번호</th><th>상태</th></tr></thead><tbody>${d.lines.map((l, i) => `<tr${it && i === Number(idx) ? ' style="background:var(--brand-soft)"' : ''}><td>${esc(l.name)} · ${l.qty}부</td><td class="num">${esc(l.makeNo)}</td><td>${esc(itemState(o, o.items[i], i))}${l.at ? `<br><span class="muted">${esc(l.at)}</span>` : ''}</td></tr>`).join('')}</tbody></table>`;
+    const foot = d.trackingUrl ? `${CLOSE_BTN}<a class="btn btn-primary" href="${esc(d.trackingUrl)}" target="_blank" rel="noopener">${esc(d.courier)}에서 배송조회 ↗</a>` : CLOSE_BTN.replace('btn-line', 'btn-primary');
+    openDlg(it ? `배송조회 · ${it.name}` : '배송조회', body, foot, null);
+  }
+
+  // ----- 증빙서류 발급 (IA R43: 거래명세서 · 견적서 · 현금영수증 · 카드영수증) -----
+  //   바로 발급: 견적서 · 거래명세서 · 사업자등록증 · 통장사본 → 발급 이력(관리자 서류발급관리 > 자동 발급 이력, 고객 발급)에 남기고 양식 파일을 내려받음
+  //   발급 신청: 세금계산서 · 현금영수증(현금성 결제만) · 납품서 · 기관 양식 견적서/거래명세서 · 기타 → 관리자 서류발급관리(증빙서류) / 계산서 영수증 발급 관리(영수증) 처리 대기
+  //   카드영수증: 결제대행사(PG) 화면에서 출력 — 프로토타입은 준비 중 안내
+  let formsReady = null;
+  const loadScript = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+  const loadForms = () => formsReady || (formsReady = loadScript('../admin/doc-form-assets.js?v=20261026-5').then(() => loadScript('../admin/doc-forms.js?v=20261026-4')).catch(e => { formsReady = null; throw e; }));
+  // 관리자 서류발급관리 다운로드와 같은 양식 (doc-forms.js): 견적서·거래명세서는 주문 상품·금액, 사업자등록증·통장사본은 회사 서류 스캔본
+  const FORM_OF = { '견적서': '견적서', '거래내역서': '거래명세서', '사업자등록증': '사업자등록증', '통장사본': '통장사본' };
+  function formHtml(type, o) {
+    const kind = FORM_OF[type], b = me.business || {};
+    const customer = { name: me.name, org: b.companyName || '', email: me.email };
+    if (DocForms.IMAGE_DOCS.includes(kind)) return DocForms.build(kind, { customer, issuedAt: new Date() });
+    return DocForms.build(kind, { customer, issuedAt: new Date(), payTerms: type === '견적서' ? '신용카드/무통장/계좌이체/휴대폰결제' : o.payMethod,
+      rows: DocForms.orderRows(o, kind), notes: [`주문번호 ${o.orderNo} (주문일 ${o.orderDate})`] });
+  }
+  function downloadForm(type, o) {
+    const name = `${FORM_OF[type]}_${o.orderNo}.html`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([formHtml(type, o)], { type: 'text/html;charset=utf-8' }));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    return name;
+  }
+  // 바로 발급: 양식 준비 → 발급 기록(DocData.issueByCustomer) → 내려받기
+  function instantIssue(o, type, record) {
+    loadForms().then(() => {
+      if (record) {
+        const r = DD.issueByCustomer(o.orderNo, type, me.no);
+        if (!r.ok) { if (dlg.open) dlgError(r.error); else toast(r.error); return; }
+        dlgChanged = true;
+      }
+      const name = downloadForm(type, o);
+      toast(`${docLabel(type)}를 내려받았습니다. (${name}, 브라우저에서 열어 인쇄하면 PDF로 저장할 수 있습니다)`);
+    }, () => toast('서류 양식을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'));
+  }
+  const CARD_LIKE = ['신용카드', '휴대폰결제', '네이버페이', '토스페이', '카카오페이'];
+  let dcFiles = { biz: '', att: '' };
+  function openDocs(o) {
+    if (o.payStatus === '전체취소') { toast('취소된 주문은 증빙서류를 발급할 수 없습니다.'); return; }
+    dcFiles = { biz: '', att: '' };
+    const blockedBank = DD.bankCopyBlocked(o), paidOk = !!o.payment.paidDateTime, rcOk = DD.receiptAllowed(o);
+    const inst = [
+      ['견적서', '주문 상품·금액 기준', true],
+      ['거래내역서', paidOk ? '결제 완료 주문' : '결제 확인 후 발급', paidOk],
+      ['사업자등록증', '스탑북(한국학술정보㈜) 사본', true],
+      ['통장사본', blockedBank ? '가상계좌 주문은 발급 불가' : '회사 계좌 입금용', !blockedBank]
+    ].map(([t, sub, ok]) => `<button type="button" class="btn btn-line" data-issue="${esc(t)}"${ok ? '' : ` disabled title="${esc(t === '통장사본' ? DD.BANK_COPY_BLOCK_REASON : sub)}"`}>${esc(docLabel(t))}<small>${esc(sub)}</small></button>`).join('')
+      + (CARD_LIKE.includes(o.payMethod) && paidOk ? `<button type="button" class="btn btn-line" data-todo="카드영수증 출력(결제대행사 화면)">카드영수증<small>${esc(o.payMethod)} 결제 영수증</small></button>` : '');
+    const REQ_LABEL = { '견적서': '견적서 (기관 양식·직인)', '거래내역서': '거래명세서 (기관 양식·직인)' };
+    const chips = DD.CUSTOMER_REQUEST_TYPES.map(t => {
+      const off = DD.RECEIPT_TYPES.includes(t) && !rcOk;
+      return `<label class="chip-check"><input type="checkbox" name="dcType" value="${esc(t)}"${off ? ' disabled' : ''}><span${off ? ' title="현금성 결제(무통장입금·계좌이체·후결제) 주문만 신청할 수 있습니다."' : ''}>${esc(REQ_LABEL[t] || t)}</span></label>`;
+    }).join('');
+    const b = me.business || {}, want = new Date(); want.setDate(want.getDate() + 3);
+    const body = `<h3 class="dlg-sub">바로 발급 <small>양식 파일을 바로 내려받습니다</small></h3>
+      <div class="doc-grid">${inst}</div>
+      <p class="hint">내려받은 파일을 브라우저에서 열어 인쇄하면 PDF로 저장할 수 있습니다.</p>
+      <h3 class="dlg-sub">발급 신청 <small>담당자가 확인한 뒤 발급해 드립니다</small></h3>
+      ${o.payment.docType ? `<p class="notice">결제할 때 요청한 <b>${esc(o.payment.docType)}${o.payment.docPurpose ? `(${esc(o.payment.docPurpose)})` : ''}</b>은(는) <b>${esc(o.payment.docStatus)}</b> 상태입니다.</p>` : ''}
+      ${rcOk ? '' : `<p class="hint">${esc(o.payMethod)} 결제는 카드 영수증으로 증빙되어 세금계산서·현금영수증을 따로 신청할 수 없습니다.</p>`}
+      <div class="chip-row" id="dcTypes" role="group" aria-label="신청할 서류">${chips}</div>
+      <div id="dcForm" hidden style="margin-top:16px">
+        <div class="form-inline">
+          <div class="field"><label for="dcName">담당자명<span class="req">*</span></label><input type="text" id="dcName" maxlength="20" value="${esc(b.managerName || me.name)}"></div>
+          <div class="field"><label for="dcPhone">연락처<span class="req">*</span></label><input type="tel" id="dcPhone" maxlength="13" inputmode="numeric" value="${esc(b.managerPhone || me.phone)}"></div>
+          <div class="field"><label for="dcEmail">이메일<span class="req">*</span></label><input type="email" id="dcEmail" maxlength="100" value="${esc(b.managerEmail || me.email)}"></div>
+          <div class="field"><label for="dcOrg">기관/회사명<span class="opt">(선택)</span></label><input type="text" id="dcOrg" maxlength="50" value="${esc(b.companyName || '')}"></div>
+          <div class="field" id="dcTaxRow" hidden><span class="label">사업자등록증<span class="req">*</span></span><div><button type="button" class="btn btn-sm" id="dcBizBtn">파일 선택</button><input type="file" id="dcBiz" accept="image/*,.pdf" hidden><ul class="file-chips" id="dcBizName"></ul><p class="hint">세금계산서는 ${paidOk ? '영수' : '청구'}로 발행됩니다.</p></div></div>
+          <div class="field" id="dcCashRow" hidden><span class="label">현금영수증<span class="req">*</span></span><div>
+            <div class="radio-row" role="radiogroup" aria-label="현금영수증 용도"><label><input type="radio" name="dcPurpose" value="소득공제" checked><span>소득공제 (휴대폰)</span></label><label><input type="radio" name="dcPurpose" value="지출증빙"><span>지출증빙 (사업자)</span></label></div>
+            <input type="text" id="dcCashId" maxlength="13" inputmode="numeric" placeholder="휴대폰 번호" aria-label="현금영수증 발급 번호" style="margin-top:8px" value="${esc(me.phone)}"></div></div>
+          <div class="field"><span class="label" id="dcRecvLabel">받는 방법<span class="req">*</span></span><div>
+            <div class="radio-row" role="radiogroup" aria-labelledby="dcRecvLabel">${DD.RECEIVE_METHODS.map((m, i) => `<label><input type="radio" name="dcRecv" value="${esc(m)}"${i ? '' : ' checked'}><span>${esc(m)}</span></label>`).join('')}</div>
+            <input type="text" id="dcTo" maxlength="100" aria-label="받을 곳" style="margin-top:8px" value="${esc(b.managerEmail || me.email)}"></div></div>
+          <div class="field"><label for="dcWant">발급 희망일<span class="req">*</span></label><input type="date" id="dcWant" min="${ymd(new Date())}" value="${ymd(want)}"></div>
+          <div class="field"><label for="dcReq">요청 사항<span class="opt" id="dcReqOpt">(선택)</span></label><div><textarea class="ta" id="dcReq" maxlength="${DD.REQUIREMENT_MAX}" placeholder="기관 양식·직인·수신처 등 필요한 내용을 적어 주세요."></textarea>
+            <button type="button" class="btn btn-sm" id="dcAttBtn" style="margin-top:8px">양식 파일 첨부 (선택)</button><input type="file" id="dcAtt" hidden><ul class="file-chips" id="dcAttName"></ul></div></div>
+        </div>
+      </div>`;
+    openDlg('증빙서류 발급', body, `${CLOSE_BTN}<button type="submit" class="btn btn-primary">발급 신청</button>`, () => submitDocs(o));
+    const types = () => [...document.querySelectorAll('input[name=dcType]:checked')].map(c => c.value);
+    const sync = () => {
+      const t = types();
+      $('dcForm').hidden = !t.length;
+      $('dcTaxRow').hidden = !t.includes('세금계산서');
+      $('dcCashRow').hidden = !t.includes('현금영수증');
+      $('dcReqOpt').textContent = t.includes('기타') || t.includes('납품서') ? '(필수)' : '(선택)';
+    };
+    $('dcTypes').addEventListener('change', () => { $('dcTypes').classList.remove('invalid'); sync(); });
+    const recvDefault = { '이메일': b.managerEmail || me.email, '팩스': '', '우편': o.delivery.address ? `${o.delivery.address} ${o.delivery.detail || ''}`.trim() : MD.addressText(me) || '' };
+    const recvPh = { '이메일': '받을 이메일 주소', '팩스': '받을 팩스 번호', '우편': '받을 주소' };
+    $('odDlgBody').querySelectorAll('input[name=dcRecv]').forEach(r => r.addEventListener('change', () => { $('dcTo').value = recvDefault[r.value]; $('dcTo').placeholder = recvPh[r.value]; }));
+    $('odDlgBody').querySelectorAll('input[name=dcPurpose]').forEach(r => r.addEventListener('change', () => {
+      const biz = r.value === '지출증빙'; $('dcCashId').placeholder = biz ? '사업자등록번호 (10자리)' : '휴대폰 번호'; $('dcCashId').value = biz ? (b.bizNo || '') : me.phone;
+    }));
+    const filePick = (btn, input, list, key) => {
+      $(btn).addEventListener('click', () => $(input).click());
+      $(input).addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; if (f.size > 10 * 1024 * 1024) { dlgError(`10MB 이하 파일만 첨부할 수 있습니다: ${f.name}`); return; } dcFiles[key] = f.name; $(list).innerHTML = `<li><span>${esc(f.name)}</span><button type="button" data-unfile="${key}" aria-label="${esc(f.name)} 첨부 취소">&times;</button></li>`; $(btn).classList.remove('invalid'); });
+      $(list).addEventListener('click', e => { if (!e.target.closest('[data-unfile]')) return; dcFiles[key] = ''; $(list).innerHTML = ''; });
+    };
+    filePick('dcBizBtn', 'dcBiz', 'dcBizName', 'biz');
+    filePick('dcAttBtn', 'dcAtt', 'dcAttName', 'att');
+    $('odDlgBody').querySelector('.doc-grid').addEventListener('click', e => { const bt = e.target.closest('[data-issue]'); if (bt && !bt.disabled) instantIssue(o, bt.dataset.issue, true); });
+  }
+  function submitDocs(o) {
+    const types = [...document.querySelectorAll('input[name=dcType]:checked')].map(c => c.value);
+    if (!types.length) { dlgError('발급 신청할 서류를 선택해 주세요. 표준 양식은 위의 바로 발급에서 내려받을 수 있습니다.', 'dcTypes'); return; }
+    const purpose = (document.querySelector('input[name=dcPurpose]:checked') || {}).value;
+    const cashId = $('dcCashId').value.trim();
+    if (types.includes('현금영수증')) {
+      if (purpose === '소득공제' && !validPhone(cashId)) { dlgError('현금영수증 발급용 휴대폰 번호를 정확히 입력해 주세요.', 'dcCashId'); return; }
+      if (purpose === '지출증빙' && digits(cashId).length !== 10) { dlgError('사업자등록번호 10자리를 정확히 입력해 주세요.', 'dcCashId'); return; }
+    }
+    const recv = (document.querySelector('input[name=dcRecv]:checked') || {}).value;
+    if (recv === '이메일' && !validEmail($('dcTo').value.trim())) { dlgError('받을 이메일 주소를 정확히 입력해 주세요.', 'dcTo'); return; }
+    if (recv === '팩스' && !/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test($('dcTo').value.trim())) { dlgError('받을 팩스 번호를 정확히 입력해 주세요.', 'dcTo'); return; }
+    const input = {
+      orderNo: o.orderNo, docTypes: types,
+      contact: { name: $('dcName').value, phone: $('dcPhone').value, email: $('dcEmail').value, org: $('dcOrg').value },
+      bizCert: dcFiles.biz, cashReceipt: types.includes('현금영수증') ? { purpose, idType: purpose === '지출증빙' ? '사업자등록번호' : '휴대폰', idValue: purpose === '지출증빙' ? cashId : fmtPhone(cashId) } : null,
+      requirement: $('dcReq').value, receiveBy: recv, receiveTo: $('dcTo').value, wantBy: $('dcWant').value, attachment: dcFiles.att
+    };
+    const r = DD.submitRequest(input, me.no);
+    const FIELD = { docTypes: 'dcTypes', name: 'dcName', phone: 'dcPhone', email: 'dcEmail', bizCert: 'dcBizBtn', cashId: 'dcCashId', receiveTo: 'dcTo', wantBy: 'dcWant', requirement: 'dcReq' };
+    if (!r.ok) { dlgError(r.error, FIELD[r.field]); return; }
+    dlgChanged = true;
+    dlg.close();
+    toast(`서류 발급 신청이 접수되었습니다. (신청번호 ${r.parts.map(q => q.reqNo).join(', ')})`);
+  }
+
+  // ----- 재주문: 주문 상품을 그대로 장바구니에 복사 (MemberData.addToCart → 관리자 회원 상세 > 장바구니에도 보임) -----
+  //   취소된 상품은 빼고 담음 (전부 취소된 주문은 전체). 옵션은 제작 사양(사이즈·형태·커버·코팅·페이지·후가공)을 그대로
+  function reorder(o) {
+    const live = o.items.filter(it => it.payStatus !== '취소');
+    const src = live.length ? live : o.items;
+    const items = src.map(it => {
+      const sp = it.spec || {};
+      const pages = sp.basePages ? `${sp.basePages}p${sp.addPages ? `(+${sp.addPages}p)` : ''}` : '';
+      return { title: it.name, productCategory: it.category, price: it.price ? it.price.unitPrice : Math.round(it.listPrice / it.qty),
+        option: [sp.size, sp.form, sp.cover, sp.coating, pages, sp.finishing].filter(Boolean).join(' · ') || '기본',
+        project: `${o.orderNo} 재주문`, qty: it.qty, fromOrderNo: o.orderNo };
+    });
+    if (!confirm(`이 주문의 상품 ${items.length}종을 장바구니에 담을까요?\n${items.map(c => `· ${c.title} × ${c.qty}`).join('\n')}`)) return;
+    if (!MemberData.addToCart(me.no, items)) { toast('장바구니에 담지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
+    syncCartUi();
+    toast(`장바구니에 ${items.length}종을 담았습니다. (${items.reduce((s, c) => s + c.qty, 0)}개)`);
+  }
+  // 상단 유틸 메뉴 장바구니 건수 + 첫 화면 장바구니 요약
+  function syncCartUi() {
+    const cart = (me && me.cart) || [];
+    const qty = cart.reduce((s, c) => s + (c.qty || 1), 0);
+    const u = $('utilCart'); if (u) u.textContent = cart.length;
+    const h = $('hCart'); if (h && me) h.innerHTML = `<div class="k">장바구니</div><div class="v">${cart.length}종 ${qty}개</div><div class="s">${cart.length ? `결제 예정 ${won(cart.reduce((s, c) => s + c.price * (c.qty || 1), 0))}원` : '담긴 상품이 없습니다'}</div>`;
+  }
+
+  // ----- 목록·상세의 버튼 (한 곳에서 처리) -----
+  document.addEventListener('click', e => {
+    const host = e.target.closest('[data-order]');
+    const t = e.target.closest('[data-copy], [data-pay], [data-cancel], [data-exchange], [data-addr], [data-track], [data-docs], [data-redl], [data-reorder]');
+    if (!t || !host || !ORDER_READY || !me) return;
+    const o = findMine(host.dataset.order);
+    if (!o) return;
+    if (t.dataset.copy != null) copyText(t.dataset.copy, ok => toast(ok ? `입금계좌를 복사했습니다. (${t.dataset.copy})` : `복사하지 못했습니다. 직접 입력해 주세요: ${t.dataset.copy}`));
+    else if (t.dataset.reorder != null) reorder(o);
+    else if (t.dataset.pay != null) toast(`프로토타입: ${t.dataset.pay} 결제 연동은 준비 중입니다.`);   // TODO: PG 결제창 (후결제·추가결제)
+    else if (t.dataset.cancel != null) openCancel(o, t.dataset.cancel === 'all' ? null : Number(t.dataset.cancel));
+    else if (t.dataset.exchange != null) openExchange(o);
+    else if (t.dataset.addr != null) openAddr(o);
+    else if (t.dataset.track != null) openTrack(o, t.dataset.track);
+    else if (t.dataset.docs != null) openDocs(o);
+    else if (t.dataset.redl != null) instantIssue(o, t.dataset.redl, false);   // 이미 발급한 서류 다시 받기 (발급 이력은 그대로)
+  });
+
   // ===== 시작 =====
   renderUtil();
+  syncCartUi();
   route();
   if (!me) openLogin();   // 비로그인: 로그인 모달 (닫으면 '로그인이 필요합니다' 안내)
 })();
