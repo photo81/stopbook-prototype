@@ -846,7 +846,7 @@
     isUnpaid, isPostpayOrder, isPostpay, isWaiting, addDeposit, depositsOf, isKsiMaker,
     VOUCHERS, VOUCHER_FACES, VOUCHER_STATUSES, voucherName, voucherBalance, voucherHistory, voucherMemos, addVoucherMemo,
     isRequestWaiting, isRequested, requestOutsource, requestMemoOf, saveRequestMemo,
-    saveCancel, restoreCancel, saveExtraRequest,
+    saveCancel, restoreCancel, saveExtraRequest, extraPayments,
     adminLog, memoCategories, addMemo, updateMemo, deleteMemo, addHistory, systemHistory,
     saveAddress, deleteAddress, ADDRESS_FIELDS,
     MEMO_CATEGORIES: ['주문', '결제', '배송', '취소', '불량', '기타']
@@ -1001,6 +1001,30 @@
   function saveExtraRequest(orderNo, req) {
     (EXTRAS[orderNo] || (EXTRAS[orderNo] = [])).push(req);
     try { localStorage.setItem(EXTRA_KEY, JSON.stringify(EXTRAS)); return true; } catch (e) { return false; }
+  }
+
+  // ===== 추가결제 목록 (주문관리 > 추가 결제, extra-payments.html) =====
+  //   ① 관리자가 주문 상세에서 생성한 요청(EXTRAS, 상태 결제대기) ② 샘플: 결제정보의 추가결제금액(extraPay)이 있는 주문 = 이미 결제가 끝난 추가결제(결제완료)
+  //   반환: [{ id, order, orderNo, amount, reason, method, memo, at, by, status, paidAt, sample }] 생성일시 최근 순
+  // TODO: 실서비스에서는 GET /api/admin/extra-payments?{조건}
+  const EXTRA_REASONS = ['페이지 추가', '옵션 변경', '후가공 추가', '추가 배송비', '기타'];
+  function extraPayments() {
+    const out = [];
+    ORDERS.forEach(o => {
+      (EXTRAS[o.orderNo] || []).forEach((q, i) => out.push(Object.assign({ id: `${o.orderNo}#${i}`, order: o, orderNo: o.orderNo, paidAt: '', sample: false }, q)));
+      const p = o.payment;
+      if (p && p.extraPay > 0) {
+        let s = [...`${o.orderNo}#extra`].reduce((h, c) => (h * 47 + c.charCodeAt(0)) % 233280, 17);
+        const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+        const base = new Date(`${o.orderDate}T00:00`).getTime(), today = TODAY.getTime() + DAY - 60000;
+        const at = new Date(Math.min(today, base + (1 + Math.floor(r() * 3)) * DAY + (9 + Math.floor(r() * 9)) * 3600000 + Math.floor(r() * 60) * 60000));
+        const paid = new Date(Math.min(today, at.getTime() + (2 + Math.floor(r() * 30)) * 3600000));
+        const dt = d => `${fmtDate(d)} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        out.push({ id: `${o.orderNo}#s`, order: o, orderNo: o.orderNo, amount: p.extraPay, reason: EXTRA_REASONS[Math.floor(r() * 4)], method: r() < 0.7 ? '결제 링크 발송 (문자·알림톡)' : '무통장 입금 안내',
+          memo: '', at: dt(at), by: ['김지영', '김태복', '창경훈', '최의담', '이고은'][Math.floor(r() * 5)], status: o.payStatus === '전체취소' ? '취소' : '결제완료', paidAt: o.payStatus === '전체취소' ? '' : dt(paid), sample: true });
+      }
+    });
+    return out.sort((a, b) => b.at.localeCompare(a.at));
   }
 
   // 관리자 주문취소 저장: items = { [상품 index]: { amount, reason, refund, memo, at, by } }. 반환: 저장 성공 여부

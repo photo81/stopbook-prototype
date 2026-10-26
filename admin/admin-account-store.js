@@ -12,7 +12,7 @@
   // 기본 레벨. 최고 관리자(system)는 항상 전체 메뉴 접근이며 삭제·권한 변경 불가
   const MEMBER = ['members.html', 'group-applications.html', 'withdrawn.html', 'member-types.html'];
   const MESSAGE = ['message-send.html', 'message-sms.html', 'message-alimtalk.html', 'message-email.html'];
-  const ORDER = ['orders.html', 'paid-orders.html', 'unpaid-orders.html', 'postpay-orders.html', 'prepaid-orders.html', 'canceled-orders.html'];
+  const ORDER = ['orders.html', 'paid-orders.html', 'unpaid-orders.html', 'postpay-orders.html', 'prepaid-orders.html', 'canceled-orders.html', 'extra-payments.html'];
   const PRODUCTION = ['production-orders.html', 'ordered-orders.html', 'making-orders.html', 'shipping-orders.html', 'delivered-orders.html', 'outsource-orders.html'];
   const CLAIM = ['claim-cancel.html', 'claim-exchange.html', 'claim-documents.html', 'claim-receipts.html'];
   const BOARD = ['board-all.html', 'board-admin-notice.html', 'board-inquiry-settings.html'];

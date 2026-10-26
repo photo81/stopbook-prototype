@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스탑북 관리자 - 추가 결제</title>
+<link rel="stylesheet" href="admin.css?v=20261026-6">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="logo" href="dashboard.html" title="대시보드">STOPBOOK Admin</a>
+    <ul>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">회원관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="members.html">통합 회원 관리</a></li>
+          <li><a href="group-applications.html">단체 회원 신청 관리</a></li>
+          <li><a href="withdrawn.html">탈퇴 회원 관리</a></li>
+          <li><a href="member-types.html">회원 유형 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">메시지전송관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="message-send.html">메시지 전송</a></li>
+          <li><a href="message-alimtalk.html">알림톡 발송 관리</a></li>
+          <li><a href="message-sms.html">SMS 발송 관리</a></li>
+          <li><a href="message-email.html">이메일 발송 관리</a></li>
+        </ul>
+      </li>      <li class="has-sub open">
+        <a href="#" class="menu-parent" aria-expanded="true">주문관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="orders.html">통합 주문 관리</a></li>
+          <li><a href="paid-orders.html">결제 완료 주문</a></li>
+          <li><a href="unpaid-orders.html">미입금 주문</a></li>
+          <li><a href="postpay-orders.html">후결제 주문</a></li>
+          <li><a href="prepaid-orders.html">선결제 주문</a></li>
+          <li><a href="canceled-orders.html">취소 주문</a></li>
+          <li><a href="extra-payments.html" class="active" aria-current="page">추가 결제</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">관리자계정관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="admin-levels.html">레벨 관리</a></li>
+          <li><a href="admin-accounts.html">계정 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">제작/배송관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="production-orders.html">통합 제작 관리</a></li>
+          <li><a href="ordered-orders.html">주문 완료</a></li>
+          <li><a href="making-orders.html">제작 중</a></li>
+          <li><a href="shipping-orders.html">배송 중</a></li>
+          <li><a href="delivered-orders.html">배송 완료</a></li>
+          <li><a href="outsource-orders.html">외주 제작</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">클레임관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="claim-cancel.html">취소 요청 관리</a></li>
+          <li><a href="claim-exchange.html">교환 반품 관리</a></li>
+          <li><a href="claim-documents.html">서류 발급 관리</a></li>
+          <li><a href="claim-receipts.html">계산서 영수증 발급 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">게시판관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="board-all.html">게시판 통합 관리</a></li>
+          <li><a href="board-admin-notice.html">관리자 공지</a></li>
+          <li><a href="board-inquiry-settings.html">1:1 문의 설정</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">게시글관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="board-notice.html">공지사항</a></li>
+          <li><a href="board-inquiry.html">1:1 문의</a></li>
+          <li><a href="board-faq.html">FAQ</a></li>
+          <li><a href="board-review.html">이용후기</a></li>
+          <li><a href="board-partner.html">제휴문의</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">혜택관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="mileage-types.html">마일리지 유형 관리</a></li>
+        </ul>
+      </li>
+<li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">혜택내역<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="mileage.html">마일리지 내역</a></li>
+        </ul>
+      </li>    </ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="breadcrumb">홈 &gt; 주문관리 &gt; <b>추가 결제</b></div>
+      <div><span class="proto-ver" data-proto-version>프로토타입 v2.75 (2026-10-13)</span> 관리자님 | <a href="#">로그아웃</a></div>
+    </header>
+
+    <main class="content">
+      <h1>추가 결제 <span class="page-desc">주문 상세에서 생성한 추가 결제(페이지 추가·옵션 변경·추가 배송비 등)를 한 곳에서 확인합니다.</span></h1>
+
+      <!-- 상태 탭: 전체 / 결제대기 / 결제완료 / 취소 (검색 조건 기준 건수) -->
+      <div class="tabs" role="tablist" id="stTabs"></div>
+
+      <form class="panel" id="searchForm" novalidate>
+        <div class="search-row">
+          <div class="search-grid order-search">
+            <div class="field f-keyword">
+              <label for="sKeyType">검색어</label>
+              <select id="sKeyType" style="flex:0 0 96px">
+                <option value="all">전체</option><option value="orderNo">주문번호</option><option value="name">주문자명</option><option value="userId">아이디</option><option value="reason">사유</option><option value="memo">비고</option><option value="by">생성자</option>
+              </select>
+              <input type="text" id="sKeyword" placeholder="검색어 입력">
+            </div>
+            <div class="field f-period">
+              <label for="sDateType">기간</label>
+              <select id="sDateType" style="flex:0 0 96px"><option value="at">생성일</option><option value="paidAt">결제일</option></select>
+              <div class="range"><input type="date" id="sFrom" aria-label="기간 시작"> ~ <input type="date" id="sTo" aria-label="기간 종료"></div>
+              <div class="quick-range" role="group" aria-label="기간 빠른 선택">
+                <button type="button" class="btn btn-xs" data-days="0">오늘</button>
+                <button type="button" class="btn btn-xs" data-days="7">7일</button>
+                <button type="button" class="btn btn-xs" data-days="30">1개월</button>
+                <button type="button" class="btn btn-xs" data-days="90">3개월</button>
+                <button type="button" class="btn btn-xs btn-adjust" data-days="all">전체</button>
+              </div>
+            </div>
+            <div class="field f-status">
+              <label for="sMethod">결제 방법</label>
+              <select id="sMethod"><option value="">전체</option><option>결제 링크 발송 (문자·알림톡)</option><option>무통장 입금 안내</option><option>관리자 직접 결제 처리</option></select>
+            </div>
+          </div>
+          <div class="search-actions">
+            <button type="submit" class="btn btn-primary">검색</button>
+            <button type="button" class="btn" id="btnReset">초기화</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- 합계 (탭과 상관없이 검색 조건 기준) -->
+      <div class="kpi-row" id="summary"></div>
+
+      <section class="panel">
+        <div class="list-head">
+          <div class="count" id="listGuide"></div>
+        </div>
+        <div class="table-wrap">
+          <table class="ml-table">
+            <colgroup><col style="width:136px"><col style="width:140px"><col style="width:90px"><col style="width:100px"><col style="width:110px"><col style="width:104px"><col style="width:190px"><col style="width:84px"><col style="width:136px"><col style="width:76px"><col></colgroup>
+            <thead><tr><th>생성일시</th><th>주문번호</th><th>주문자명</th><th>아이디</th><th>사유</th><th class="num">금액</th><th>결제 방법</th><th>상태</th><th>결제일시</th><th>생성자</th><th>비고</th></tr></thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+        <p class="readonly" style="margin:10px 0 0">추가 결제는 주문 상세 &gt; 결제정보 &gt; [+ 추가결제 생성]에서 만듭니다. 생성하면 '결제대기'로 등록되고, 고객 결제가 끝나면 총 결제금액에 반영됩니다. 주문번호를 누르면 주문 상세가 열립니다.</p>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="board-store.js?v=20261026-5"></script>
+<script src="member-type-store.js?v=20261026-6"></script>
+<script src="feedback.js?v=20261026-1"></script>
+<script src="member-data.js?v=20261026-7"></script>
+<script src="order-data.js?v=20261026-2"></script>
+<script src="list-tools.js?v=20261026-1"></script>
+<script>
+(function () {
+  'use strict';
+  // 추가 결제 (주문관리 > 추가 결제)
+  //   주문 상세 > 결제정보에서 관리자가 생성한 추가결제 요청 + 샘플(이미 결제가 끝난 추가결제)을 한 목록으로 (OrderData.extraPayments)
+  //   상태 탭(전체·결제대기·결제완료·취소) · 검색(검색어·기간(생성일/결제일)·결제 방법) · 합계 · N개씩 · 엑셀
+  // TODO: 실서비스에서는 GET /api/admin/extra-payments?{조건}
+  const { esc, initSidebar, listToday } = AdminUtil;
+  const $ = id => document.getElementById(id);
+  const won = n => `${Number(n || 0).toLocaleString()}원`;
+  const fmtDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  initSidebar();
+  const ALL = OrderData.extraPayments();
+  const STATUS_CLASS = { '결제대기': 'ps-입금대기', '결제완료': 'ps-결제완료', '취소': 'ps-전체취소' };
+
+  // 기간 빠른 선택 (기본 전체 — 추가결제는 건수가 많지 않아 전체를 먼저 보여 줌)
+  const quick = () => $('searchForm').querySelectorAll('[data-days]');
+  $('searchForm').addEventListener('click', e => {
+    const b = e.target.closest('[data-days]'); if (!b) return;
+    if (b.dataset.days === 'all') { $('sFrom').value = ''; $('sTo').value = ''; }
+    else { const t = listToday(); $('sFrom').value = fmtDate(new Date(t.getFullYear(), t.getMonth(), t.getDate() - Number(b.dataset.days))); $('sTo').value = fmtDate(t); }
+    quick().forEach(x => x.classList.toggle('btn-adjust', x === b));
+  });
+  ['sFrom', 'sTo'].forEach(id => $(id).addEventListener('input', () => quick().forEach(x => x.classList.remove('btn-adjust'))));
+
+  const TABS = ['전체', '결제대기', '결제완료', '취소'];
+  let tab = '전체', search = null, rows = [];
+  function readSearch() {
+    const s = { keyType: $('sKeyType').value, kw: $('sKeyword').value.trim().toLowerCase(), dateType: $('sDateType').value, from: $('sFrom').value, to: $('sTo').value, method: $('sMethod').value };
+    if (s.from && s.to && s.from > s.to) { AdminUtil.toast('기간 시작일이 종료일보다 늦습니다.'); return null; }
+    return s;
+  }
+  function matches(x) {
+    const s = search, day = String(x[s.dateType] || '').slice(0, 10);
+    const fields = { orderNo: x.orderNo, name: x.order.name, userId: x.order.userId, reason: x.reason, memo: x.memo, by: x.by };
+    if ((s.from || s.to) && !day) return false;   // 결제일 기준인데 아직 결제 전이면 제외
+    return (!s.from || day >= s.from) && (!s.to || day <= s.to) && (!s.method || x.method === s.method) &&
+      (!s.kw || (s.keyType === 'all' ? Object.values(fields) : [fields[s.keyType]]).some(v => String(v || '').toLowerCase().includes(s.kw)));
+  }
+  const tools = ListTools.create({ section: $('listBody').closest('.panel'), onChange: () => render(),
+    units: [{ label: '추가결제 단위', desc: '추가결제 1건 = 1행', file: '추가결제',
+      rows: () => [['생성일시', '주문번호', '주문자명', '아이디', '사유', '금액', '결제 방법', '상태', '결제일시', '생성자', '비고'],
+        ...rows.map(x => [x.at, x.orderNo, x.order.name, x.order.userId, x.reason, x.amount, x.method, x.status, x.paidAt || '', x.by, x.memo || ''])] }] });
+  let lastKey = '';
+  function render() {
+    const base = ALL.filter(matches);
+    const cnt = t => (t === '전체' ? base.length : base.filter(x => x.status === t).length);
+    $('stTabs').innerHTML = TABS.map(t => `<button type="button" role="tab" class="tab ${t === tab ? 'active' : ''}" aria-selected="${t === tab}" data-tab="${t}">${t} <span class="tab-count">${cnt(t).toLocaleString()}</span></button>`).join('');
+    rows = base.filter(x => tab === '전체' || x.status === tab);
+    const key = tab + JSON.stringify(search); if (key !== lastKey) { tools.first(); lastKey = key; }
+    const sum = l => l.reduce((t, x) => t + x.amount, 0);
+    const by = st => base.filter(x => x.status === st);
+    $('summary').innerHTML = [
+      ['전체', won(sum(base)), `${base.length.toLocaleString()}건`],
+      ['결제대기', won(sum(by('결제대기'))), `${by('결제대기').length.toLocaleString()}건 · 고객 결제 전`],
+      ['결제완료', won(sum(by('결제완료'))), `${by('결제완료').length.toLocaleString()}건 · 총 결제금액에 반영`],
+      ['취소', won(sum(by('취소'))), `${by('취소').length.toLocaleString()}건`]
+    ].map(([l, v, s]) => `<div class="kpi"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+    $('listGuide').innerHTML = `${search.from || search.to ? `${search.dateType === 'paidAt' ? '결제일' : '생성일'} ${search.from || '처음'} ~ ${search.to || '오늘'} · ` : ''}<b>${rows.length.toLocaleString()}</b>건`;
+    $('listBody').innerHTML = tools.page(rows).map(x => `<tr>
+        <td>${esc(x.at)}</td>
+        <td><a class="name-link mono" href="order-detail.html?orderNo=${encodeURIComponent(x.orderNo)}" target="_blank" title="주문 상세 열기">${esc(x.orderNo)}</a></td>
+        <td>${esc(x.order.name)}</td><td class="mono">${esc(x.order.userId)}</td>
+        <td>${esc(x.reason)}</td><td class="num"><b>${won(x.amount)}</b></td>
+        <td title="${esc(x.method)}">${esc(x.method)}</td>
+        <td><span class="badge ${STATUS_CLASS[x.status] || ''}">${esc(x.status)}</span></td>
+        <td>${x.paidAt ? esc(x.paidAt) : '<span class="muted">-</span>'}</td>
+        <td>${esc(x.by || '-')}</td>
+        <td class="left" title="${esc(x.memo || '')}">${x.memo ? esc(x.memo) : '<span class="muted">-</span>'}</td>
+      </tr>`).join('') || '<tr><td colspan="11" class="empty">조건에 맞는 추가 결제가 없습니다.</td></tr>';
+  }
+  $('stTabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } });
+  $('searchForm').addEventListener('submit', e => { e.preventDefault(); const s = readSearch(); if (s) { search = s; render(); } });
+  $('btnReset').addEventListener('click', () => { $('searchForm').reset(); quick().forEach(x => x.classList.toggle('btn-adjust', x.dataset.days === 'all')); search = readSearch(); render(); });
+  search = readSearch();
+  render();
+})();
+</script>
+</body>
+</html>
