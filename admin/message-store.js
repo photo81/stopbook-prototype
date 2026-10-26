@@ -87,7 +87,8 @@
   const resetTemplates = channel => { try { localStorage.removeItem(TEMPLATE_KEY[channel]); return true; } catch (e) { return false; } };
 
   // ===== 발송 내역 =====
-  // { id, at, channel, templateId, templateName, count, success, fail, reserveAt, by, sample(첫 수신자 본문) }
+  // { id, at, channel, templateId, templateName, count, success, fail, reserveAt, by, sample(첫 수신자 본문), recipients? }
+  //   recipients: [{ memberNo, to, ok }] — 회원에게 보낸 건은 회원별로 남겨 회원 상세 > 이용 정보 > 메시지 전송 이력에 보임 (직접 입력 수신자는 memberNo 없음)
   const logs = channel => (read(LOG_KEY) || []).filter(l => !channel || l.channel === channel).sort((a, b) => b.at.localeCompare(a.at));
   function addLog(entry) {
     const list = read(LOG_KEY) || [];
@@ -95,5 +96,38 @@
     return write(LOG_KEY, list);
   }
 
-  window.MessageStore = { CHANNELS, AUTO_VARS, varKeys, manualKeys, fill, smsBytes, smsKind, SMS_MAX, templates, saveTemplate, deleteTemplate, resetTemplates, logs, addLog, nowText };
+  // ===== 회원별 메시지 전송 이력 (관리자 회원 상세 > 이용 정보) =====
+  //   실제 기록: 발송 내역 중 recipients에 그 회원이 있는 건 (메시지 전송 화면·쇼핑몰 자동 발송)
+  //   샘플 기록: 회원 데이터(가입일·주문·문의·수신 동의)로 만든 자동 발송 이력 — 가입 환영(이메일) · 주문 접수/배송 시작(알림톡) · 문의 답변(알림톡) · 등급 안내(이메일, 매월 1일) · 이벤트(SMS, 광고, 수신 동의 회원만)
+  //   반환: [{ at, channel, templateName, ad, to, ok, text, by, sample }] 최근 순
+  // TODO: 실서비스에서는 GET /api/admin/members/{no}/messages (발송 대행사 결과 포함)
+  const pad2 = n => String(n).padStart(2, '0');
+  const dayText = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  function sampleLogsOf(m) {
+    if (!m || m.withdrawn) return [];
+    let s = (m.no * 48271 + 19) % 233280;
+    const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    const tm = () => `${pad2(9 + Math.floor(r() * 10))}:${pad2(Math.floor(r() * 60))}:${pad2(Math.floor(r() * 60))}`;
+    const today = dayText(new Date());
+    const out = [];
+    const add = (day, channel, templateName, text, ad) => { if (day && day <= today) out.push({ at: `${day} ${tm()}`, channel, templateName, ad: !!ad, to: CHANNELS[channel].to(m), ok: true, text, by: '시스템', sample: true }); };
+    add(m.joinDate, 'email', '가입 환영', `[스탑북] ${m.name}님, 가입을 환영합니다`);
+    (m.orders || []).filter(o => o.orderNo && o.payStatus !== '전체취소').forEach(o => {
+      add(o.at, 'alimtalk', '주문 접수 안내', `${m.name}님, 주문이 접수되었습니다. 주문번호 ${o.orderNo}`);
+      if (/^배송/.test(o.status || '')) { const d = new Date(o.at); d.setDate(d.getDate() + 3); add(dayText(d), 'alimtalk', '배송 시작 안내', `${m.name}님, 주문하신 상품이 출고되었습니다. (${o.orderNo})`); }
+    });
+    (m.inquiries || []).filter(q => q.answeredAt).forEach(q => add(q.answeredAt.slice(0, 10), 'alimtalk', '1:1 문의 답변 안내', `${m.name}님, 문의하신 '${q.title}'에 답변이 등록되었습니다.`));
+    const now = new Date();
+    [1, 2].forEach(k => { const d = new Date(now.getFullYear(), now.getMonth() - k + 1, 1); if (dayText(d) >= m.joinDate) add(dayText(d), 'email', '회원 등급 안내', `[스탑북] ${m.name}님의 이번 달 회원 등급은 ${m.grade}입니다.`); });
+    if (m.marketingSms === 'Y') [20, 55].forEach(back => { const d = new Date(now.getTime() - back * 86400000); if (dayText(d) >= m.joinDate) add(dayText(d), 'sms', '이벤트 안내 (광고)', `(광고) ${m.name}님, 스탑북 포토북 제작 이벤트 진행 중!`, true); });
+    return out;
+  }
+  function memberLogs(m) {
+    if (!m) return [];
+    const real = (read(LOG_KEY) || []).flatMap(l => (l.recipients || []).filter(x => x.memberNo === m.no).map(x => ({
+      at: l.at, channel: l.channel, templateName: l.templateName, ad: !!l.ad, to: x.to || '', ok: x.ok !== false, text: l.sample || '', by: l.by || '', sample: false, reserveAt: l.reserveAt || '' })));
+    return real.concat(m.withdrawn ? [] : sampleLogsOf(m)).sort((a, b) => b.at.localeCompare(a.at));
+  }
+
+  window.MessageStore = { CHANNELS, AUTO_VARS, varKeys, manualKeys, fill, smsBytes, smsKind, SMS_MAX, templates, saveTemplate, deleteTemplate, resetTemplates, logs, addLog, memberLogs, nowText };
 })();

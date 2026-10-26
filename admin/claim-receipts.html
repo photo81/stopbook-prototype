@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 계산서 영수증 발급 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261026-4">
+<link rel="stylesheet" href="admin.css?v=20261026-6">
 </head>
 <body>
 <div class="layout">
@@ -42,6 +42,7 @@
       <li class="has-sub">
         <a href="#" class="menu-parent" aria-expanded="false">관리자계정관리<span class="chev">▼</span></a>
         <ul class="submenu">
+          <li><a href="admin-levels.html">레벨 관리</a></li>
           <li><a href="admin-accounts.html">계정 관리</a></li>
         </ul>
       </li>
@@ -80,6 +81,7 @@
           <li><a href="board-inquiry.html">1:1 문의</a></li>
           <li><a href="board-faq.html">FAQ</a></li>
           <li><a href="board-review.html">이용후기</a></li>
+          <li><a href="board-partner.html">제휴문의</a></li>
         </ul>
       </li>
       <li class="has-sub">
@@ -175,11 +177,11 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261026-1"></script>
-<script src="member-type-store.js?v=20261026-1"></script>
-<script src="member-data.js?v=20261026-1"></script>
+<script src="board-store.js?v=20261026-5"></script>
+<script src="member-type-store.js?v=20261026-6"></script>
+<script src="member-data.js?v=20261026-7"></script>
 <script src="order-data.js?v=20261026-1"></script>
-<script src="document-data.js?v=20261026-4"></script>
+<script src="document-data.js?v=20261026-5"></script>
 <script src="list-tools.js?v=20261026-1"></script>
 <script src="feedback.js?v=20261026-1"></script>
 <script>
@@ -209,7 +211,7 @@
     const c = q.contact || {};
     return {
       key: q.reqNo, reqNo: q.reqNo, at: q.at, receipts, others, pairNo: q.pairNo || '', purpose: q.cashReceipt ? q.cashReceipt.purpose : '',
-      channel: q.manual ? `관리자 등록 (${q.channel})` : '고객 신청',
+      channel: q.manual ? `관리자 등록 (${q.channel})` : q.web ? '고객 신청 (마이페이지)' : '고객 신청',
       orderNo: q.orderNo || '', name: a.name, email: a.email, org: c.org || a.company || '',
       payMethod: o ? o.payMethod : '', payStatus: o ? o.payStatus : '',
       status: q.status, issuedAt: q.processedAt || '', processedBy: q.processedBy || '', rejectReason: q.rejectReason || '',

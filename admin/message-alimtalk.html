@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 알림톡 발송 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261026-4">
+<link rel="stylesheet" href="admin.css?v=20261026-6">
 </head>
 <body>
 <div class="layout">
@@ -32,6 +32,7 @@
       <li class="has-sub">
         <a href="#" class="menu-parent" aria-expanded="false">관리자계정관리<span class="chev">▼</span></a>
         <ul class="submenu">
+          <li><a href="admin-levels.html">레벨 관리</a></li>
           <li><a href="admin-accounts.html">계정 관리</a></li>
         </ul>
       </li>
@@ -81,6 +82,7 @@
           <li><a href="board-inquiry.html">1:1 문의</a></li>
           <li><a href="board-faq.html">FAQ</a></li>
           <li><a href="board-review.html">이용후기</a></li>
+          <li><a href="board-partner.html">제휴문의</a></li>
         </ul>
       </li>
       <li class="has-sub">
@@ -143,11 +145,11 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261026-1"></script>
-<script src="member-type-store.js?v=20261026-1"></script>
+<script src="board-store.js?v=20261026-5"></script>
+<script src="member-type-store.js?v=20261026-6"></script>
 <script src="alimtalk.js?v=20261026-1"></script>
-<script src="message-store.js?v=20261026-1"></script>
-<script src="message-admin.js?v=20261026-1"></script>
+<script src="message-store.js?v=20261026-2"></script>
+<script src="message-admin.js?v=20261026-5"></script>
 <script src="feedback.js?v=20261026-1"></script>
 <script>MessageAdmin.init({ channel: 'alimtalk' });</script>
 </body>

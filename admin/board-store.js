@@ -11,7 +11,7 @@
 // TODO: 실서비스에서는 GET/POST/PUT/DELETE /api/admin/boards, /api/admin/boards/{code}/posts
 (function () {
   'use strict';
-  const KEY = 'stopbook.boards.v2';   // v1: 샘플 11개(가이드·건의사항·보도자료 포함) → v2: 운영 프로토타입 목록 5개
+  const KEY = 'stopbook.boards.v3';   // v1: 샘플 11개(가이드·건의사항·보도자료 포함) → v2: 운영 프로토타입 목록 5개 → v3: 제휴문의를 전용 화면(board-partner.html)이 있는 기본 게시판으로
   const pad = n => String(n).padStart(2, '0');
   const nowText = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 
@@ -29,10 +29,10 @@
   const DEFAULTS = [
     B(1, 'notice', '기본형', '공지사항', ['공지사항', '이벤트'], 75, 0, { system: true, href: 'board-notice.html' }),
     B(2, 'qna', '1:1 문의형', '1:1 문의', [], 0, 0, { system: true, href: 'board-inquiry.html', live: 'inquiry', link: '상품', updatedAt: '2026-10-12 15:37', updatedBy: '관리자' }),
-    B(3, 'faq', '기본형', 'FAQ', ['주문/결제', '배송', '편집·제작', '회원'], 42, 0, { system: true, href: 'board-faq.html' }),
+    B(3, 'faq', '기본형', 'FAQ', ['회원/로그인', '상품', '편집/저장/보관함', '장바구니/주문/결제', '제작/배송/교환(환불)', '이벤트', '기타'], 32, 0, { system: true, href: 'board-faq.html', live: 'faq' }),   // 구분·질문은 faq-store.js
     B(4, 'product_review', '상품리뷰', '이용후기', [], 128, 3, { system: true, href: 'board-review.html' }),
-    // 관리자가 등록한 게시판: 제휴문의 (1:1 문의형, 누구나 읽고 쓸 수 있음)
-    B(5, 'join', '1:1 문의형', '제휴문의', ['제휴문의', '기타문의'], 0, 0, { link: '상품', read: '전체', write: '전체', createdAt: '2026-10-12 15:36', updatedAt: '2026-10-12 15:36', updatedBy: '관리자' })
+    // 제휴문의: 쇼핑몰 고객센터 > 제휴문의 접수(비회원 포함) → 전용 처리 화면 board-partner.html (partner-store.js). 게시물 수·신규 = 실제 접수 데이터
+    B(5, 'join', '1:1 문의형', '제휴문의', [], 0, 0, { system: true, href: 'board-partner.html', live: 'partner', link: '연동 없음', read: '관리자', write: '전체', createdAt: '2026-10-12 15:36', updatedAt: '2026-10-26 10:00', updatedBy: '관리자' })
   ];
 
   let boards;
@@ -120,7 +120,11 @@
   // 게시물 수 (1:1 문의는 실제 문의 데이터: 전체 / 신규 = 담당자 미지정 대기). 그 외 = 샘플 + 관리자가 쓴 글
   const countsOf = b => (b.live === 'inquiry' && window.InquiryData
     ? { posts: InquiryData.inquiries.length, fresh: InquiryData.newCount() }
-    : { posts: b.posts + (saved[b.code] || []).filter(p => !p.sampleOf).length - (saved[b.code + '#deleted'] || []).length, fresh: b.fresh });
+    : b.live === 'partner' && window.PartnerStore
+      ? { posts: PartnerStore.list().length, fresh: PartnerStore.pendingCount() }
+      : b.live === 'faq' && window.FaqStore
+        ? { posts: FaqStore.total(), fresh: 0 }
+        : { posts: b.posts + (saved[b.code] || []).filter(p => !p.sampleOf).length - (saved[b.code + '#deleted'] || []).length, fresh: b.fresh });
   const list = () => boards.map(b => Object.assign({}, b, { heads: b.heads.slice() }, countsOf(b)));
   const find = no => list().find(b => b.no === Number(no)) || null;
   const clean = s => String(s || '').trim().replace(/\s+/g, ' ');

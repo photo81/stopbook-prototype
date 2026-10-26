@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스탑북 관리자 - 레벨 관리</title>
+<link rel="stylesheet" href="admin.css?v=20261026-6">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="logo" href="dashboard.html" title="대시보드">STOPBOOK Admin</a>
+    <ul>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">회원관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="members.html">통합 회원 관리</a></li>
+          <li><a href="group-applications.html">단체 회원 신청 관리</a></li>
+          <li><a href="withdrawn.html">탈퇴 회원 관리</a></li>
+          <li><a href="member-types.html">회원 유형 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">메시지전송관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="message-send.html">메시지 전송</a></li>
+          <li><a href="message-alimtalk.html">알림톡 발송 관리</a></li>
+          <li><a href="message-sms.html">SMS 발송 관리</a></li>
+          <li><a href="message-email.html">이메일 발송 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub open">
+        <a href="#" class="menu-parent" aria-expanded="true">관리자계정관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="admin-levels.html" class="active" aria-current="page">레벨 관리</a></li>
+          <li><a href="admin-accounts.html">계정 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">주문관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="orders.html">통합 주문 관리</a></li>
+          <li><a href="paid-orders.html">결제 완료 주문</a></li>
+          <li><a href="unpaid-orders.html">미입금 주문</a></li>
+          <li><a href="postpay-orders.html">후결제 주문</a></li>
+          <li><a href="prepaid-orders.html">선결제 주문</a></li>
+          <li><a href="canceled-orders.html">취소 주문</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">제작/배송관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="production-orders.html">통합 제작 관리</a></li>
+          <li><a href="ordered-orders.html">주문 완료</a></li>
+          <li><a href="making-orders.html">제작 중</a></li>
+          <li><a href="shipping-orders.html">배송 중</a></li>
+          <li><a href="delivered-orders.html">배송 완료</a></li>
+          <li><a href="outsource-orders.html">외주 제작</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">클레임관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="claim-cancel.html">취소 요청 관리</a></li>
+          <li><a href="claim-exchange.html">교환 반품 관리</a></li>
+          <li><a href="claim-documents.html">서류 발급 관리</a></li>
+          <li><a href="claim-receipts.html">계산서 영수증 발급 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">게시판관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="board-all.html">게시판 통합 관리</a></li>
+          <li><a href="board-admin-notice.html">관리자 공지</a></li>
+          <li><a href="board-inquiry-settings.html">1:1 문의 설정</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">게시글관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="board-notice.html">공지사항</a></li>
+          <li><a href="board-inquiry.html">1:1 문의</a></li>
+          <li><a href="board-faq.html">FAQ</a></li>
+          <li><a href="board-review.html">이용후기</a></li>
+          <li><a href="board-partner.html">제휴문의</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">혜택관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="mileage-types.html">마일리지 유형 관리</a></li>
+        </ul>
+      </li>
+<li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">혜택내역<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="mileage.html">마일리지 내역</a></li>
+        </ul>
+      </li>
+    </ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="breadcrumb">홈 &gt; 관리자계정관리 &gt; <b>레벨 관리</b></div>
+      <div><span class="proto-ver" data-proto-version>프로토타입 v2.76 (2026-10-15)</span> 관리자님 | <a href="#">로그아웃</a></div>
+    </header>
+
+    <main class="content">
+      <h1>레벨 관리 <span class="page-desc">관리자 레벨별 접근 가능한 메뉴를 지정합니다. 계정은 계정 관리에서 등록합니다.</span></h1>
+
+      <!-- 아직 적용 전 안내: 구글 로그인 연동 전이라 레벨 권한·사용 안 함이 실제 화면 접근에 쓰이지 않음 -->
+      <div class="status-banner st-대기" style="margin-bottom:12px"><b>적용 전 설정</b> 구글 로그인 연동 전이라 여기서 정한 레벨 권한과 '사용 안 함'은 아직 관리자 화면 접근에 적용되지 않습니다.
+        <div class="banner-sub">지금은 누구나 모든 관리자 메뉴를 볼 수 있습니다. 사내 구글 계정 로그인을 연동하면 등록된 사용 중 계정만 로그인하고, 지정한 레벨의 메뉴만 열리게 됩니다.</div></div>
+
+      <section class="panel">
+        <div class="list-head">
+          <div class="count"><b>관리자 레벨</b> · 수정 버튼(또는 레벨명)을 누르면 이름과 접근 메뉴를 수정할 수 있습니다. 계정이 지정된 레벨은 삭제할 수 없습니다.</div>
+          <div class="right">
+            <button type="button" class="btn btn-primary" id="btnAddLevel">+ 레벨 추가</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>레벨명</th><th style="text-align:right">접근 메뉴</th><th>접근 카테고리</th><th style="text-align:right">계정</th><th class="col-desc">설명</th><th>관리</th></tr>
+            </thead>
+            <tbody id="levelBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="list-head">
+          <div class="count"><b>레벨별 접근 메뉴 한눈에 보기</b> · 대시보드는 모든 레벨이 볼 수 있고, 상세 화면은 목록 화면의 권한을 따릅니다.</div>
+        </div>
+        <div class="table-wrap">
+          <table class="perm-matrix">
+            <thead><tr id="matrixHead"></tr></thead>
+            <tbody id="matrixBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="list-head"><div class="count"><b>레벨 변경 이력</b> · 레벨 추가·권한 변경·삭제 기록 (삭제한 레벨 포함, 최근 50건)</div></div>
+        <div class="table-wrap history-wrap">
+          <table class="history-table">
+            <thead><tr><th style="width:130px">일시</th><th style="width:130px">레벨</th><th>내용</th><th style="width:170px">처리자</th></tr></thead>
+            <tbody id="auditLevel"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- 레벨 추가/설정 모달 -->
+<div class="modal-bg" id="levelModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="levelTitle">
+    <div class="modal-header">
+      <h2 id="levelTitle"></h2>
+      <button type="button" class="close" data-close aria-label="닫기">&times;</button>
+    </div>
+    <form id="levelForm" class="modal-body" novalidate>
+      <div class="section-title">기본 정보</div>
+      <table class="form-table">
+        <tr><th>레벨명 *</th><td>
+          <input type="text" id="lvName" maxlength="20" placeholder="예) CS 담당">
+          <div class="err" id="lvNameErr"></div>
+        </td></tr>
+        <tr><th>설명</th><td><textarea id="lvDesc" maxlength="300" placeholder="이 레벨이 담당하는 업무를 적어 주세요."></textarea></td></tr>
+      </table>
+
+      <div class="section-title">접근 메뉴</div>
+      <div class="perm-tools">
+        <span class="perm-sum" id="permSum"></span>
+        <button type="button" class="btn btn-sm" id="btnPermAll">전체 선택</button>
+        <button type="button" class="btn btn-sm" id="btnPermNone">전체 해제</button>
+      </div>
+      <div class="readonly at-note" id="permLocked" style="margin:0 0 8px" hidden>최고 관리자 레벨은 항상 모든 메뉴(이후 추가되는 메뉴 포함)에 접근하며 변경할 수 없습니다.</div>
+      <div class="perm-tree" id="permTree"></div>
+      <label class="readonly" id="lvNewBoardsRow" style="display:block;margin-top:8px"><input type="checkbox" id="lvNewBoards"> 게시판 통합 관리에서 새로 만드는 게시판도 자동으로 접근 허용</label>
+      <div class="err" id="permErr"></div>
+
+      <div id="lvHistoryBox">
+        <div class="section-title">변경 이력</div>
+        <div class="table-wrap history-wrap">
+          <table class="history-table">
+            <thead><tr><th>일시</th><th>내용</th><th>처리자</th></tr></thead>
+            <tbody id="lvHistory"></tbody>
+          </table>
+        </div>
+      </div>
+    </form>
+    <div class="modal-footer">
+      <button type="button" class="btn" data-close>취소</button>
+      <button type="submit" form="levelForm" class="btn btn-primary" id="lvSubmit"></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="board-store.js?v=20261026-5"></script>
+<script src="member-type-store.js?v=20261026-6"></script>
+<script src="feedback.js?v=20261026-1"></script>
+<script src="admin-account-store.js?v=20261026-7"></script>
+<script src="admin-account-ui.js?v=20261026-6"></script>
+<script>
+(function () {
+  'use strict';
+  const { esc, toast, initSidebar } = AdminUtil;
+  const S = AdminAccountStore;
+  const $ = id => document.getElementById(id);
+  // 저장소 + 두 화면(레벨·계정 관리) 공통 도우미. 저장하면 render()를 다시 부름
+  const { d, catalog, TOTAL, levelBy, off, log, auditRows, historyRows, persist, setErr, catSummary, bindModal } = AdminAccountUI.create(render);
+
+  // ===== 레벨 목록 · 한눈에 보기 · 변경 이력 =====
+  function render() {
+    $('levelBody').innerHTML = d.levels.map(lv => {
+      const n = S.levelMenus(lv, catalog).length;
+      const users = d.accounts.filter(a => a.level === lv.code).length;
+      const chips = lv.all
+        ? '<span class="chip-sm">전체 메뉴</span>'
+        : catSummary(lv).filter(x => x.k).map(x => `<span class="chip-sm">${esc(x.cat)}${x.k < x.m ? ` <span class="readonly">${x.k}/${x.m}</span>` : ''}</span>`).join('') || off('없음');
+      return `<tr>
+        <td><button type="button" class="link-btn" data-edit-level="${esc(lv.code)}">${esc(lv.name)}</button>${lv.system ? ' <span class="badge">기본</span>' : ''}</td>
+        <td class="num">${n} / ${TOTAL}</td>
+        <td><div class="perm-chips">${chips}</div></td>
+        <td class="num">${users ? `${users}명` : off('0명')}</td>
+        <td class="left cat-desc" title="${esc(lv.desc)}">${esc(lv.desc)}</td>
+        <td class="keep"><button type="button" class="btn btn-sm" data-edit-level="${esc(lv.code)}">수정</button>
+          ${lv.system ? '<button type="button" class="btn btn-sm btn-danger" disabled title="기본 레벨은 삭제할 수 없습니다.">삭제</button>' : `<button type="button" class="btn btn-sm btn-danger" data-del-level="${esc(lv.code)}">삭제</button>`}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="6" class="empty">등록된 레벨이 없습니다.</td></tr>';
+
+    // 한눈에 보기: 메뉴 × 레벨
+    $('matrixHead').innerHTML = '<th>대메뉴</th><th>카테고리</th><th>메뉴</th>' + d.levels.map(lv => `<th class="lv">${esc(lv.name)}</th>`).join('');
+    const menusOf = d.levels.map(lv => S.levelMenus(lv, catalog));
+    $('matrixBody').innerHTML = catalog.flatMap(s => s.cats.flatMap((c, ci) => c.items.map((it, ii) => `<tr>
+        <td class="cat">${ci === 0 && ii === 0 ? esc(s.label) : ''}</td>
+        <td class="cat">${ii === 0 ? esc(c.cat) : ''}</td>
+        <td>${esc(it.label)}</td>
+        ${menusOf.map(m => `<td class="lv">${m.includes(it.href) ? '<span class="on" aria-label="접근">●</span>' : '<span class="off" aria-label="접근 불가">–</span>'}</td>`).join('')}
+      </tr>`))).join('');
+    $('auditLevel').innerHTML = auditRows('레벨');
+  }
+
+  $('levelBody').addEventListener('click', e => {
+    const ed = e.target.closest('[data-edit-level]');
+    if (ed) return openLevel(ed.dataset.editLevel);
+    const del = e.target.closest('[data-del-level]');
+    if (del) return deleteLevel(del.dataset.delLevel);
+  });
+
+  function deleteLevel(code) {
+    const lv = levelBy(code);
+    if (!lv || lv.system) return;
+    const users = d.accounts.filter(a => a.level === code).length;
+    if (users) { toast(`'${lv.name}' 레벨에 지정된 계정 ${users}개를 먼저 다른 레벨로 옮겨 주세요.`); return; }
+    if (!confirm(`'${lv.name}' 레벨을 삭제하시겠습니까?\n삭제하면 되돌릴 수 없습니다. (변경 이력에는 남습니다)`)) return;
+    // TODO: 실서비스에서는 DELETE /api/admin/admin-levels/{code}
+    log(lv, `레벨 삭제 (접근 메뉴 ${S.levelMenus(lv, catalog).length}개)`, '레벨');
+    d.levels = d.levels.filter(l => l.code !== code);
+    persist(`'${lv.name}' 레벨이 삭제되었습니다.`);
+  }
+
+  // ----- 레벨 추가/설정 모달: 접근 메뉴 트리 -----
+  // 관리자계정관리(레벨 관리·계정 관리)는 최고 관리자 전용: 다른 레벨에서는 잠금 + 안내 (data-super-only)
+  const SUPER_ONLY = S.superOnlyHrefs(catalog);
+  $('permTree').innerHTML = catalog.map(s => `
+    <div class="perm-sec">
+      <div class="perm-sec-head"><label><input type="checkbox" data-sec><span>${esc(s.label)}</span></label><small>${s.cats.reduce((n, c) => n + c.items.length, 0)}개 메뉴</small></div>
+      ${s.cats.map(c => { const only = c.items.length && c.items.every(it => SUPER_ONLY.includes(it.href)); return `<div class="perm-cat">
+        <label class="perm-cat-name"><input type="checkbox" data-cat${only ? ' data-super-only' : ''}><span>${esc(c.cat)}</span></label>
+        <div class="perm-items">${c.items.map(it => `<label><input type="checkbox" data-menu value="${esc(it.href)}"${SUPER_ONLY.includes(it.href) ? ' data-super-only' : ''}><span>${esc(it.label)}</span></label>`).join('')}</div>
+        ${c.items.some(it => SUPER_ONLY.includes(it.href)) ? '<div class="readonly at-note" data-super-note hidden>레벨 관리·계정 관리는 최고 관리자만 사용할 수 있습니다.</div>' : ''}
+      </div>`; }).join('')}
+    </div>`).join('');
+
+  const menuBoxes = (root = $('permTree')) => [...root.querySelectorAll('input[data-menu]')];
+  // 하위 메뉴 선택 상태에 맞춰 카테고리·대메뉴 체크(일부 선택은 indeterminate) 갱신
+  function syncPerm() {
+    const setGroup = (box, all) => {
+      // 잠긴(최고 관리자 전용) 메뉴는 제외하고 계산. 모두 잠겼으면 그대로
+      const items = all.some(x => !x.disabled) ? all.filter(x => !x.disabled) : all;
+      const k = items.filter(x => x.checked).length;
+      box.checked = k > 0 && k === items.length;
+      box.indeterminate = k > 0 && k < items.length;
+    };
+    $('permTree').querySelectorAll('.perm-cat').forEach(el => setGroup(el.querySelector('[data-cat]'), menuBoxes(el)));
+    $('permTree').querySelectorAll('.perm-sec').forEach(el => setGroup(el.querySelector('[data-sec]'), menuBoxes(el)));
+    const k = menuBoxes().filter(x => x.checked).length;
+    $('permSum').innerHTML = `<b>${k}</b> / ${TOTAL}개 메뉴 선택`;
+  }
+  $('permTree').addEventListener('change', e => {
+    const t = e.target;
+    if (t.matches('[data-cat]')) menuBoxes(t.closest('.perm-cat')).forEach(x => { if (!x.disabled) x.checked = t.checked; });
+    if (t.matches('[data-sec]')) menuBoxes(t.closest('.perm-sec')).forEach(x => { if (!x.disabled) x.checked = t.checked; });
+    $('permErr').classList.remove('show');
+    syncPerm();
+  });
+  const setAllPerm = on => { menuBoxes().forEach(x => { if (!x.disabled) x.checked = on; }); syncPerm(); };
+  $('btnPermAll').addEventListener('click', () => setAllPerm(true));
+  $('btnPermNone').addEventListener('click', () => setAllPerm(false));
+
+  let editLevel = null;
+  function openLevel(code) {
+    const lv = code ? levelBy(code) : null;
+    editLevel = lv ? lv.code : null;
+    $('levelTitle').textContent = lv ? '레벨 수정' : '레벨 추가';
+    $('lvSubmit').textContent = lv ? '저장' : '추가';
+    $('lvName').value = lv ? lv.name : '';
+    $('lvDesc').value = lv ? lv.desc : '';
+    // 최고 관리자: 항상 전체 메뉴 (변경 불가)
+    const locked = !!(lv && lv.all);
+    const mine = lv ? S.levelMenus(lv, catalog) : [];
+    $('permTree').querySelectorAll('input').forEach(x => { x.disabled = locked; });
+    menuBoxes().forEach(x => { x.checked = mine.includes(x.value); });
+    // 최고 관리자 외 레벨: 레벨 관리·계정 관리(관리자계정관리)는 선택 불가 (자기 권한 상승 방지)
+    $('permTree').querySelectorAll('input[data-super-only]').forEach(x => { if (!locked) { x.disabled = true; x.checked = false; } });
+    $('permTree').querySelectorAll('[data-super-note]').forEach(x => { x.hidden = locked; });
+    $('btnPermAll').hidden = $('btnPermNone').hidden = locked;
+    $('permLocked').hidden = !locked;
+    // 새 게시판 자동 허용 (최고 관리자는 항상 전체라 표시 안 함). 새 레벨 기본값: 사용 안 함
+    $('lvNewBoardsRow').hidden = locked;
+    $('lvNewBoards').checked = !!(lv && lv.newBoards);
+    // 이 레벨의 변경 이력 (새 레벨은 없음)
+    $('lvHistoryBox').hidden = !lv;
+    $('lvHistory').innerHTML = lv ? historyRows(lv) : '';
+    ['lvNameErr', 'permErr'].forEach(id => $(id).classList.remove('show'));
+    syncPerm();
+    $('levelModal').classList.add('open');
+    $('lvName').focus();
+  }
+
+  $('levelForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = $('lvName').value.trim();
+    const nameMsg = S.checkLevelName(d, name, editLevel);
+    $('lvNameErr').textContent = nameMsg;
+    $('lvNameErr').classList.toggle('show', !!nameMsg);
+    const lv = editLevel ? levelBy(editLevel) : null;
+    const locked = !!(lv && lv.all);
+    const checked = menuBoxes().filter(x => x.checked && !SUPER_ONLY.includes(x.value)).map(x => x.value);
+    // 게시판(게시판 통합 관리에서 만든 게시판)은 켜고 끈 것을 그 게시판의 생성 일시와 함께 저장, 나머지 메뉴는 menus
+    const menus = checked.filter(h => !S.boardCode(h));
+    const boards = Object.fromEntries(menuBoxes().filter(x => S.boardCode(x.value)).map(x => [S.boardCode(x.value), { on: x.checked, createdAt: S.boardStamp(S.boardCode(x.value)) }]));
+    const newBoards = $('lvNewBoards').checked;
+    const permMsg = !locked && !checked.length ? '접근 메뉴를 하나 이상 선택하세요.' : '';
+    setErr('permErr', permMsg);
+    if (nameMsg || permMsg) return;
+
+    const desc = $('lvDesc').value.trim();
+    // TODO: 실서비스에서는 POST /api/admin/admin-levels, PUT /api/admin/admin-levels/{code}
+    if (lv) {
+      const changes = [];
+      if (lv.name !== name) changes.push(`레벨명 변경: ${lv.name} → ${name}`);
+      if (!locked) {
+        // 권한 변경 이력: 추가·제외한 메뉴 이름까지 기록
+        const before = S.levelMenus(lv, catalog);
+        const labelOf = h => { for (const s of catalog) for (const c of s.cats) { const it = c.items.find(i => i.href === h); if (it) return it.label; } return h; };
+        const plus = checked.filter(h => !before.includes(h)).map(labelOf), minus = before.filter(h => !checked.includes(h)).map(labelOf);
+        if (plus.length) changes.push(`접근 메뉴 추가: ${plus.join(', ')}`);
+        if (minus.length) changes.push(`접근 메뉴 제외: ${minus.join(', ')}`);
+        if (!!lv.newBoards !== newBoards) changes.push(`새 게시판 자동 허용: ${newBoards ? '사용' : '사용 안 함'}`);
+        Object.assign(lv, { menus, boards, newBoards });
+      }
+      if (lv.desc !== desc) changes.push('설명 변경');
+      Object.assign(lv, { name, desc });
+      if (changes.length) log(lv, changes.join(' / '), '레벨');
+    } else {
+      const nlv = { code: 'L' + Date.now().toString(36).toUpperCase(), name, desc, all: false, system: false, menus, boards, newBoards, history: [] };
+      log(nlv, `레벨 생성 (접근 메뉴 ${checked.length}개${newBoards ? ' · 새 게시판 자동 허용' : ''})`, '레벨');
+      d.levels.push(nlv);
+    }
+    closeLevelModal();
+    persist(`'${name}' 레벨이 ${lv ? '저장' : '추가'}되었습니다.`);
+  });
+
+  const closeLevelModal = bindModal('levelModal');
+  $('btnAddLevel').addEventListener('click', () => openLevel(null));
+
+  initSidebar();
+  render();
+})();
+</script>
+</body>
+</html>

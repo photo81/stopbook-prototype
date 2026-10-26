@@ -803,12 +803,12 @@
   // 상단바 프로토타입 버전 표시. 버전을 올릴 때는 여기만 바꾸면 모든 화면에 반영됨 (HTML의 같은 문구는 스크립트 실패 시 대비용)
   const PROTO_VERSION = '프로토타입 v2.76 (2026-10-15)';
   document.querySelectorAll('[data-proto-version]').forEach(el => { el.textContent = PROTO_VERSION; });
-  // 사용자(쇼핑몰) 화면 바로가기: 모든 관리자 화면 상단바의 프로토타입 버전 왼쪽 (새 탭으로 user/signup.html)
+  // 사용자(쇼핑몰) 화면 바로가기: 모든 관리자 화면 상단바의 프로토타입 버전 왼쪽 (새 탭으로 쇼핑몰 메인 user/index.html)
   document.querySelectorAll('.topbar [data-proto-version]').forEach(el => {
     if (el.parentNode.querySelector('.user-link')) return;
     const a = document.createElement('a');
     a.className = 'user-link';
-    a.href = '../user/signup.html';
+    a.href = '../user/index.html';
     a.target = '_blank';
     a.rel = 'noopener';
     a.textContent = '[사용자페이지 바로가기]';
@@ -932,6 +932,7 @@
   const NEW_KEY = 'stopbook.newCounts.v1';
   const NEW_SOURCES = [
     { key: 'inquiry', gnb: 'board', href: 'board-inquiry.html', label: '1:1 문의', note: '담당자 미지정', count: () => (window.InquiryData ? InquiryData.newCount() : null) },
+    { key: 'partner', gnb: 'board', href: 'board-partner.html', label: '제휴문의', note: '접수', count: () => (window.PartnerStore ? PartnerStore.pendingCount() : null) },
     { key: 'cancel', gnb: 'order', href: 'claim-cancel.html', label: '취소 요청', note: '승인 대기', count: () => (window.ClaimData ? ClaimData.cancel.requests.filter(q => q.status === '대기').length : null) },
     { key: 'exchange', gnb: 'order', href: 'claim-exchange.html', label: '교환·반품 신청', note: '승인 대기', count: () => (window.ClaimData ? ClaimData.exchange.requests.filter(q => q.status === '대기').length : null) },
     { key: 'document', gnb: 'order', href: 'claim-documents.html', label: '서류 발급 신청', note: '처리 대기', count: () => (window.DocData ? DocData.requests.filter(q => q.kind === '증빙서류' && q.status === '대기').length : null) },

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - FAQ</title>
-<link rel="stylesheet" href="admin.css?v=20261026-4">
+<link rel="stylesheet" href="admin.css?v=20261026-6">
 </head>
 <body>
 <div class="layout">
@@ -42,6 +42,7 @@
       <li class="has-sub">
         <a href="#" class="menu-parent" aria-expanded="false">관리자계정관리<span class="chev">▼</span></a>
         <ul class="submenu">
+          <li><a href="admin-levels.html">레벨 관리</a></li>
           <li><a href="admin-accounts.html">계정 관리</a></li>
         </ul>
       </li>
@@ -80,6 +81,7 @@
           <li><a href="board-inquiry.html">1:1 문의</a></li>
           <li><a href="board-faq.html" class="active" aria-current="page">FAQ</a></li>
           <li><a href="board-review.html">이용후기</a></li>
+          <li><a href="board-partner.html">제휴문의</a></li>
         </ul>
       </li>
       <li class="has-sub">
@@ -103,24 +105,402 @@
     </header>
 
     <main class="content">
-      <h1>FAQ <span class="page-desc">자주 묻는 질문과 답변을 등록하고 관리합니다.</span></h1>
+      <h1>FAQ <span class="page-desc">쇼핑몰 고객센터 &gt; FAQ에 보이는 자주 묻는 질문을 구분별로 관리합니다. 베스트로 표시한 질문은 '베스트 10' 탭에 모아 보입니다.</span></h1>
 
-      <!-- 빈 페이지: 화면 구성 예정 -->
-      <section class="panel">
-        <div class="empty-page">
-          <b>준비 중인 화면입니다.</b>
-          <p>FAQ 화면은 구성 예정입니다.</p>
-        </div>
-      </section>
+      <!-- 상위 탭: 질문 관리 / 구분 관리 -->
+      <div class="tabs" role="tablist" id="mainTabs">
+        <button type="button" role="tab" class="tab active" aria-selected="true" data-tab="q">질문 관리 <span class="tab-count" id="tabQCount"></span></button>
+        <button type="button" role="tab" class="tab" aria-selected="false" data-tab="cat">구분 관리 <span class="tab-count" id="tabCatCount"></span></button>
+      </div>
+
+      <!-- ===== 질문 관리 ===== -->
+      <div id="qView" role="tabpanel">
+        <!-- 구분 탭: 전체 · 베스트 · 구분별 (쇼핑몰 FAQ 탭과 같은 구성) -->
+        <div class="tabs mini-tabs faq-cat-tabs" role="tablist" id="catTabs"></div>
+        <form class="panel" id="searchForm" novalidate>
+          <div class="search-row">
+            <div class="search-grid order-search">
+              <div class="field f-keyword">
+                <label for="sKeyword">검색어</label>
+                <input type="text" id="sKeyword" placeholder="질문·답변 내용으로 검색">
+              </div>
+              <div class="field f-status">
+                <label for="sUse">노출</label>
+                <select id="sUse"><option value="">전체</option><option value="Y">노출</option><option value="N">숨김</option></select>
+              </div>
+            </div>
+            <div class="search-actions">
+              <button type="submit" class="btn btn-primary">검색</button>
+              <button type="button" class="btn" id="btnReset">초기화</button>
+            </div>
+          </div>
+        </form>
+        <section class="panel" id="qPanel">
+          <div class="list-head">
+            <div class="count" id="qGuide"></div>
+            <div class="right"><button type="button" class="btn btn-primary" id="btnNewQ">+ 질문 등록</button></div>
+          </div>
+          <div class="table-wrap">
+            <table class="bp-table faq-table">
+              <colgroup><col style="width:82px"><col style="width:150px"><col><col style="width:76px"><col style="width:92px"><col style="width:176px"><col style="width:112px"></colgroup>
+              <thead><tr><th>순서</th><th>구분</th><th>질문</th><th class="num">조회수</th><th>노출</th><th>수정일 · 수정자</th><th>관리</th></tr></thead>
+              <tbody id="qBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===== 구분 관리 ===== -->
+      <div id="catView" role="tabpanel" hidden>
+        <section class="panel">
+          <div class="list-head">
+            <div class="count" id="catGuide"></div>
+            <div class="right"><button type="button" class="btn btn-primary" id="btnNewCat">+ 구분 추가</button></div>
+          </div>
+          <div class="table-wrap">
+            <table class="faq-cat-table">
+              <colgroup><col style="width:82px"><col><col style="width:150px"><col style="width:92px"><col style="width:112px"></colgroup>
+              <thead><tr><th>순서</th><th>구분명</th><th>질문 수</th><th>노출</th><th>관리</th></tr></thead>
+              <tbody id="catBody"></tbody>
+            </table>
+          </div>
+          <div class="faq-note">쇼핑몰 FAQ에는 노출 중인 구분의 노출 질문만 보입니다. 구분 순서가 쇼핑몰 탭 순서입니다.</div>
+        </section>
+      </div>
     </main>
+  </div>
+</div>
+
+<!-- 질문 등록·수정 모달 -->
+<div class="modal-bg" id="qModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="qTitle">
+    <div class="modal-header">
+      <h2 id="qTitle">질문 등록</h2>
+      <button type="button" class="close" data-close aria-label="닫기">&times;</button>
+    </div>
+    <form id="qForm" class="modal-body" novalidate>
+      <table class="form-table">
+        <tr><th>구분 *</th><td><select id="fCat" class="w-auto" aria-label="구분"></select></td></tr>
+        <tr><th>질문 *</th><td>
+          <input type="text" id="fQ" placeholder="고객에게 보이는 질문 (예: 배송비는 얼마인가요?)">
+          <div class="faq-counter"><span id="fQLen">0</span> / <span id="fQMax"></span>자</div>
+        </td></tr>
+        <tr><th>답변 *</th><td>
+          <textarea id="fA" class="faq-answer-input" placeholder="답변 내용을 입력해 주세요."></textarea>
+          <div class="faq-counter"><span id="fALen">0</span> / <span id="fAMax"></span>자 · 줄바꿈은 그대로 표시됩니다.</div>
+        </td></tr>
+        <tr><th>베스트</th><td>
+          <div class="inline-row">
+            <label class="check-chip"><input type="checkbox" id="fBest"> 베스트 10에 표시</label>
+            <span class="readonly" id="fBestNote"></span>
+          </div>
+        </td></tr>
+        <tr><th>노출</th><td>
+          <div class="inline-row">
+            <label class="check-chip"><input type="checkbox" id="fUse" checked> 쇼핑몰에 노출</label>
+            <span class="readonly">숨기면 쇼핑몰 FAQ에서 바로 내려갑니다.</span>
+          </div>
+        </td></tr>
+        <tr><th>미리보기</th><td>
+          <div class="faq-preview" id="fPreview"></div>
+          <div class="readonly at-note">쇼핑몰 FAQ에서 질문을 펼쳤을 때 모양입니다.</div>
+        </td></tr>
+      </table>
+      <div class="err" id="fErr"></div>
+      <span class="readonly" id="fMeta"></span>
+    </form>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-danger" id="btnDelQ" style="margin-right:auto">삭제</button>
+      <button type="button" class="btn" data-close>취소</button>
+      <button type="submit" form="qForm" class="btn btn-primary" id="btnSaveQ">등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- 구분 추가·수정 모달 -->
+<div class="modal-bg" id="catModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="catTitle">
+    <div class="modal-header">
+      <h2 id="catTitle">구분 추가</h2>
+      <button type="button" class="close" data-close aria-label="닫기">&times;</button>
+    </div>
+    <form id="catForm" class="modal-body" novalidate>
+      <table class="form-table">
+        <tr><th>구분명 *</th><td>
+          <input type="text" id="cName" placeholder="예) 장바구니/주문/결제">
+          <div class="faq-counter"><span id="cNameLen">0</span> / <span id="cNameMax"></span>자</div>
+        </td></tr>
+        <tr><th>노출</th><td>
+          <div class="inline-row">
+            <label class="check-chip"><input type="checkbox" id="cUse" checked> 쇼핑몰에 노출</label>
+            <span class="readonly">숨기면 이 구분의 질문이 모두 쇼핑몰 FAQ에서 내려갑니다.</span>
+          </div>
+        </td></tr>
+      </table>
+      <div class="err" id="cErr"></div>
+    </form>
+    <div class="modal-footer">
+      <button type="button" class="btn" data-close>취소</button>
+      <button type="submit" form="catForm" class="btn btn-primary" id="btnSaveCat">추가</button>
+    </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261026-1"></script>
-<script src="member-type-store.js?v=20261026-1"></script>
+<script src="board-store.js?v=20261026-5"></script>
+<script src="faq-store.js?v=20261026-1"></script>
+<script src="member-type-store.js?v=20261026-6"></script>
+<script src="list-tools.js?v=20261026-1"></script>
 <script src="feedback.js?v=20261026-1"></script>
-<script>AdminUtil.initSidebar();</script>
+<script>
+(function () {
+  'use strict';
+  // FAQ (게시글관리 > 자주하는 질문, 아코디언형). 데이터는 faq-store.js(FaqStore) — 쇼핑몰 고객센터 > FAQ가 같은 데이터를 읽음
+  //   질문 관리: 구분 탭(전체·베스트·구분별) · 검색(질문·답변) · 노출 필터 · 순서(구분을 골랐을 때만) · 답변 펼쳐 보기(아코디언) · 노출 토글 · 등록/수정/삭제 모달
+  //   구분 관리: 순서(= 쇼핑몰 탭 순서) · 구분명 · 질문 수 · 노출 토글 · 추가/수정/삭제 (질문이 있는 구분은 삭제 불가)
+  // TODO: 실서비스에서는 /api/admin/faq/categories, /api/admin/faq/items 호출
+  const { esc, toast, initSidebar, ADMIN_NAME } = AdminUtil;
+  const $ = id => document.getElementById(id);
+  initSidebar();
+  const BEST_MAX = 10;   // 베스트 권장 개수 (넘어도 저장은 허용)
+  const ALL = '', BEST = 'best';
+
+  // ===== 상위 탭 (?tab=q|cat) =====
+  const params = new URLSearchParams(location.search);
+  let tab = params.get('tab') === 'cat' ? 'cat' : 'q';
+  function renderTab() {
+    document.querySelectorAll('#mainTabs .tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on)); });
+    $('qView').hidden = tab !== 'q';
+    $('catView').hidden = tab !== 'cat';
+    $('tabQCount').textContent = FaqStore.total().toLocaleString();
+    $('tabCatCount').textContent = FaqStore.cats().length;
+    if (tab === 'q') renderList(); else renderCats();
+  }
+  $('mainTabs').addEventListener('click', e => {
+    const b = e.target.closest('[data-tab]');
+    if (!b || b.dataset.tab === tab) return;
+    tab = b.dataset.tab;
+    try { history.replaceState(null, '', `?tab=${tab}`); } catch (err) { /* file:// 등에서 차단될 수 있음 */ }
+    renderTab();
+  });
+
+  // ===== 질문 관리 =====
+  let cat = ALL, search = { kw: '', use: '' }, rows = [];
+  const opened = new Set();   // 답변을 펼쳐 둔 질문 (다시 그려도 유지)
+  const useOk = it => !search.use || it.use === (search.use === 'Y');
+  // 순서 바꾸기는 구분 하나를 골랐고 검색·노출 조건이 없을 때만 (목록 = 그 구분의 전체 순서일 때)
+  const canOrder = () => cat !== ALL && cat !== BEST && !search.kw && !search.use;
+  const orderTip = () => (cat === ALL || cat === BEST ? '구분을 선택하면 순서를 바꿀 수 있습니다' : '검색어·노출 조건을 지우면 순서를 바꿀 수 있습니다');
+  const tools = ListTools.create({ section: $('qPanel'), onChange: () => renderList(),
+    units: [{ label: '질문 단위', desc: '질문 1건 = 1행 (현재 목록 기준)', file: 'FAQ', rows: () => [['구분', '질문', '답변', '베스트', '노출', '조회수', '등록일', '수정일', '수정자'],
+      ...rows.map(it => [FaqStore.catName(it.cat), it.q, it.a, it.best ? 'Y' : '', it.use ? '노출' : '숨김', it.views, it.createdAt, it.updatedAt, it.updatedBy])] }] });
+  let lastKey = '';
+
+  function renderList() {
+    const base = FaqStore.items({ q: search.kw }).filter(useOk);   // 구분 탭 숫자용 (검색·노출 조건 반영)
+    const cats = FaqStore.cats();
+    const tabs = [[ALL, '전체', base.length], [BEST, '베스트', base.filter(it => it.best).length],
+      ...cats.map(c => [c.code, c.name + (c.use ? '' : ' (숨김)'), base.filter(it => it.cat === c.code).length])];
+    if (!tabs.some(t => t[0] === cat)) cat = ALL;   // 구분을 지운 뒤 돌아온 경우
+    $('catTabs').innerHTML = tabs.map(([code, name, n]) => `<button type="button" role="tab" class="tab ${code === cat ? 'active' : ''}" aria-selected="${code === cat}" data-cat="${esc(code)}">${esc(name)} <span class="tab-count">${n.toLocaleString()}</span></button>`).join('');
+    rows = FaqStore.items({ cat: cat || undefined, q: search.kw }).filter(useOk);
+    const key = cat + JSON.stringify(search); if (key !== lastKey) { tools.first(); lastKey = key; }
+    const best = FaqStore.countOf(BEST);
+    $('qGuide').innerHTML = `질문 <b>${rows.length.toLocaleString()}</b>건 · 베스트 ${best}/${BEST_MAX}${best > BEST_MAX ? ' <span class="faq-warn">(권장 개수 초과)</span>' : ''}`;
+    $('tabQCount').textContent = FaqStore.total().toLocaleString();
+    const ok = canOrder(), tip = ok ? '' : ` title="${orderTip()}"`;
+    const pageRows = tools.page(rows);
+    $('qBody').innerHTML = pageRows.map(it => {
+      const i = rows.indexOf(it), c = FaqStore.catOf(it.cat), open = opened.has(it.id);
+      return `<tr class="faq-row${it.use ? '' : ' row-hidden'}" data-id="${esc(it.id)}">
+        <td class="keep"><span class="faq-order"${tip}>
+          <button type="button" data-move="-1" data-id="${esc(it.id)}" aria-label="위로"${ok && i > 0 ? '' : ' disabled'}>▲</button>
+          <button type="button" data-move="1" data-id="${esc(it.id)}" aria-label="아래로"${ok && i < rows.length - 1 ? '' : ' disabled'}>▼</button></span></td>
+        <td>${c ? `<span class="iq-tag-chip">${esc(c.name)}</span>${c.use ? '' : ' <span class="muted">(숨김)</span>'}` : '<span class="muted">(삭제된 구분)</span>'}</td>
+        <td><div class="iq-subject">
+          <button type="button" class="iq-title-link" data-edit="${esc(it.id)}" title="${esc(it.q)}">${esc(it.q)}</button>
+          ${it.best ? '<span class="badge faq-best">베스트</span>' : ''}
+          <button type="button" class="faq-chev" data-toggle="${esc(it.id)}" aria-expanded="${open}" title="${open ? '답변 닫기' : '답변 보기'}">${open ? '답변 닫기' : '답변 보기'} <span class="faq-chev-ico">▾</span></button>
+        </div></td>
+        <td class="num">${(it.views || 0).toLocaleString()}</td>
+        <td class="keep"><button type="button" class="use-toggle" role="switch" aria-checked="${it.use}" data-use="${esc(it.id)}"
+          aria-label="${esc(it.q)} ${it.use ? '노출' : '숨김'}"><span class="use-track"></span><span class="use-label">${it.use ? '노출' : '숨김'}</span></button></td>
+        <td>${esc(it.updatedAt)} <span class="muted">· ${esc(it.updatedBy)}</span></td>
+        <td class="keep"><button type="button" class="btn btn-sm" data-edit="${esc(it.id)}">수정</button> <button type="button" class="btn btn-sm btn-danger" data-del="${esc(it.id)}">삭제</button></td>
+      </tr>
+      <tr class="faq-ans-row" data-ans="${esc(it.id)}"${open ? '' : ' hidden'}><td colspan="7"><div class="faq-answer">${FaqStore.answerHtml(it.a)}</div></td></tr>`;
+    }).join('') || '<tr><td colspan="7" class="empty">조건에 맞는 질문이 없습니다.</td></tr>';
+  }
+
+  $('catTabs').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { cat = b.dataset.cat; renderList(); } });
+  $('searchForm').addEventListener('submit', e => { e.preventDefault(); search = { kw: $('sKeyword').value.trim(), use: $('sUse').value }; renderList(); });
+  $('btnReset').addEventListener('click', () => { $('searchForm').reset(); search = { kw: '', use: '' }; renderList(); });
+  $('btnNewQ').addEventListener('click', () => openQ(null));
+
+  $('qBody').addEventListener('click', e => {
+    const tg = e.target.closest('[data-toggle]');
+    if (tg) {   // 답변 펼치기/접기 (아코디언)
+      const id = tg.dataset.toggle, row = $('qBody').querySelector(`[data-ans="${CSS.escape(id)}"]`);
+      const open = row.hidden;
+      row.hidden = !open; tg.setAttribute('aria-expanded', String(open)); tg.title = open ? '답변 닫기' : '답변 보기';
+      tg.firstChild.textContent = (open ? '답변 닫기' : '답변 보기') + ' ';
+      if (open) opened.add(id); else opened.delete(id);
+      return;
+    }
+    const mv = e.target.closest('[data-move]');
+    if (mv) { if (FaqStore.moveItem(mv.dataset.id, Number(mv.dataset.move))) renderList(); return; }
+    const use = e.target.closest('[data-use]');
+    if (use) return toggleUse(use.dataset.use);
+    const ed = e.target.closest('[data-edit]');
+    if (ed) return openQ(FaqStore.find(ed.dataset.edit));
+    const del = e.target.closest('[data-del]');
+    if (del) return deleteQ(del.dataset.del);
+  });
+
+  // 노출 토글 (즉시 저장). 숨길 때만 확인
+  function toggleUse(id) {
+    const it = FaqStore.find(id); if (!it) return;
+    const hide = it.use;
+    if (hide && !confirm(`'${it.q}' 질문을 숨기시겠습니까?\n쇼핑몰 FAQ에서 바로 내려갑니다.`)) return;
+    const err = FaqStore.saveItem({ id: it.id, cat: it.cat, q: it.q, a: it.a, best: it.best, use: !hide }, ADMIN_NAME);
+    if (err) { toast(err); return; }
+    renderList();
+    toast(hide ? '질문을 숨겼습니다.' : '질문을 노출합니다.');
+  }
+  function deleteQ(id) {
+    const it = FaqStore.find(id); if (!it) return;
+    if (!confirm(`'${it.q}' 질문을 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.`)) return;
+    FaqStore.deleteItem(id); opened.delete(id);
+    closeModal('qModal'); renderList(); toast('질문을 삭제했습니다.');
+  }
+
+  // ----- 질문 등록·수정 모달 -----
+  let editing = null;
+  $('fQMax').textContent = FaqStore.Q_MAX; $('fAMax').textContent = FaqStore.A_MAX;
+  $('fQ').maxLength = FaqStore.Q_MAX; $('fA').maxLength = FaqStore.A_MAX;
+  function openQ(it) {
+    editing = it ? it.id : null;
+    $('qTitle').textContent = it ? '질문 수정' : '질문 등록';
+    $('btnSaveQ').textContent = it ? '저장' : '등록';
+    $('btnDelQ').hidden = !it;
+    $('fCat').innerHTML = FaqStore.cats().map(c => `<option value="${esc(c.code)}">${esc(c.name)}${c.use ? '' : ' (숨김)'}</option>`).join('');
+    // 등록 시에는 보고 있던 구분을 기본값으로
+    $('fCat').value = it ? it.cat : (cat !== ALL && cat !== BEST ? cat : (FaqStore.cats()[0] || {}).code || '');
+    $('fQ').value = it ? it.q : ''; $('fA').value = it ? it.a : '';
+    $('fBest').checked = !!(it && it.best) || (!it && cat === BEST);
+    $('fUse').checked = it ? it.use : true;
+    $('fMeta').textContent = it ? `${it.createdAt} 등록 · ${it.updatedAt} 수정 (${it.updatedBy}) · 조회 ${(it.views || 0).toLocaleString()}` : '';
+    $('fErr').textContent = ''; $('fErr').classList.remove('show');
+    syncQ();
+    $('qModal').classList.add('open');
+    $('fQ').focus();
+  }
+  // 글자 수 · 베스트 안내 · 미리보기 갱신
+  function syncQ() {
+    $('fQLen').textContent = $('fQ').value.length; $('fALen').textContent = $('fA').value.length;
+    const cur = editing && FaqStore.find(editing);
+    const n = FaqStore.countOf(BEST) - (cur && cur.best ? 1 : 0) + ($('fBest').checked ? 1 : 0);
+    const over = n > BEST_MAX;
+    $('fBestNote').innerHTML = `베스트는 최대 ${BEST_MAX}개를 권장합니다 · 현재 <b>${n}</b>/${BEST_MAX}${over ? ` <span class="faq-warn">권장 개수를 넘었습니다. 다른 질문의 베스트를 해제해 주세요.</span>` : ''}`;
+    const q = $('fQ').value.trim(), a = $('fA').value.trim();
+    $('fPreview').innerHTML = `<div class="faq-preview-q">${q ? esc(q) : '<span class="muted">(질문 없음)</span>'}</div><div class="faq-preview-a">${a ? FaqStore.answerHtml(a) : '<span class="muted">(답변 없음)</span>'}</div>`;
+  }
+  ['fQ', 'fA'].forEach(id => $(id).addEventListener('input', syncQ));
+  $('fBest').addEventListener('change', syncQ);
+  $('qForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const err = FaqStore.saveItem({ id: editing, cat: $('fCat').value, q: $('fQ').value, a: $('fA').value, best: $('fBest').checked, use: $('fUse').checked }, ADMIN_NAME);
+    $('fErr').textContent = err; $('fErr').classList.toggle('show', !!err);
+    if (err) return;
+    closeModal('qModal');
+    renderList();
+    toast(editing ? '질문을 저장했습니다.' : '질문을 등록했습니다.');
+  });
+  $('btnDelQ').addEventListener('click', () => { if (editing) deleteQ(editing); });
+
+  // ===== 구분 관리 =====
+  function renderCats() {
+    const cats = FaqStore.cats();
+    $('tabCatCount').textContent = cats.length;
+    $('catGuide').innerHTML = `구분 <b>${cats.length}</b>개 · 노출 ${cats.filter(c => c.use).length}개 · 구분명을 누르면 수정할 수 있습니다.`;
+    $('catBody').innerHTML = cats.map((c, i) => {
+      const n = FaqStore.countOf(c.code), on = FaqStore.countOf(c.code, true);
+      return `<tr${c.use ? '' : ' class="row-hidden"'}>
+        <td class="keep"><span class="faq-order">
+          <button type="button" data-cmove="-1" data-code="${esc(c.code)}" aria-label="위로"${i > 0 ? '' : ' disabled'}>▲</button>
+          <button type="button" data-cmove="1" data-code="${esc(c.code)}" aria-label="아래로"${i < cats.length - 1 ? '' : ' disabled'}>▼</button></span></td>
+        <td><button type="button" class="link-btn" data-cedit="${esc(c.code)}">${esc(c.name)}</button></td>
+        <td>${n ? `${n}개 <span class="muted">· 노출 ${on}개</span>` : '<span class="yn-off">없음</span>'}</td>
+        <td class="keep"><button type="button" class="use-toggle" role="switch" aria-checked="${c.use}" data-cuse="${esc(c.code)}"
+          aria-label="${esc(c.name)} ${c.use ? '노출' : '숨김'}"><span class="use-track"></span><span class="use-label">${c.use ? '노출' : '숨김'}</span></button></td>
+        <td class="keep"><button type="button" class="btn btn-sm" data-cedit="${esc(c.code)}">수정</button> <button type="button" class="btn btn-sm btn-danger" data-cdel="${esc(c.code)}">삭제</button></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5" class="empty">등록된 구분이 없습니다. 구분을 추가해 주세요.</td></tr>';
+  }
+  $('catBody').addEventListener('click', e => {
+    const mv = e.target.closest('[data-cmove]');
+    if (mv) { if (FaqStore.moveCat(mv.dataset.code, Number(mv.dataset.cmove))) renderCats(); return; }
+    const use = e.target.closest('[data-cuse]');
+    if (use) return toggleCatUse(use.dataset.cuse);
+    const ed = e.target.closest('[data-cedit]');
+    if (ed) return openCat(FaqStore.catOf(ed.dataset.cedit));
+    const del = e.target.closest('[data-cdel]');
+    if (del) return deleteCat(del.dataset.cdel);
+  });
+  function toggleCatUse(code) {
+    const c = FaqStore.catOf(code); if (!c) return;
+    const hide = c.use;
+    if (hide && !confirm(`'${c.name}' 구분을 숨기시겠습니까?\n이 구분의 질문 ${FaqStore.countOf(code, true)}개가 쇼핑몰 FAQ에서 내려갑니다.`)) return;
+    const err = FaqStore.saveCat({ code, name: c.name, use: !hide }, ADMIN_NAME);
+    if (err) { toast(err); return; }
+    renderCats();
+    toast(hide ? `'${c.name}' 구분을 숨겼습니다.` : `'${c.name}' 구분을 노출합니다.`);
+  }
+  function deleteCat(code) {
+    const c = FaqStore.catOf(code); if (!c) return;
+    if (FaqStore.countOf(code)) { toast(FaqStore.deleteCat(code)); return; }   // 질문이 있으면 삭제 불가 안내 (deleteCat 오류 문구)
+    if (!confirm(`'${c.name}' 구분을 삭제하시겠습니까? 삭제하면 되돌릴 수 없습니다.`)) return;
+    const err = FaqStore.deleteCat(code);
+    if (err) { toast(err); return; }
+    renderCats(); toast('구분을 삭제했습니다.');
+  }
+
+  // ----- 구분 추가·수정 모달 -----
+  let editingCat = null;
+  $('cNameMax').textContent = FaqStore.CAT_MAX; $('cName').maxLength = FaqStore.CAT_MAX;
+  function openCat(c) {
+    editingCat = c ? c.code : null;
+    $('catTitle').textContent = c ? '구분 수정' : '구분 추가';
+    $('btnSaveCat').textContent = c ? '저장' : '추가';
+    $('cName').value = c ? c.name : ''; $('cNameLen').textContent = $('cName').value.length;
+    $('cUse').checked = c ? c.use : true;
+    $('cErr').textContent = ''; $('cErr').classList.remove('show');
+    $('catModal').classList.add('open');
+    $('cName').focus();
+  }
+  $('cName').addEventListener('input', () => { $('cNameLen').textContent = $('cName').value.length; });
+  $('btnNewCat').addEventListener('click', () => openCat(null));
+  $('catForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const err = FaqStore.saveCat({ code: editingCat, name: $('cName').value, use: $('cUse').checked }, ADMIN_NAME);
+    $('cErr').textContent = err; $('cErr').classList.toggle('show', !!err);
+    if (err) return;
+    closeModal('catModal');
+    renderCats();
+    toast(editingCat ? '구분을 저장했습니다.' : '구분을 추가했습니다.');
+  });
+
+  // ===== 모달 공통 (닫기 버튼 · 바깥 클릭 · ESC) =====
+  const closeModal = id => $(id).classList.remove('open');
+  ['qModal', 'catModal'].forEach(id => {
+    document.querySelectorAll(`#${id} [data-close]`).forEach(b => b.addEventListener('click', () => closeModal(id)));
+    $(id).addEventListener('click', e => { if (e.target === $(id)) closeModal(id); });
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') ['qModal', 'catModal'].forEach(closeModal); });
+
+  renderTab();
+})();
+</script>
 </body>
 </html>

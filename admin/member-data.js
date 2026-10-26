@@ -374,6 +374,25 @@
   }
   members.forEach(makeUsage);
 
+  // ===== 쇼핑몰에서 담은 장바구니 (마이페이지 > 주문/배송 [재주문]) =====
+  //   CART_KEY: { [회원no]: [{ title, productCategory, price(단가), option, project, qty, savedAt, previewUrl, fromOrderNo }] }
+  //   샘플 장바구니(m.cart) 앞에 붙여 회원 상세 > 장바구니·집계(cartSummary)에 그대로 보임
+  // TODO: 실서비스에서는 POST /api/members/me/cart (재주문 = 주문 상품의 편집본을 장바구니로 복사)
+  const CART_KEY = 'stopbook.cartAdds.v1';
+  let CART_ADDS = {};
+  try { CART_ADDS = JSON.parse(localStorage.getItem(CART_KEY)) || {}; } catch (e) { /* 저장소 사용 불가 시 기록 없음 */ }
+  members.forEach(m => { const adds = CART_ADDS[m.no]; if (adds && adds.length && !m.withdrawn) m.cart = adds.concat(m.cart || []); });
+  // 장바구니에 담기. items = 위 항목 배열(savedAt·previewUrl은 없으면 채움). 반환: 저장 성공 여부
+  function addToCart(no, items) {
+    const m = members.find(x => x.no === no && !x.withdrawn);
+    if (!m || !items.length) return false;
+    const today = fmtDate(new Date());
+    const recs = items.map(c => Object.assign({ savedAt: today, previewUrl: viewerUrl(VIEWER_SAMPLE.mskey, VIEWER_SAMPLE.userId) }, c));
+    CART_ADDS[no] = recs.concat(CART_ADDS[no] || []);
+    m.cart = recs.concat(m.cart || []);
+    try { localStorage.setItem(CART_KEY, JSON.stringify(CART_ADDS)); return true; } catch (e) { return false; }
+  }
+
   // 답변 대기 문의는 오늘 접수분 7~10건만 (1:1 문의는 대부분 당일 답변). 남긴 문의는 접수 시각을 오늘로, 나머지 답변 대기 샘플은 문의 이력에서 뺌
   //   (member-type-store.js keepTodayPending. 답변 완료 문의 = 지난 이력은 그대로)
   if (window.AdminUtil && AdminUtil.keepTodayPending) {
@@ -384,6 +403,17 @@
       m.inquiries = m.inquiries.filter(q => q.status !== '답변대기' || kept.has(q)).sort((a, b) => b.at.localeCompare(a.at));
     });
   }
+  // 쇼핑몰 1:1 문의하기(user/support.html#inquiry, inquiry-user.js)로 접수한 문의 (로그인 회원만 접수)
+  //   USER_INQ_KEY: [{ no(900001~), memberNo, type, title, content, contentHtml, orderItems[{ orderNo, idx, name, category, qty }], files[], at, status '답변대기', user: true }]
+  //   그 회원의 문의 이력(m.inquiries)에 붙여 회원 상세·1:1 문의(inquiry-data.js)에 보임. 탈퇴 회원의 문의는 붙이지 않음
+  const USER_INQ_KEY = 'stopbook.userInquiries.v1';
+  const userInquiries = (() => { try { const v = JSON.parse(localStorage.getItem(USER_INQ_KEY)); return Array.isArray(v) ? v : []; } catch (e) { return []; } })();
+  userInquiries.forEach(rec => {
+    const m = members.find(x => x.no === rec.memberNo && !x.withdrawn);
+    if (!m) return;
+    (m.inquiries || (m.inquiries = [])).push(Object.assign({ answeredAt: '', answer: '', answeredBy: '' }, rec));
+    m.inquiries.sort((a, b) => b.at.localeCompare(a.at));
+  });
   // 1:1 문의(board-inquiry.html)에서 관리자가 처리한 내용(유형 변경·답변 완료·답변 수정)을 회원 문의 이력에도 반영
   //   저장 형식은 inquiry-data.js 참고 ({ [문의 no]: { type, status, answer, answeredAt, answeredBy, ... } })
   // TODO: 실서비스에서는 문의 API 한 곳에서 조회
@@ -493,17 +523,35 @@
   // 입금대기(후결제대기) 샘플 보충: 절반 규칙에서 빠진 주문 중 최근 5건을 입금 전 후결제 주문으로 추가
   skipped.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 5).forEach(o => postpayOrder(o, '후결제대기'));
 
-  // ===== 마일리지 주문 사용 = 실제 주문 (혜택내역 > 마일리지 내역에서 차감한 주문번호가 보이게) =====
+  // ===== 마일리지 주문 사용·적립 = 실제 주문 (혜택내역 > 마일리지 내역에서 주문번호가 보이게) =====
   //   샘플 '주문 결제 시 사용'을 지우고, 회원의 주문(최근 1년, 전체취소 제외) 가운데 일부에서 그때 잔여 마일리지 안에서 사용한 것으로 다시 만듦
   //   주문의 결제 정보(order-data.js 할인금액 > 마일리지)는 이 사용 금액과 같게 맞춤 → 마일리지 내역과 주문 결제 내역이 일치
+  //   구매 확정·리뷰 적립도 주문 데이터 기간(최근 1년) 안의 샘플은 지우고 실제 주문으로 다시 만듦 (날짜만 보고 주문을 붙이면 결제 전에 구매 확정이 찍히는 문제)
+  //     구매 확정 적립: 배송완료 주문만, 주문일 10~16일 뒤, 결제금액의 1%(100P 단위, 최소 100P) / 리뷰 작성 적립: 구매 확정 주문의 약 35%, 확정 1~7일 뒤 500P
+  //     오늘 이후가 되는 적립은 만들지 않음. 1년보다 오래된 적립 샘플(주문 데이터 없음)은 그대로
   //   잔여는 처음부터 다시 계산 (관리자 지급·차감 등 다른 기록은 그대로). 별도 난수라 다른 샘플 값은 그대로
+  const ORDER_FROM = fmtDate(new Date(base - 365 * 86400000));
+  const atOf = (day, plusDays, r) => { const d = new Date(new Date(day).getTime() + plusDays * 86400000); return `${fmtDate(d)} ${pad(9 + Math.floor(r() * 12))}:${pad(Math.floor(r() * 60))}`; };
   members.forEach(m => {
     if (!m.ledger) return;
     let s = (m.no * 15485863 + 11) % 233280;
     const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
-    const keep = m.ledger.mileage.filter(e => !(e.by === '시스템' && e.reason === '주문 결제 시 사용'));
+    let s3 = (m.no * 2750159 + 17) % 233280;   // 적립용 별도 난수 (사용 금액 샘플이 바뀌지 않게)
+    const r3 = () => (s3 = (s3 * 9301 + 49297) % 233280) / 233280;
+    const isSampleEarn = e => e.by === '시스템' && /^(구매 확정 적립|리뷰 작성 적립)$/.test(e.reason) && e.at.slice(0, 10) >= ORDER_FROM;
+    const keep = m.ledger.mileage.filter(e => !(e.by === '시스템' && e.reason === '주문 결제 시 사용') && !isSampleEarn(e));
+    const now = fmtDateTime(new Date(base));
+    const earns = [];
+    (m.orders || []).filter(o => o.orderNo && o.status === '배송완료').forEach(o => {
+      const confirmAt = atOf(o.at, 10 + Math.floor(r3() * 7), r3);
+      const reviewDays = 1 + Math.floor(r3() * 7), review = r3() < 0.35;
+      if (confirmAt > now) return;
+      earns.push({ at: confirmAt, type: '적립', item: '', reason: '구매 확정 적립', by: '시스템', delta: Math.max(100, Math.floor((o.amount || 0) * 0.01 / 100) * 100), orderNo: o.orderNo });
+      const reviewAt = atOf(confirmAt.slice(0, 10), reviewDays, r3);
+      if (review && reviewAt <= now) earns.push({ at: reviewAt, type: '적립', item: '', reason: '리뷰 작성 적립', by: '시스템', delta: 500, orderNo: o.orderNo });
+    });
     const slots = (m.orders || []).filter(o => o.orderNo && o.payStatus !== '전체취소').map(o => ({ slot: true, o, at: `${o.at} ${pad(9 + Math.floor(r() * 12))}:${pad(Math.floor(r() * 60))}`, pick: r() }));
-    const seq = keep.map(e => Object.assign({}, e)).concat(slots).sort((a, b) => a.at.localeCompare(b.at));
+    const seq = keep.map(e => Object.assign({}, e)).concat(earns, slots).sort((a, b) => a.at.localeCompare(b.at));
     const list = [];
     seq.forEach(x => {
       const bal = list.length ? list[list.length - 1].balance : 0;
@@ -723,7 +771,7 @@
   //   간편 로그인(카카오·네이버·구글) 회원은 비밀번호가 없음
   // TODO: 실서비스에서는 POST /api/auth/login 등 서버에서 검증 (비밀번호는 서버에만 bcrypt 등으로 저장)
   const AUTH_KEY = 'stopbook.memberAuth.v1', LOGIN_KEY = 'stopbook.memberLogins.v1';
-  const SAMPLE_PASSWORD = 'stopbook1!';
+  const SAMPLE_PASSWORD = '0000';   // 프로토타입 시연용 (2026-10-26 'stopbook1!' → '0000'). 가입·변경 규칙(8~20자)과 무관하게 샘플 회원 로그인에만 씀
   const PW_EXPIRE_DAYS = 90, PW_SNOOZE_DAYS = 30, LOCK_FAILS = 5, LOCK_MINUTES = 10;   // 요구사항 PRD_MEM_006: 90일 미변경 시 변경 유도
   const readJson = key => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { return {}; } };
   const writeJson = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); return true; } catch (e) { return false; } };
@@ -777,18 +825,62 @@
   }
 
   // 비밀번호 틀림: 연속 실패 횟수 증가, 5회면 10분 잠금 (로그인·마이페이지 비밀번호 확인이 같은 횟수를 셈)
+  //   쇼핑몰 로그인 실패는 로그인 로그에도 남김 (마이페이지 비밀번호 확인 실패는 로그인 로그 아님)
   function failAttempt(m, a, now, what) {
     a.fail = (a.fail || 0) + 1;
+    const login = what === '로그인';
     if (a.fail >= LOCK_FAILS) {
       a.lockedUntil = fmtDateTime(new Date(now.getTime() + LOCK_MINUTES * 60000));
       a.fail = 0;
       authLog(m, a, `${what} ${LOCK_FAILS}회 연속 실패로 ${LOCK_MINUTES}분간 로그인 제한`, '시스템');
       saveAuth(m, a);
+      if (login) addLoginLog(m.no, { ok: false, method: '비밀번호', note: `비밀번호 불일치 (${LOCK_FAILS}회 연속 → ${LOCK_MINUTES}분 잠금)` });
       return { error: 'locked', until: a.lockedUntil };
     }
     saveAuth(m, a);
+    if (login) addLoginLog(m.no, { ok: false, method: '비밀번호', note: `비밀번호 불일치 (${a.fail}회)` });
     return { error: 'mismatch', fails: a.fail, remain: LOCK_FAILS - a.fail };
   }
+
+  // ===== 로그인 로그 (관리자 회원 상세 > 가입 정보 > 최근접속일 옆 [로그인 로그]) =====
+  //   LOGIN_LOG_KEY: { [회원 no]: [{ at, ok, method(비밀번호|카카오|네이버|구글), env(PC|MO), ip, note }] } — 쇼핑몰 로그인 성공·실패
+  //   샘플: 최근접속일까지 최근 120일 안의 로그인 5~14건(마지막 = 최근접속일·접속 기기), 스탑북회원은 가끔 비밀번호 불일치 실패
+  //   IP는 가운데를 가려 표시 (개인정보 최소 노출). 탈퇴 회원은 접속 기록 파기 → 빈 목록
+  // TODO: 실서비스에서는 GET /api/admin/members/{no}/login-logs (서버 접속 로그, 보관 기간 정책 적용)
+  const LOGIN_LOG_KEY = 'stopbook.memberLoginLog.v1';
+  const LOGIN_METHOD = { '스탑북회원': '비밀번호', '카카오회원': '카카오', '네이버회원': '네이버', '구글회원': '구글' };
+  const methodOf = m => LOGIN_METHOD[m.memberType] || (hasPassword(m) ? '비밀번호' : 'SNS');
+  const maskIp = (a, b, c) => `${a}.${b}.***.${c}`;
+  function addLoginLog(no, e) {
+    const m = members.find(x => x.no === no);
+    const all = readJson(LOGIN_LOG_KEY);
+    const list = all[no] || [];
+    let s = (Date.now() + no) % 233280;
+    const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    list.push(Object.assign({ at: fmtDateTime(new Date()), env: (m && m.loginEnv) || '', ip: maskIp(211 + Math.floor(r() * 12), Math.floor(r() * 255), 1 + Math.floor(r() * 250)), note: '' }, e));
+    all[no] = list.slice(-100);   // 회원당 최근 100건
+    return writeJson(LOGIN_LOG_KEY, all);
+  }
+  function sampleLoginLog(m) {
+    if (!m.lastLogin || m.withdrawn) return [];
+    let s = (m.no * 69621 + 3) % 233280;
+    const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    const last = new Date(m.lastLogin).getTime(), from = Math.max(new Date(m.joinDate).getTime(), last - 120 * 86400000);
+    const n = 5 + Math.floor(r() * 10), method = methodOf(m);
+    const ipA = [211 + Math.floor(r() * 12), Math.floor(r() * 255)], ipB = [58 + Math.floor(r() * 60), Math.floor(r() * 255)];
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const t = i === n - 1 ? last : from + r() * Math.max(0, last - from);
+      const env = i === n - 1 ? m.loginEnv : (r() < 0.65 ? 'MO' : 'PC');
+      const ip = env === 'MO' ? maskIp(ipB[0], ipB[1], 1 + Math.floor(r() * 250)) : maskIp(ipA[0], ipA[1], 1 + Math.floor(r() * 250));
+      const at = `${fmtDate(new Date(t))} ${pad(8 + Math.floor(r() * 15))}:${pad(Math.floor(r() * 60))}`;
+      if (method === '비밀번호' && i !== n - 1 && r() < 0.12) out.push({ at, ok: false, method, env, ip, note: '비밀번호 불일치 (1회)', sample: true });
+      out.push({ at: i === n - 1 ? at : at.replace(/(\d\d)$/, mm => pad(Math.min(59, Number(mm) + 1))), ok: true, method, env, ip, note: '', sample: true });
+    }
+    return out;
+  }
+  // 회원 로그인 로그 (최근 순)
+  const loginLogOf = m => (!m || m.withdrawn ? [] : (readJson(LOGIN_LOG_KEY)[m.no] || []).concat(sampleLoginLog(m)).sort((a, b) => b.at.localeCompare(a.at)));
 
   // 로그인. 반환: { member, change: 'temp'|'expired'|'' } 또는 { error: 'mismatch'|'locked', fails, until }
   //   없는 계정·간편 로그인 계정·비밀번호 틀림은 모두 'mismatch' (가입 여부가 드러나지 않게)
@@ -810,12 +902,13 @@
     return { member: m, change: a.temp ? 'temp' : expired ? 'expired' : '', changedAt: a.changedAt };
   }
 
-  // 최근 접속일·접속 기기 기록 (간편 로그인도 사용)
+  // 최근 접속일·접속 기기 기록 (간편 로그인도 사용) + 로그인 로그(성공)
   function recordLogin(no, env) {
     const m = members.find(x => x.no === no);
     if (!m || m.withdrawn) return false;
     m.lastLogin = fmtDate(new Date());
     if (env) m.loginEnv = env;
+    addLoginLog(no, { ok: true, method: methodOf(m), env: m.loginEnv });
     LOGINS[no] = { lastLogin: m.lastLogin, loginEnv: m.loginEnv };
     const fresh = readJson(LOGIN_KEY); fresh[no] = LOGINS[no];
     return writeJson(LOGIN_KEY, fresh);
@@ -877,7 +970,7 @@
     return { changedAt, temp: !!a.temp, locked, lockedUntil: locked ? a.lockedUntil : '', fail: a.fail || 0, sample: !!a.sample,
       expired: daysBetween(String(a.changedAt).slice(0, 10), fmtDate(new Date())) >= PW_EXPIRE_DAYS };
   }
-  const Auth = { SAMPLE_PASSWORD, PW_EXPIRE_DAYS, PW_SNOOZE_DAYS, LOCK_FAILS, LOCK_MINUTES, hasPassword, findLoginMember, login, recordLogin, setPassword, isSamePassword, verifyPassword, snoozePassword, unlockLogin, authInfo };
+  const Auth = { SAMPLE_PASSWORD, PW_EXPIRE_DAYS, PW_SNOOZE_DAYS, LOCK_FAILS, LOCK_MINUTES, hasPassword, findLoginMember, login, recordLogin, setPassword, isSamePassword, verifyPassword, snoozePassword, unlockLogin, authInfo, loginLogOf, LOGIN_LOG_KEY };
 
   // 가입 중복 확인: 이메일(대소문자 무시) 또는 휴대폰 번호(숫자만 비교)가 같은 회원. 반환: { field: 'email'|'phone', member } 또는 null
   //   기존 다계정 보유자도 휴대폰 번호가 같으면 추가 가입 불가 (요구사항 PRD_MEM_001)
@@ -1206,7 +1299,7 @@
     Object.assign(WITHDRAWALS, stored);
 
     // 저장소에 남은 개인정보 파기 (회원정보 수정 값·비밀번호·로그인 기록·가입 정보)
-    [[PROFILE_KEY, PROFILES], [AUTH_KEY, AUTH], [LOGIN_KEY, LOGINS]].forEach(([key, mem]) => {
+    [[PROFILE_KEY, PROFILES], [AUTH_KEY, AUTH], [LOGIN_KEY, LOGINS], [LOGIN_LOG_KEY, {}]].forEach(([key, mem]) => {   // 로그인 로그(접속 IP 등)도 파기
       const fresh = readJson(key);
       delete fresh[no]; delete mem[no];
       writeJson(key, fresh);
@@ -1378,7 +1471,7 @@
   window.MemberData = {
     members, GRADE_ORDER, gradeRun, saveAdminEdit, dormantRun, dormantNotice, runDormantBatch, BENEFITS, COUPONS, PRODUCTS, PROJECT_NAMES, VIEWER_SAMPLE, viewerUrl, pad, fmtDate, fmtDateTime, pushEntry, heldCoupons, orderStats, validOrders, statusClass, ageOf, addMileage, mileageHistory,
     applications, saveApplication, applyApproval, revokeBusiness, GROUP_TYPES: groupKinds,
-    findDuplicate, registerMember, snsKey, findSnsMember, SIGNUP_KEY, Auth, updateProfile, PROFILE_KEY,
+    findDuplicate, registerMember, snsKey, findSnsMember, SIGNUP_KEY, USER_INQ_KEY, userInquiries, INQ_TYPES, CART_KEY, addToCart, Auth, updateProfile, PROFILE_KEY,
     INTERESTS, INTEREST_ETC, interestText, addressText,
     WITHDRAW_KEY, WITHDRAWN_LABEL, withdrawCheck, withdraw, withdrawType, rejoinBlock, withdrawals, isWithdrawnStored, maskEmail, maskUserId
   };

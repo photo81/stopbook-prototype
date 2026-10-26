@@ -4,6 +4,7 @@
 //   교환: 상품 수령 후 불량 → 같은 상품을 다시 제작해 보냄 (승인하면 재제작 진행)
 //   반품: 상품 수령 후 불량 → 상품을 돌려받고 환불 (승인하면 신청 상품이 취소 처리되어 환불)
 //   신청 샘플은 주문에서 만들고(고정), 관리자가 처리한 신청은 localStorage에 통째로 보관해 다시 열 때 그대로 복원
+//   고객이 쇼핑몰 마이페이지(user/mypage.html#orders)에서 신청한 건(submitCancel·submitExchange)도 같은 저장소에 '대기'로 저장 → 승인 대기 목록에 바로 보임
 // TODO: 실서비스에서는 GET /api/admin/claims/{cancel|exchange}, POST /api/admin/claims/{kind}/{reqNo}/approve|reject
 (function () {
   'use strict';
@@ -134,6 +135,8 @@
     }
     cancel.push(req);
   });
+  // 고객이 마이페이지에서 다시 신청한 건(같은 주문에 이전 신청이 있어 번호 뒤에 -2, -3…이 붙은 신청)은 위 주문별 반복에서 찾지 못하므로 저장본에서 바로 넣음
+  Object.values(overlays.cancel).forEach(q => { if (!cancel.some(x => x.reqNo === q.reqNo)) cancel.push(q); });
   // 승인 대기 샘플은 오늘 접수분 7~10건만 (취소 요청은 대부분 당일 처리). 관리자가 처리한 신청은 그대로
   AdminUtil.keepTodayPending(cancel, q => q.status === '대기' && !overlays.cancel[q.reqNo], 'cancel');
   // 부분 취소요청 샘플 보충: 승인 대기인 전체 요청 가운데 상품이 2건 이상인 주문 5건을 '일부 상품만 요청'으로 바꿈 (처리된 신청은 제외)
@@ -147,7 +150,8 @@
   // 주문 리스트·주문 상세에서 취소 요청이 들어온 주문임을 바로 알 수 있게 결제상태를 바꿔 둠 (원래 상태는 payStatusBefore에 보관)
   //   승인 → 취소 기록으로 전체취소/부분취소, 반려 → 다음 로드부터 표시하지 않으므로 원래 결제상태로 돌아감
   //   (이 파일을 order-list.js보다 먼저 로드해야 목록에 반영됨)
-  cancel.forEach(q => {
+  //   고객이 마이페이지에서 신청한 직후(submitCancel)에도 같은 함수로 바로 반영
+  function markCancelRequested(q) {
     if (q.status !== '대기') return;
     const o = orderOf(q);
     if (!o || !['결제완료', '부분취소'].includes(o.payStatus)) return;
@@ -156,7 +160,8 @@
     o.cancelRequest = q;
     // 요청된 상품도 상품별 결제상태를 '취소요청'으로 (주문 상세 > 주문정보의 상품 행). 요청에 없는 상품은 그대로
     q.items.forEach(i => { const it = o.items[i]; if (it && it.payStatus !== '취소') { it.payStatusBefore = it.payStatus; it.payStatus = '취소요청'; it.cancelRequested = true; } });
-  });
+  }
+  cancel.forEach(markCancelRequested);
 
   // 처리 완료 샘플의 처리 내용: 주관부서는 제작처(KSI 디지털센터 → 제작1반/제작2반, KSI 오프셋센터 → 오프셋센터, 그 외 → 외주제작), 사유는 불량 유형에서, 조치사항은 유형별 예시
   function sampleProcess(o, defect, r, type) {
@@ -221,6 +226,8 @@
     }
     exchange.push(req);
   });
+  // 고객이 같은 주문에 다시 신청한 건(번호 뒤 -2, -3…)은 저장본에서 바로 넣음 (취소 요청과 같음)
+  Object.values(overlays.exchange).forEach(q => { if (!exchange.some(x => x.reqNo === q.reqNo)) exchange.push(q); });
   // 승인 대기 샘플은 오늘 접수분 7~10건만 (교환·반품도 대부분 당일 처리). 관리자가 처리한 신청은 그대로
   AdminUtil.keepTodayPending(exchange, q => q.status === '대기' && !overlays.exchange[q.reqNo], 'exchange');
 
@@ -312,16 +319,116 @@
 
   const byAt = (a, b) => b.at.localeCompare(a.at);
 
+  // ===== 고객 신청 (쇼핑몰 마이페이지 > 주문/배송) =====
+  //   취소: 출고 전 주문의 상품 중 공정이 리핑완료(외주: 의뢰완료)까지인 상품만 (canCancelItem — 관리자 취소 요청 관리와 같은 기준)
+  //   교환·반품: 배송완료된 상품만. 불량 유형 + 불량 내용(필수) + 사진(파일명만, 최대 5장)
+  //   같은 주문에 승인 대기 중인 신청이 있으면 새로 받지 않음
+  //   신청은 관리자 화면과 같은 저장소(overlay)에 '대기'로 저장 → 클레임관리 > 취소 요청 관리 / 교환 반품 관리의 승인 대기에 바로 보임
+  //   신청번호: 취소 'C' + 주문번호, 교환·반품 'X' + 주문번호 (같은 주문에 이전 신청이 있으면 뒤에 -2, -3…)
+  //   주문 히스토리에는 OrderData.addHistory로 '취소신청'·'교환신청'·'반품신청'을 남김 (historyOf에서는 중복되지 않게 뺌)
+  //   환불 수단 (refundKindOf): 결제 전 주문 = 환불 없음 / 현금성 결제(무통장입금·계좌이체·후결제·별도결제) = 계좌 환불(은행·계좌번호·예금주 입력) / 그 외 = 원결제수단 취소
+  //   반환: { ok, req } 또는 { ok: false, error(고객 안내 문구), field(문제가 있는 입력: items/reason/detail/photos/bank/account/holder) }
+  // TODO: 실서비스에서는 POST /api/members/me/orders/{orderNo}/cancel-requests, /exchange-requests (사진은 파일 업로드). 서버에서 같은 기준으로 다시 검증
+  const DETAIL_MAX = 500, PHOTO_MAX = 5, DEFECT_DETAIL_MIN = 10;
+  // 환불 계좌 은행 선택지 (샘플 은행 BANKS + 그 밖의 은행. BANKS는 샘플 값이 바뀌지 않도록 그대로 둠)
+  const REFUND_BANKS = BANKS.concat(['기업은행', 'SC제일은행', '케이뱅크', '토스뱅크', '우체국', '새마을금고']);
+  const UNPAID = ['입금대기', '후결제대기'];
+  const refundKindOf = o => (UNPAID.includes(o.payStatus) ? 'none' : cashLike(o) ? 'account' : 'original');
+  const refundTextOf = rf => (rf.bank ? `${rf.method} (${rf.bank} ${rf.account} ${rf.holder})` : rf.method);
+  function normRefund(o, refund) {
+    const kind = refundKindOf(o);
+    if (kind === 'none') return { refund: { method: '환불 없음 (결제 전 주문)', bank: '', account: '', holder: '' } };
+    if (kind === 'original') return { refund: { method: `원결제수단 취소 (${o.payMethod})`, bank: '', account: '', holder: '' } };
+    const r = refund || {}, bank = String(r.bank || '').trim(), account = String(r.account || '').trim(), holder = String(r.holder || '').trim();
+    const len = account.replace(/\D/g, '').length;
+    if (!REFUND_BANKS.includes(bank)) return { error: '환불받을 은행을 선택해 주세요.', field: 'bank' };
+    if (!/^[\d-]+$/.test(account) || len < 10 || len > 16) return { error: '환불 계좌번호를 정확히 입력해 주세요. (숫자 10~16자리)', field: 'account' };
+    if (!holder) return { error: '예금주를 입력해 주세요.', field: 'holder' };
+    return { refund: { method: '계좌 환불', bank, account, holder } };
+  }
+  const memberOrder = (orderNo, memberNo) => { const o = OrderData.find(orderNo); return o && (memberNo == null || (o.member && o.member.no === memberNo)) ? o : null; };
+  const nextReqNo = (prefix, orderNo, list) => {
+    const base = `${prefix}${orderNo.replace('-', '')}`;
+    if (!list.some(q => q.reqNo === base)) return base;
+    let n = 2;
+    while (list.some(q => q.reqNo === `${base}-${n}`)) n++;
+    return `${base}-${n}`;
+  };
+  const pickIdx = (o, items) => [...new Set((items || []).map(Number))].filter(i => o.items[i]).sort((a, b) => a - b);
+  const fail = (error, field) => ({ ok: false, error, field: field || '' });
+  // 이 주문의 신청 (최근 순). 마이페이지 주문 상태·신청 내역 표시용
+  const requestsOf = orderNo => ({ cancel: cancel.filter(q => q.orderNo === orderNo), exchange: exchange.filter(q => q.orderNo === orderNo) });
+
+  // 취소 요청: items = 상품 index 배열, reason = CANCEL_REASONS 중 하나, detail = 상세 사유('기타'면 필수), refund = { bank, account, holder } (계좌 환불일 때만)
+  function submitCancel(orderNo, items, reason, detail, refund, memberNo) {
+    const o = memberOrder(orderNo, memberNo);
+    if (!o) return fail('주문 정보를 찾을 수 없습니다.');
+    if (o.payStatus === '전체취소') return fail('이미 취소된 주문입니다.');
+    if (cancel.some(q => q.orderNo === orderNo && q.status === '대기')) return fail('이 주문은 이미 취소 요청이 접수되어 처리 중입니다.');
+    const idxs = pickIdx(o, items);
+    if (!idxs.length) return fail('취소할 상품을 선택해 주세요.', 'items');
+    const blocked = idxs.filter(i => !canCancelItem(o.items[i]));
+    if (blocked.length) return fail(`제작이 시작되었거나 이미 취소된 상품은 취소할 수 없습니다: ${blocked.map(i => o.items[i].name).join(', ')}`, 'items');
+    if (!CANCEL_REASONS.includes(reason)) return fail('취소 사유를 선택해 주세요.', 'reason');
+    const text = String(detail || '').trim();
+    if (reason === '기타' && !text) return fail('기타 사유를 입력해 주세요.', 'detail');
+    if (text.length > DETAIL_MAX) return fail(`상세 사유는 ${DETAIL_MAX}자 이내로 입력해 주세요.`, 'detail');
+    const rf = normRefund(o, refund);
+    if (rf.error) return fail(rf.error, rf.field);
+    const liveAll = o.items.map((it, i) => (it.payStatus !== '취소' ? i : -1)).filter(i => i >= 0);
+    const scope = idxs.length === liveAll.length ? '전체' : '부분';   // 취소 불가 단계인 상품이 남으면 '부분'
+    const at = nowText();
+    const req = { reqNo: nextReqNo('C', orderNo, cancel), orderNo, type: '취소', scope, at, items: idxs, reason, detail: text, refund: rf.refund,
+      status: '대기', processedAt: '', processedBy: '', refundAmount: 0, memo: '', rejectReason: '', channel: '마이페이지', web: true,
+      history: [{ at, content: `고객 취소 요청(${scope}) (${reason}${scope === '부분' ? `, 상품 ${idxs.length}건` : ''})`, by: '고객' }] };
+    if (!saveReq('cancel', req)) return fail('일시적인 오류로 신청하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    cancel.unshift(req);
+    markCancelRequested(req);
+    const names = idxs.map(i => o.items[i].name).join(', ');
+    OrderData.addHistory(orderNo, '취소신청', `고객 취소 요청(${scope}) (${req.reqNo}, 마이페이지) · 상품 ${idxs.length}건 (${names}) · 사유 ${reason}${text ? ` · ${text}` : ''} · 환불 ${refundTextOf(rf.refund)}`, '고객');
+    return { ok: true, req };
+  }
+  // 교환·반품 신청: type = '교환' | '반품', reason = DEFECTS 중 하나, detail = 불량 내용(필수, 10자 이상), photos = 사진 파일명 배열(최대 5장), refund = 반품일 때만
+  function submitExchange(orderNo, type, items, reason, detail, photos, refund, memberNo) {
+    const o = memberOrder(orderNo, memberNo);
+    if (!o) return fail('주문 정보를 찾을 수 없습니다.');
+    if (type !== '교환' && type !== '반품') return fail('교환 또는 반품을 선택해 주세요.', 'type');
+    if (exchange.some(q => q.orderNo === orderNo && q.status === '대기')) return fail('이 주문은 이미 교환·반품 신청이 접수되어 처리 중입니다.');
+    const idxs = pickIdx(o, items);
+    if (!idxs.length) return fail(`${type}할 상품을 선택해 주세요.`, 'items');
+    const notDelivered = idxs.filter(i => o.items[i].payStatus === '취소' || o.items[i].status !== '배송완료');
+    if (notDelivered.length) return fail(`배송이 완료된 상품만 ${type} 신청할 수 있습니다: ${notDelivered.map(i => o.items[i].name).join(', ')}`, 'items');
+    if (!DEFECTS.includes(reason)) return fail('불량 유형을 선택해 주세요.', 'reason');
+    const text = String(detail || '').trim();
+    if (text.length < DEFECT_DETAIL_MIN) return fail(`불량 내용을 ${DEFECT_DETAIL_MIN}자 이상 적어 주세요.`, 'detail');
+    if (text.length > DETAIL_MAX) return fail(`불량 내용은 ${DETAIL_MAX}자 이내로 입력해 주세요.`, 'detail');
+    const names = (Array.isArray(photos) ? photos : []).map(String).filter(Boolean);
+    if (names.length > PHOTO_MAX) return fail(`사진은 최대 ${PHOTO_MAX}장까지 첨부할 수 있습니다.`, 'photos');
+    let rf = { refund: null };
+    if (type === '반품') { rf = normRefund(o, refund); if (rf.error) return fail(rf.error, rf.field); }
+    const live = o.items.map((it, i) => (it.payStatus !== '취소' ? i : -1)).filter(i => i >= 0);
+    const at = nowText();
+    const req = { reqNo: nextReqNo('X', orderNo, exchange), orderNo, type, at, items: idxs, reason, detail: text, photos: names.length, photoNames: names, refund: rf.refund,
+      status: '대기', processedAt: '', processedBy: '', refundAmount: 0, result: '', memo: '', rejectReason: '', channel: '마이페이지', web: true,
+      history: [{ at, content: `고객 ${type} 신청 (${reason}${idxs.length < live.length ? `, 상품 ${idxs.length}건` : ''})`, by: '고객' }] };
+    if (!saveReq('exchange', req)) return fail('일시적인 오류로 신청하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    exchange.unshift(req);
+    OrderData.addHistory(orderNo, `${type}신청`, `고객 ${type} 신청 (${req.reqNo}, 마이페이지) · 상품 ${idxs.length}건 (${idxs.map(i => o.items[i].name).join(', ')}) · 불량: ${reason} · ${text}${names.length ? ` · 사진 ${names.length}장` : ''}${rf.refund ? ` · 환불 ${refundTextOf(rf.refund)}` : ''}`, '고객');
+    return { ok: true, req };
+  }
+
   // ===== 주문 히스토리 연동 =====
   // 주문 상세 > 주문 히스토리에 이 주문의 취소 요청·교환·반품 처리 이력을 같이 보여줌
   //   고객 신청 이력('취소신청'·'교환신청'·'반품신청')과 샘플로 만들어진 처리 이력은 여기서 공급하고,
-  //   관리자가 화면에서 처리한 이력은 승인·반려 시 OrderData.addHistory로 이미 기록되므로 중복되지 않게 뺌 (overlay에 있는 신청 = 관리자가 처리한 신청)
+  //   관리자가 화면에서 처리한 이력은 승인·반려 시 OrderData.addHistory로 이미 기록되므로 중복되지 않게 뺌 (overlay에 있는 신청 = 관리자가 처리했거나 고객이 마이페이지에서 신청한 신청)
+  //   마이페이지에서 고객이 신청한 건(web)은 신청 때 OrderData.addHistory로 고객 신청 이력을 남기므로 고객 이력도 뺌
   function historyOf(orderNo) {
     const out = [];
     [['cancel', cancel], ['exchange', exchange]].forEach(([kind, list]) => list.filter(q => q.orderNo === orderNo).forEach(q => {
       const processedHere = !!overlays[kind][q.reqNo];
       q.history.forEach(h => {
         if (h.by !== '고객' && processedHere) return;
+        if (h.by === '고객' && q.web) return;
         out.push({ at: h.at, type: h.by === '고객' ? `${q.type}신청` : (q.type === '취소' ? '취소' : q.type), content: `${h.content} (${q.reqNo})`, by: h.by });
       });
     }));
@@ -332,6 +439,8 @@
     historyOf, processText,
     STATUS_TEXT, orderOf, maxRefund, CANCEL_LIMIT, stepOf, canCancelItem, cancelLimitOf,
     CANCEL_REASONS, DEPARTMENTS, CAUSES, CAUSE_OF, ACTIONS,
+    // 고객 신청 (마이페이지 > 주문/배송)
+    DEFECTS, REFUND_BANKS, DETAIL_MAX, PHOTO_MAX, DEFECT_DETAIL_MIN, refundKindOf, requestsOf, submitCancel, submitExchange,
     cancel: { requests: cancel.sort(byAt), approve: approveCancel, reject: (req, reason, by) => reject('cancel', req, reason, by) },
     exchange: { requests: exchange.sort(byAt), approve: approveExchange, reject: (req, reason, by) => reject('exchange', req, reason, by) }
   };

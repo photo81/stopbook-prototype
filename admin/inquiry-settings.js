@@ -65,8 +65,7 @@
   const defaults = () => ({ types: JSON.parse(JSON.stringify(DEFAULT_TYPES)), renames: {}, knowledge: JSON.parse(JSON.stringify(DEFAULT_KNOWLEDGE)), prompt: { model: MODELS[0].id, format: DEFAULT_PROMPT, updatedAt: '', updatedBy: '' }, updatedAt: '', updatedBy: '' });
 
   let data;
-  try { data = Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { data = defaults(); }
-  const save = (by, part) => {
+  try { data = Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { data = defaults(); }  const save = (by, part) => {
     data.updatedAt = nowText(); data.updatedBy = by || '';
     if (part === 'prompt') Object.assign(data.prompt, { updatedAt: data.updatedAt, updatedBy: data.updatedBy });
     try { localStorage.setItem(KEY, JSON.stringify(data)); return true; } catch (e) { return false; }
@@ -106,8 +105,7 @@
     save(by);
     return '';
   }
-  const setUse = (id, use, by) => { const t = byId(id); if (t) { t.use = !!use; save(by); } };
-  function moveType(id, dir, by) {
+  const setUse = (id, use, by) => { const t = byId(id); if (t) { t.use = !!use; save(by); } };  function moveType(id, dir, by) {
     const i = data.types.findIndex(t => t.id === id), j = i + dir;
     if (i < 0 || j < 0 || j >= data.types.length) return;
     [data.types[i], data.types[j]] = [data.types[j], data.types[i]];

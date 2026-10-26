@@ -6,6 +6,7 @@
 //   별도 발급 신청: 자동 발급으로는 안 되는 서류(기관 양식·직인 날인·수신처 변경·납품서·세금계산서 수정 등)를 고객이 따로 신청한 건.
 //     주문 전 견적서 요청처럼 주문과 연결되지 않은 신청도 있음 (orderNo 없음 → customer = { name, phone, email, company })
 //     관리자가 서류를 만들어 전달(발급 완료)하거나 반려. 처리한 신청은 localStorage에 통째로 보관해 다시 열 때 그대로 복원
+//   고객이 쇼핑몰 마이페이지(user/mypage.html#orders)에서 바로 발급한 서류(issueByCustomer)와 발급 신청(submitRequest)도 같은 저장소에 저장 → 관리자 화면에 바로 보임
 // TODO: 실서비스에서는 GET /api/admin/documents/issues, GET /api/admin/documents/requests, POST /api/admin/documents/requests/{reqNo}/complete|reject
 (function () {
   'use strict';
@@ -210,7 +211,8 @@
     }
   });
   // 관리자가 직접 등록한 신청 (유선·이메일 등으로 받은 별도 발급 신청, 신청번호 DM…)
-  Object.values(overlay).filter(x => x.manual && !requests.some(r => r.reqNo === x.reqNo)).forEach(x => requests.push(x));
+  // + 고객이 마이페이지에서 같은 주문에 다시 신청한 건 (신청번호 D주문번호-2 …, web) — 주문별 반복에서는 첫 번호만 찾으므로 여기서 넣음
+  Object.values(overlay).filter(x => (x.manual || x.web) && !requests.some(r => r.reqNo === x.reqNo)).forEach(x => requests.push(x));
   // ===== 신청 정보: 담당자 · 기관/회사명 + 서류별 추가 정보 =====
   //   contact = { name(담당자명), phone, email, org(기관/회사명) } — 모든 신청
   //   bizCert = 사업자등록증 첨부 파일 — 세금계산서를 신청한 경우
@@ -379,10 +381,11 @@
     return saveReq(parts[0]) ? parts : null;
   }
   // 관리자 발급(재발급·주문 상세의 증빙서류 발급): 발급 이력에 관리자 건으로 추가. src = { docType, orderNo, userId, name, email, category, company, amount, channel }
+  //   발급번호: 관리자 M…, 고객(마이페이지 바로 발급, by '고객') C…
   function addIssue(src, by) {
     const at = nowText();
     const o = src.orderNo ? OrderData.find(src.orderNo) : null;
-    const rec = { id: `M${at.slice(0, 10).replace(/-/g, '')}-${String(adminIssues.length + 1).padStart(4, '0')}`, at, docType: src.docType, orderNo: src.orderNo || '',
+    const rec = { id: `${by === '고객' ? 'C' : 'M'}${at.slice(0, 10).replace(/-/g, '')}-${String(adminIssues.length + 1).padStart(4, '0')}`, at, docType: src.docType, orderNo: src.orderNo || '',
       userId: src.userId || (o ? o.userId : ''), name: src.name || (o ? o.name : ''), email: src.email || (o ? o.email : ''),
       category: src.category || (o ? o.member.category : ''), company: src.company || (o && o.member.business ? o.member.business.companyName : ''),
       channel: src.channel || '관리자 재발급', amount: src.amount || 0, purpose: src.purpose || '', file: src.file || fileOf(src.docType, o), by };
@@ -402,11 +405,91 @@
     return rec;
   };
 
+  // ===== 고객 신청·발급 (쇼핑몰 마이페이지 > 주문/배송 > 증빙서류 발급) =====
+  //   바로 발급(INSTANT_TYPES): 견적서·거래내역서(고객 화면 표기 '거래명세서')·사업자등록증·통장사본 → 발급 이력에 고객 건으로 남기고(issueByCustomer, 발급번호 C…) 양식을 바로 내려받음
+  //     통장사본은 무통장입금(가상계좌) 주문이면 불가, 거래내역서는 결제가 확인된 주문만
+  //   발급 신청(submitRequest): 담당자가 만들어 전달하는 서류(세금계산서·현금영수증·납품서·기관 양식 견적서/거래내역서·기타)
+  //     관리자 등록(addRequest)과 같은 항목을 받고 같은 방식으로 증빙서류(D…)·영수증(R…) 접수로 나눔 → 서류 발급 관리 / 계산서 영수증 발급 관리의 처리 대기에 바로 보임
+  //     신청번호: 'D' + 주문번호 (같은 주문에 이전 신청이 있으면 뒤에 -2, -3…, 영수증 접수는 첫 글자 R). 접수 경로 channel '마이페이지', web: true
+  //     세금계산서·현금영수증은 현금성 결제(무통장입금·계좌이체·후결제·별도결제) 주문만 (카드·간편결제는 카드 영수증으로 증빙)
+  //   반환: { ok, issue } / { ok, parts } 또는 { ok: false, error(고객 안내 문구), field }
+  // TODO: 실서비스에서는 POST /api/members/me/orders/{orderNo}/documents (바로 발급은 서버가 PDF 생성), POST /api/members/me/document-requests (첨부 파일 업로드)
+  const INSTANT_TYPES = ['견적서', '거래내역서', '사업자등록증', '통장사본'];
+  const CUSTOMER_REQUEST_TYPES = ['세금계산서', '현금영수증', '납품서', '견적서', '거래내역서', '기타'];
+  const REQUIREMENT_MAX = 500;
+  const receiptAllowed = o => !!o && ['무통장입금', '계좌이체', '후결제', '별도결제'].includes(o.payMethod);
+  const fail = (error, field) => ({ ok: false, error, field: field || '' });
+  const customerOrder = (orderNo, memberNo) => { const o = orderNo ? OrderData.find(orderNo) : null; return o && (memberNo == null || (o.member && o.member.no === memberNo)) ? o : null; };
+  function issueByCustomer(orderNo, docType, memberNo) {
+    const o = customerOrder(orderNo, memberNo);
+    if (!o) return fail('주문 정보를 찾을 수 없습니다.');
+    if (!INSTANT_TYPES.includes(docType)) return fail('바로 발급할 수 없는 서류입니다. 발급 신청을 이용해 주세요.');
+    if (docType === '통장사본' && bankCopyBlocked(o)) return fail(BANK_COPY_BLOCK_REASON);
+    if (o.payStatus === '전체취소' && (docType === '견적서' || docType === '거래내역서')) return fail('취소된 주문은 견적서·거래명세서를 발급할 수 없습니다.');
+    if (docType === '거래내역서' && !o.payment.paidDateTime) return fail('거래명세서는 결제가 확인된 뒤에 발급할 수 있습니다.');
+    const amount = docType === '견적서' ? o.amount : docType === '거래내역서' ? o.payment.total : 0;
+    const rec = addIssue({ docType, orderNo, channel: '마이페이지', amount }, '고객');
+    if (!rec) return fail('일시적인 오류로 발급하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    OrderData.addHistory(orderNo, '서류발급', `${docType} 발급 (${rec.id}, 마이페이지 바로 발급 · ${rec.file})`, '고객');
+    return { ok: true, issue: rec };
+  }
+  // input = { orderNo, docTypes[], contact{ name, phone, email, org }, bizCert(세금계산서: 사업자등록증 파일명), cashReceipt{ purpose, idType, idValue }(현금영수증),
+  //           requirement, receiveBy, receiveTo, wantBy('YYYY-MM-DD'), attachment(기관 양식 등 파일명) }
+  function submitRequest(input, memberNo) {
+    const o = customerOrder(input.orderNo, memberNo);
+    if (!o) return fail('주문 정보를 찾을 수 없습니다.');
+    if (o.payStatus === '전체취소') return fail('취소된 주문은 서류를 신청할 수 없습니다.');
+    const types = [...new Set(input.docTypes || [])].filter(t => CUSTOMER_REQUEST_TYPES.includes(t));
+    if (!types.length) return fail('신청할 서류를 선택해 주세요.', 'docTypes');
+    if (types.some(t => RECEIPT_TYPES.includes(t)) && !receiptAllowed(o)) return fail('세금계산서·현금영수증은 무통장입금·계좌이체·후결제 주문만 신청할 수 있습니다. 카드·간편결제는 카드 영수증으로 증빙됩니다.', 'docTypes');
+    const dup = [...new Set(requests.filter(q => q.orderNo === o.orderNo && q.status === '대기').flatMap(typesOf).filter(t => types.includes(t)))];
+    if (dup.length) return fail(`이미 접수되어 처리 중인 서류가 있습니다: ${dup.join(', ')}`, 'docTypes');
+    const c = input.contact || {}, ct = { name: String(c.name || '').trim(), phone: String(c.phone || '').trim(), email: String(c.email || '').trim(), org: String(c.org || '').trim() };
+    if (!ct.name) return fail('담당자명을 입력해 주세요.', 'name');
+    if (!/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(ct.phone)) return fail('연락처를 정확히 입력해 주세요.', 'phone');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ct.email)) return fail('이메일 주소를 정확히 입력해 주세요.', 'email');
+    if (types.includes('세금계산서') && !input.bizCert) return fail('세금계산서를 신청하려면 사업자등록증 파일을 첨부해 주세요.', 'bizCert');
+    let cashReceipt = null;
+    if (types.includes('현금영수증')) {
+      const cr = input.cashReceipt || {};
+      if (!CASH_PURPOSES.includes(cr.purpose)) return fail('현금영수증 발급 용도를 선택해 주세요.', 'cashPurpose');
+      if (!(CASH_ID_TYPES[cr.purpose] || []).includes(cr.idType)) return fail('현금영수증 발급 번호 종류를 선택해 주세요.', 'cashIdType');
+      if (!String(cr.idValue || '').trim()) return fail('현금영수증 발급 번호를 입력해 주세요.', 'cashId');
+      cashReceipt = { purpose: cr.purpose, idType: cr.idType, idValue: String(cr.idValue).trim() };
+    }
+    if (!RECEIVE_METHODS.includes(input.receiveBy)) return fail('받는 방법을 선택해 주세요.', 'receiveBy');
+    const receiveTo = String(input.receiveTo || '').trim();
+    if (!receiveTo) return fail(`받을 ${input.receiveBy === '이메일' ? '이메일 주소' : input.receiveBy === '팩스' ? '팩스 번호' : '주소'}를 입력해 주세요.`, 'receiveTo');
+    const at = nowText();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.wantBy || '') || input.wantBy < at.slice(0, 10)) return fail('발급 희망일을 오늘 이후 날짜로 선택해 주세요.', 'wantBy');
+    const requirement = String(input.requirement || '').trim();
+    if ((types.includes('기타') || types.includes('납품서')) && !requirement) return fail('요청 사항에 필요한 서류와 양식을 적어 주세요.', 'requirement');
+    if (requirement.length > REQUIREMENT_MAX) return fail(`요청 사항은 ${REQUIREMENT_MAX}자 이내로 입력해 주세요.`, 'requirement');
+    const base = `D${o.orderNo.replace('-', '')}`;
+    const used = no => requests.some(q => q.reqNo === no || q.reqNo === rNo(no));
+    let reqNo = base;
+    for (let n = 2; used(reqNo); n++) reqNo = `${base}-${n}`;
+    const paid = o.payment && o.payment.paidDateTime;
+    const app = { reqNo, web: true, channel: '마이페이지', orderNo: o.orderNo, customer: null, at,
+      docType: types[0], docTypes: types, requirement: requirement || `${types.join(', ')} 발급 요청`, attachment: input.attachment || '',
+      contact: ct, bizCert: types.includes('세금계산서') ? input.bizCert : '', taxInvoice: types.includes('세금계산서') ? { kind: paid ? '영수' : '청구', date: (paid || at).slice(0, 10) } : null, cashReceipt,
+      receiveBy: input.receiveBy, receiveTo, wantBy: input.wantBy,
+      status: '대기', processedAt: '', processedBy: '', file: '', sentBy: '', sentTo: '', memo: '', rejectReason: '',
+      history: [{ at, content: `고객 ${types.join(', ')} 별도 발급 신청 (마이페이지, ${input.receiveBy} 수령)`, by: '고객' }] };
+    const parts = splitApplication(app);
+    requests.unshift(...parts);
+    if (!saveReq(parts[0])) { parts.forEach(q => requests.splice(requests.indexOf(q), 1)); return fail('일시적인 오류로 신청하지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
+    parts.forEach(q => OrderData.addHistory(q.orderNo, '서류발급', `${q.docTypes.join(', ')} ${q.kind} 발급 신청 (${q.reqNo}, 마이페이지, ${q.receiveBy} 수령)`, '고객'));
+    return { ok: true, parts };
+  }
+
   const byAt = (a, b) => b.at.localeCompare(a.at);
   window.DocData = {
     STATUS_TEXT, AUTO_TYPES, REQUEST_TYPES, RECEIVE_METHODS, BANK_COPY_BLOCK_REASON, bankCopyBlocked, CHANNEL_OF, RECEIPT_CHANNELS: ['유선', '이메일', '팩스', '방문', '기타'], CASH_ID_TYPES, orderOf, applicantOf, typesOf, typeLabel,
     RECEIPT_TYPES, PROOF_TYPES, TAX_KINDS, CASH_PURPOSES, KINDS, groupOf, proofTypesOf, receiptTypesOf, partsDone, allDone, anyDone, progressOf,
     issues: issues.sort(byAt), requests: requests.sort(byAt),
-    completeProof, completeReceipt, saveMemo, reject, addIssue, reissue, addRequest
+    completeProof, completeReceipt, saveMemo, reject, addIssue, reissue, addRequest,
+    // 고객 신청·발급 (마이페이지 > 주문/배송 > 증빙서류 발급)
+    INSTANT_TYPES, CUSTOMER_REQUEST_TYPES, REQUIREMENT_MAX, receiptAllowed, issueByCustomer, submitRequest
   };
 })();

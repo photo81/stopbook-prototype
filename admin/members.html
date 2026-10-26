@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 통합 회원 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261026-4c">
+<link rel="stylesheet" href="admin.css?v=20261026-6">
 </head>
 <body>
 <div class="layout">
@@ -42,6 +42,7 @@
       <li class="has-sub">
         <a href="#" class="menu-parent" aria-expanded="false">관리자계정관리<span class="chev">▼</span></a>
         <ul class="submenu">
+          <li><a href="admin-levels.html">레벨 관리</a></li>
           <li><a href="admin-accounts.html">계정 관리</a></li>
         </ul>
       </li>
@@ -80,6 +81,7 @@
           <li><a href="board-inquiry.html">1:1 문의</a></li>
           <li><a href="board-faq.html">FAQ</a></li>
           <li><a href="board-review.html">이용후기</a></li>
+          <li><a href="board-partner.html">제휴문의</a></li>
         </ul>
       </li>
       <li class="has-sub">
@@ -357,7 +359,8 @@
         <colgroup><col class="c-th"><col><col class="c-th"><col><col class="c-th"><col></colgroup>
         <tr>
           <th>가입일</th><td class="readonly" id="fJoinDate"></td>
-          <th>최근접속일</th><td class="readonly" id="fLastLogin" colspan="3"></td>
+          <th>최근접속일</th><td colspan="3"><div class="usage-line"><span class="readonly" id="fLastLogin"></span>
+            <button type="button" class="btn btn-xs" data-usage="logins" id="btnLoginLog">로그인 로그</button></div></td>
         </tr>
         <tr>
           <th>가입유형</th><td class="readonly" id="fMemberType"></td>
@@ -428,22 +431,30 @@
       </table>
 
       <div class="section-title">이용 정보</div>
+      <!-- 1줄: 총 주문 이력 · 장바구니 / 2줄: 문의 이력 · 메시지 이력(메시지 전송 이력). 값과 버튼은 한 줄 -->
       <table class="form-table multi-col">
-        <colgroup><col class="c-th"><col><col class="c-th"><col><col class="c-th"><col></colgroup>
+        <colgroup><col class="c-th"><col><col class="c-th"><col></colgroup>
         <tr>
           <th>총 주문 이력</th><td>
             <div class="usage-line"><span class="benefit" id="uOrders"></span>
               <button type="button" class="btn btn-xs" data-usage="orders">상세보기</button>
             </div>
           </td>
+          <th>장바구니</th><td>
+            <div class="usage-line"><span class="benefit" id="uCart"></span>
+              <button type="button" class="btn btn-xs" data-usage="cart">장바구니 보기</button>
+            </div>
+          </td>
+        </tr>
+        <tr>
           <th>문의 이력</th><td>
             <div class="usage-line"><span class="benefit" id="uInquiries"></span>
               <button type="button" class="btn btn-xs" data-usage="inquiries">상세보기</button>
             </div>
           </td>
-          <th>장바구니</th><td>
-            <div class="usage-line"><span class="benefit" id="uCart"></span>
-              <button type="button" class="btn btn-xs" data-usage="cart">장바구니 보기</button>
+          <th>메시지 이력</th><td>
+            <div class="usage-line"><span class="benefit" id="uMessages"></span>
+              <button type="button" class="btn btn-xs" data-usage="messages">상세보기</button>
             </div>
           </td>
         </tr>
@@ -675,10 +686,11 @@
 <div class="toast" id="toast"></div>
 
 <script src="alimtalk.js?v=20261026-1"></script>
-<script src="board-store.js?v=20261026-1"></script>
-<script src="member-type-store.js?v=20261026-1"></script>
+<script src="board-store.js?v=20261026-5"></script>
+<script src="member-type-store.js?v=20261026-6"></script>
+<script src="message-store.js?v=20261026-2"></script><!-- 회원 상세 > 이용 정보 > 메시지 전송 이력 -->
 <script src="feedback.js?v=20261026-1"></script>
-<script src="member-data.js?v=20261026-1"></script>
+<script src="member-data.js?v=20261026-7"></script>
 <script>
 (function () {
   'use strict';
@@ -1051,6 +1063,7 @@
     const envTag = (v, what) => (v ? ` <span class="env-tag env-${v}" title="${what}: ${v === 'MO' ? '모바일' : 'PC'}">${v}</span>` : '');
     $('fJoinDate').innerHTML = esc(m.joinDate) + envTag(m.joinEnv, '가입 기기');
     $('fLastLogin').innerHTML = esc(m.lastLogin) + envTag(m.loginEnv, '최근 접속 기기');
+    $('btnLoginLog').hidden = false;
     fillGradeSelect(m);
     renderGradeDesc();
     document.querySelector(`input[name=fMkSms][value=${m.marketingSms}]`).checked = true;
@@ -1093,6 +1106,7 @@
     $('pwSns').textContent = '탈퇴로 패스워드·로그인 기록이 파기되었습니다.';
     $('pwActions').hidden = true;
     $('fLastLogin').innerHTML = pv(WL.purged);
+    $('btnLoginLog').hidden = true;   // 탈퇴로 로그인 로그 파기
   }
 
   // ===== 알림톡 발송 (alimtalk.js, 비즈엠 API v2.29.7) =====
@@ -1266,7 +1280,14 @@
     $('uOrders').textContent = `${orders.length.toLocaleString()}건 / ${won(orderSum)}`;
     $('uInquiries').innerHTML = `${inq.length.toLocaleString()}건${waiting ? ` <span class="usage-wait">답변대기 ${waiting}</span>` : ''}`;
     $('uCart').textContent = cs.count ? `${cs.count}종 ${cs.qty}개 / ${won(cs.total)}` : '비어 있음';
+    // 메시지 전송 이력: 건수 · 채널별 · 최근 발송일 (MessageStore.memberLogs)
+    const msgs = window.MessageStore ? MessageStore.memberLogs(m) : [];
+    const byCh = ['alimtalk', 'sms', 'email'].map(c => [MessageStore.CHANNELS[c].label, msgs.filter(x => x.channel === c).length]).filter(([, n]) => n);
+    // 버튼과 한 줄에 들어가도록 건수·최근 발송일만, 채널별 건수는 마우스를 올리면 표시
+    $('uMessages').innerHTML = msgs.length ? `${msgs.length.toLocaleString()}건 <span class="readonly">(최근 ${esc(msgs[0].at.slice(0, 10))})</span>` : '발송 이력 없음';
+    $('uMessages').title = byCh.map(([l, n]) => `${l} ${n}건`).join(' · ');
   }
+  const CH_BADGE = { alimtalk: 'inq-done', sms: 'inq-wait', email: '' };
 
   const orderStatusBadge = s => `<span class="badge ${MemberData.statusClass(s)}">${esc(s)}</span>`;   // 색은 주문 리스트 제작상태와 같음
 
@@ -1305,6 +1326,37 @@
         ${q.answer ? `<div class="inq-a"><b>답변</b> ${esc(q.answer)} <span class="memo-meta">(${q.answeredAt} · ${esc(q.answeredBy)})</span></div>` : '<div class="inq-a readonly">아직 답변이 등록되지 않았습니다.</div>'}
       </td></tr>`).join('') : '<tr><td colspan="5" class="empty">문의 이력이 없습니다.</td></tr>';
       $('uNote').textContent = '제목을 누르면 문의 내용과 답변을 볼 수 있습니다.';
+    } else if (kind === 'messages') {
+      // 메시지 전송 이력: 메시지 전송 화면·쇼핑몰 자동 발송(가입 환영·비밀번호 재설정·문의 접수 등) + 샘플 자동 발송 이력
+      const list = window.MessageStore ? MessageStore.memberLogs(m) : [];
+      const ok = list.filter(x => x.ok).length;
+      $('uTitle').textContent = `메시지 전송 이력 - ${who}`;
+      $('uSummary').innerHTML = `총 <b>${list.length.toLocaleString()}</b>건 · 성공 <b>${ok}</b>건${list.length - ok ? ` · 실패 <b>${list.length - ok}</b>건` : ''}`;
+      $('uHead').innerHTML = '<th>발송일시</th><th>채널</th><th>양식</th><th>내용</th><th>수신처</th><th>결과</th><th>발송</th>';
+      $('uBody').innerHTML = list.length ? list.map(x => `<tr>
+        <td>${esc(x.at.slice(0, 16))}${x.reserveAt ? `<br><span class="readonly">예약 ${esc(x.reserveAt)}</span>` : ''}</td>
+        <td><span class="badge ${CH_BADGE[x.channel] || ''}">${esc(MessageStore.CHANNELS[x.channel] ? MessageStore.CHANNELS[x.channel].label : x.channel)}</span></td>
+        <td class="left">${esc((x.templateName || '직접 입력').replace(/\s*\(광고\)$/, ''))}${x.ad ? ' <span class="badge inq-wait">광고</span>' : ''}</td>
+        <td class="left" title="${esc(x.text)}">${esc(String(x.text).slice(0, 30))}${String(x.text).length > 30 ? '…' : ''}</td>
+        <td class="mono">${esc(x.to || '-')}</td>
+        <td>${x.ok ? '성공' : '<span class="usage-wait">실패</span>'}</td>
+        <td>${esc(x.by || '-')}</td>
+      </tr>`).join('') : '<tr><td colspan="7" class="empty">메시지 전송 이력이 없습니다.</td></tr>';
+      $('uNote').textContent = '알림톡·SMS·이메일 발송 기록입니다. 내용에 마우스를 올리면 전체 문구를 볼 수 있습니다. (가입·주문·문의 자동 안내 일부는 샘플 이력)';
+    } else if (kind === 'logins') {
+      // 로그인 로그: 쇼핑몰 로그인 성공·실패 (MemberData.Auth.loginLogOf)
+      const list = MemberData.Auth.loginLogOf(m);
+      const fail = list.filter(x => !x.ok).length;
+      const d30 = new Date(Date.now() - 30 * 86400000), since = `${d30.getFullYear()}-${String(d30.getMonth() + 1).padStart(2, '0')}-${String(d30.getDate()).padStart(2, '0')}`;
+      $('uTitle').textContent = `로그인 로그 - ${who}`;
+      $('uSummary').innerHTML = `총 <b>${list.length.toLocaleString()}</b>건 · 성공 <b>${list.length - fail}</b> · 실패 <b>${fail}</b> · 최근 30일 로그인 <b>${list.filter(x => x.ok && x.at.slice(0, 10) >= since).length}</b>회`;
+      $('uHead').innerHTML = '<th>일시</th><th>결과</th><th>로그인 방식</th><th>접속 기기</th><th>IP</th><th>비고</th>';
+      $('uBody').innerHTML = list.length ? list.map(x => `<tr>
+        <td>${esc(x.at.slice(0, 16))}</td><td>${x.ok ? '<span class="badge inq-done">성공</span>' : '<span class="badge inq-wait">실패</span>'}</td>
+        <td>${esc(x.method || '-')}</td><td>${x.env ? `<span class="env-tag env-${esc(x.env)}">${esc(x.env)}</span>` : '-'}</td>
+        <td class="mono">${esc(x.ip || '-')}</td><td class="left">${esc(x.note || '')}</td>
+      </tr>`).join('') : '<tr><td colspan="6" class="empty">로그인 기록이 없습니다.</td></tr>';
+      $('uNote').textContent = '쇼핑몰 로그인 기록입니다(최근 순). IP는 가운데를 가려 표시합니다. 샘플 회원은 최근접속일 기준 샘플 기록이 함께 보입니다.';
     } else {
       const list = m.cart || [];
       const cs = cartSummary(m);

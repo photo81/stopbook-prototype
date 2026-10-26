@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 마일리지 내역</title>
-<link rel="stylesheet" href="admin.css?v=20261026-4">
+<link rel="stylesheet" href="admin.css?v=20261026-6">
 </head>
 <body>
 <div class="layout">
@@ -42,6 +42,7 @@
       <li class="has-sub">
         <a href="#" class="menu-parent" aria-expanded="false">관리자계정관리<span class="chev">▼</span></a>
         <ul class="submenu">
+          <li><a href="admin-levels.html">레벨 관리</a></li>
           <li><a href="admin-accounts.html">계정 관리</a></li>
         </ul>
       </li>
@@ -80,6 +81,7 @@
           <li><a href="board-inquiry.html">1:1 문의</a></li>
           <li><a href="board-faq.html">FAQ</a></li>
           <li><a href="board-review.html">이용후기</a></li>
+          <li><a href="board-partner.html">제휴문의</a></li>
         </ul>
       </li>
       <li class="has-sub">
@@ -117,7 +119,7 @@
             <div class="field f-keyword">
               <label for="sKeyType">검색어</label>
               <select id="sKeyType" style="flex:0 0 96px">
-                <option value="all">전체</option><option value="name">회원명</option><option value="userId">아이디</option><option value="reason">내용</option><option value="orderNo">주문번호</option><option value="by">처리자</option>
+                <option value="all">전체</option><option value="name">회원명</option><option value="userId">아이디</option><option value="email">이메일</option><option value="phone">휴대폰</option><option value="reason">내용</option><option value="orderNo">주문번호</option><option value="by">처리자</option>
               </select>
               <input type="text" id="sKeyword" placeholder="검색어 입력">
             </div>
@@ -225,9 +227,9 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261026-1"></script>
-<script src="member-type-store.js?v=20261026-1"></script>
-<script src="member-data.js?v=20261026-1"></script>
+<script src="board-store.js?v=20261026-5"></script>
+<script src="member-type-store.js?v=20261026-6"></script>
+<script src="member-data.js?v=20261026-7"></script>
 <script src="list-tools.js?v=20261026-1"></script>
 <script src="feedback.js?v=20261026-1"></script>
 <script>
@@ -236,7 +238,7 @@
   // 마일리지 내역 (혜택 > 혜택관리)
   //   전체 회원의 마일리지 지급·차감 이력을 한 목록으로 (member-data.js mileageHistory)
   //     자동: 시스템 적립(구매 확정·리뷰)·주문 사용·취소/반품 마일리지 환불(claim-data.js) / 수동: 회원 상세에서 관리자가 지급·차감
-  //   유형 탭(전체·지급·차감) · 검색(회원명·아이디·내용·관련번호·처리자, 기간, 구분) · 기간 합계 · N개씩 · 엑셀
+  //   유형 탭(전체·지급·차감) · 검색(회원명·아이디·이메일·휴대폰·내용·관련번호·처리자, 기간, 구분) · 기간 합계 · N개씩 · 엑셀
   // TODO: 실서비스에서는 GET /api/admin/benefits/mileage/history?{조건}
   const { esc, toast, initSidebar, setDefaultRange, listToday } = AdminUtil;
   const $ = id => document.getElementById(id);
@@ -267,9 +269,11 @@
   }
   function matches(e) {
     const s = search, day = e.at.slice(0, 10);
-    const fields = { name: e.m.name, userId: e.m.userId, reason: e.reason, orderNo: e.orderNo, by: e.by };
+    // 휴대폰은 '-' 없이 비교 (010-1234-5678 / 01012345678 모두 찾음)
+    const fields = { name: e.m.name, userId: e.m.userId, email: e.m.email, phone: String(e.m.phone || '').replace(/-/g, ''), reason: e.reason, orderNo: e.orderNo, by: e.by };
+    const kw = s.keyType === 'phone' ? s.kw.replace(/-/g, '') : s.kw;
     return (!s.from || day >= s.from) && (!s.to || day <= s.to) && (!s.mode || e.mode === s.mode) &&
-      (!s.kw || (s.keyType === 'all' ? Object.values(fields) : [fields[s.keyType]]).some(v => String(v || '').toLowerCase().includes(s.kw)));
+      (!kw || (s.keyType === 'all' ? Object.values(fields) : [fields[s.keyType]]).some(v => String(v || '').toLowerCase().includes(kw)));
   }
   const tools = ListTools.create({ section: $('listBody').closest('.panel'), onChange: () => render(),
     units: [{ label: '이력 단위', desc: '지급·차감 1건 = 1행', file: '마일리지내역',

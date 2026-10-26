@@ -49,15 +49,18 @@
     .sort((a, b) => b.orderedAt.localeCompare(a.orderedAt))[0] || null;
 
   // ===== 문의 목록 =====
+  //   member-data.js m.inquiries = 샘플 + 쇼핑몰 1:1 문의하기로 접수한 건(user: true, 로그인 회원만 접수 가능)
   const inquiries = [];
-  MemberData.members.forEach(m => (m.inquiries || []).forEach(cur => {
-    const src = Object.assign({}, cur, cur.sample || {});   // 관리자 처리 전 샘플 값 기준 (처리 내용은 아래에서 덮어씀)
+  // 문의 1건 구성. src = 문의 원본(샘플 또는 고객 접수), m = 회원
+  function buildQ(src, m) {
     const r = rng(src.no, 97);
     const ov = edits[src.no] || {};
-    const order = ORDER_TYPES.includes(src.type) ? orderBefore(m.userId, src.at) : null;
+    // 연결 주문: 고객 접수 건은 고객이 고른 주문 상품(orderItems, 여러 주문 가능), 샘플은 유형이 주문 관련이면 45일 이내 직전 주문
+    const orderItems = (src.orderItems || []).filter(it => OrderData.find(it.orderNo));
+    const order = orderItems.length ? OrderData.find(orderItems[0].orderNo) : (ORDER_TYPES.includes(src.type) && !src.user ? orderBefore(m.userId, src.at) : null);
     const done = src.status === '답변완료';
-    // 샘플 담당자: 답변완료 = 답변자, 답변 대기(오늘 접수) 중 일부는 이미 담당자가 지정돼 확인중
-    const sampleAgent = done ? src.answeredBy : (r() < 0.3 ? AGENTS[Math.floor(r() * AGENTS.length)] : '');
+    // 샘플 담당자: 답변완료 = 답변자, 답변 대기(오늘 접수) 중 일부는 이미 담당자가 지정돼 확인중. 고객 접수 건은 샘플 담당자 없음
+    const sampleAgent = done ? src.answeredBy : (!src.user && r() < 0.3 ? AGENTS[Math.floor(r() * AGENTS.length)] : '');
     // 확인중 샘플의 담당자 지정 시각: 접수 10~40분 뒤 (지금보다 늦지 않게)
     const assignedAt = () => {
       const at = new Date(src.at.replace(' ', 'T')).getTime();
@@ -70,10 +73,12 @@
       no: src.no,
       inquiryNo: `Q${src.at.slice(0, 10).replace(/-/g, '')}-${String(src.no).padStart(5, '0')}`,
       at: src.at,
-      member: m, name: m.name, userId: m.userId, email: m.email, phone: m.phone, category: m.category,
-      type: src.type, subject: src.title, content: src.content,
-      orderNo: order ? order.orderNo : '',
-      files: FILES_OF[src.title] || [],
+      member: m, user: !!src.user, name: m.name, userId: m.userId, email: m.email, phone: m.phone, category: m.category,
+      type: src.type, subject: src.title, content: src.content, contentHtml: src.contentHtml || '',
+      orderNo: order ? order.orderNo : '',   // 대표 주문 (첫 번째)
+      orderNos: orderItems.length ? [...new Set(orderItems.map(it => it.orderNo))] : order ? [order.orderNo] : [],
+      orderItems,   // 고객이 고른 주문 상품 [{ orderNo, idx, name, category, qty }] (샘플은 빈 배열 = 주문 전체)
+      files: src.files || FILES_OF[src.title] || [],
       tags: ov.tags || tags,
       assignee: ov.assignee !== undefined ? ov.assignee : sampleAgent,
       status: done ? '완료' : sampleAgent ? '확인중' : '대기',
@@ -81,7 +86,7 @@
       answer: done ? src.answer : '',
       answeredAt: src.answeredAt || '', answeredBy: src.answeredBy || '',
       draft: '',
-      log: [{ at: src.at, text: '고객 문의 접수', by: m.name }]
+      log: [{ at: src.at, text: src.user ? '고객 문의 접수 (쇼핑몰 1:1 문의)' : '고객 문의 접수', by: m.name }]
         .concat(sampleAgent ? [{ at: done ? addHours(src.at, 1) : assignedAt(), text: `처리 담당자 지정: ${sampleAgent}`, by: sampleAgent }] : [])
         .concat(done ? [{ at: src.answeredAt, text: '답변 완료', by: src.answeredBy }] : [])
     };
@@ -89,21 +94,42 @@
     ['type', 'status', 'replyHtml', 'answer', 'answeredAt', 'answeredBy', 'draft'].forEach(k => { if (ov[k] !== undefined) q[k] = ov[k]; });
     if (ov.log) q.log = q.log.concat(ov.log);
     q.type = canonicalType(q.type);
-    inquiries.push(q);
+    return q;
+  }
+  MemberData.members.forEach(m => (m.inquiries || []).forEach(cur => {
+    inquiries.push(buildQ(Object.assign({}, cur, cur.sample || {}), m));   // 관리자 처리 전 샘플 값 기준 (처리 내용은 buildQ에서 덮어씀)
   }));
   inquiries.sort((a, b) => b.at.localeCompare(a.at) || b.no - a.no);
 
   const find = no => inquiries.find(q => String(q.no) === String(no)) || null;
   const orderOf = q => (q.orderNo ? OrderData.find(q.orderNo) : null);
+  const ordersOf = q => q.orderNos.map(no => OrderData.find(no)).filter(Boolean);   // 연결 주문 전체 (고객이 여러 주문의 상품을 고른 경우)
   // 같은 회원의 다른 문의 (문의 이력)
   const historyOf = q => inquiries.filter(x => x.userId === q.userId && x.no !== q.no);
 
+  // 쇼핑몰 1:1 문의하기에서 방금 접수한 문의를 목록에 추가 (저장은 inquiry-user.js). rec = 저장 레코드, m = 회원
+  function addFromUser(rec, m) {
+    const q = buildQ(rec, m);
+    inquiries.unshift(q);
+    syncNewCount();
+    return q;
+  }
+  // 고객이 접수를 취소 (답변 대기 중인 고객 접수 건만). 목록에서 제거
+  function removeUser(no) {
+    const i = inquiries.findIndex(q => String(q.no) === String(no));
+    if (i < 0 || !inquiries[i].user) return false;
+    inquiries.splice(i, 1);
+    delete edits[no]; save();
+    syncNewCount();
+    return true;
+  }
+
   // 주문 히스토리용 문의 이력 (주문 상세 > 주문 히스토리, order-detail.html): 주문과 연결된 문의의 접수·담당자 지정·유형 변경·답변 완료·수정
   //   문의 처리 이력(q.log)을 그대로 옮겨 보여 주므로 1:1 문의에서 처리하면 주문 히스토리에도 바로 남음. 임시 저장은 내부 작업이라 제외
-  const orderHistory = orderNo => inquiries.filter(q => q.orderNo === orderNo).flatMap(q => q.log
+  const orderHistory = orderNo => inquiries.filter(q => q.orderNos.includes(orderNo)).flatMap(q => q.log
     .filter(l => l.text !== '답변 임시 저장')
     .map(l => ({ at: l.at, type: '문의', by: l.by,
-      content: l.text === '고객 문의 접수' ? `1:1 문의 접수 (${q.inquiryNo}) · [${q.type}] ${q.subject}` : `1:1 문의 ${l.text} (${q.inquiryNo})` })));
+      content: l.text.startsWith('고객 문의 접수') ? `1:1 문의 접수 (${q.inquiryNo}) · [${q.type}] ${q.subject}` : `1:1 문의 ${l.text} (${q.inquiryNo})` })));
 
   // 저장: 바뀐 항목 + 처리 이력 한 줄
   function update(q, fields, logText, by) {
@@ -132,5 +158,5 @@
   const newCount = () => inquiries.filter(q => q.status === '대기').length;
   const syncNewCount = () => { if (window.AdminUtil && AdminUtil.refreshNewMarks) AdminUtil.refreshNewMarks(); };
 
-  window.InquiryData = { STATUSES, AGENTS, inquiries, find, orderOf, historyOf, orderHistory, newCount, assign, classify, setTags, saveDraft, complete, editReply, textToHtml };
+  window.InquiryData = { STATUSES, AGENTS, ORDER_TYPES, inquiries, find, orderOf, ordersOf, historyOf, orderHistory, newCount, assign, classify, setTags, saveDraft, complete, editReply, textToHtml, addFromUser, removeUser };
 })();

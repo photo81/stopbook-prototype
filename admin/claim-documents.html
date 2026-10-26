@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 서류 발급 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261026-4">
+<link rel="stylesheet" href="admin.css?v=20261026-6">
 </head>
 <body>
 <div class="layout">
@@ -42,6 +42,7 @@
       <li class="has-sub">
         <a href="#" class="menu-parent" aria-expanded="false">관리자계정관리<span class="chev">▼</span></a>
         <ul class="submenu">
+          <li><a href="admin-levels.html">레벨 관리</a></li>
           <li><a href="admin-accounts.html">계정 관리</a></li>
         </ul>
       </li>
@@ -80,6 +81,7 @@
           <li><a href="board-inquiry.html">1:1 문의</a></li>
           <li><a href="board-faq.html">FAQ</a></li>
           <li><a href="board-review.html">이용후기</a></li>
+          <li><a href="board-partner.html">제휴문의</a></li>
         </ul>
       </li>
       <li class="has-sub">
@@ -216,7 +218,7 @@
               </div>
               <div class="field f-status">
                 <label for="hBy">발급 구분</label>
-                <select id="hBy"><option value="">전체</option><option value="시스템">자동 발급 (시스템)</option><option value="관리자">관리자 발급·재발급</option></select>
+                <select id="hBy"><option value="">전체</option><option value="시스템">자동 발급 (시스템)</option><option value="관리자">관리자 발급·재발급</option><option value="고객">고객 발급 (마이페이지)</option></select>
               </div>
             </div>
             <div class="search-actions">
@@ -453,14 +455,14 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261026-1"></script>
-<script src="member-type-store.js?v=20261026-1"></script>
-<script src="member-data.js?v=20261026-1"></script>
+<script src="board-store.js?v=20261026-5"></script>
+<script src="member-type-store.js?v=20261026-6"></script>
+<script src="member-data.js?v=20261026-7"></script>
 <script src="order-data.js?v=20261026-1"></script>
-<script src="inquiry-settings.js?v=20261026-1"></script>
-<script src="inquiry-data.js?v=20261026-1"></script>
-<script src="claim-data.js?v=20261026-1"></script>
-<script src="document-data.js?v=20261026-4"></script>
+<script src="inquiry-settings.js?v=20261026-3"></script>
+<script src="inquiry-data.js?v=20261026-3"></script>
+<script src="claim-data.js?v=20261026-2"></script>
+<script src="document-data.js?v=20261026-5"></script>
 <script src="doc-form-assets.js?v=20261026-5"></script>
 <script src="doc-forms.js?v=20261026-4"></script>
 <script src="list-tools.js?v=20261026-1"></script>
@@ -556,7 +558,7 @@
     units: [{ label: '신청 단위', desc: '발급 신청 1건 = 1행 (주문·사업자·처리 내용 포함)', file: '서류발급신청목록',
       rows: () => [['신청번호', '신청일시', '접수', '서류 수', '서류 종류', '주문번호', '주문일시', '주문자명', '아이디', '이메일', '휴대폰', '회원구분', '사업자명', '사업자번호', '결제수단', '결제상태', '총 결제금액(원)',
         '담당자명', '담당자 연락처', '담당자 이메일', '기관/회사명', '요청 사항', '첨부 파일', '사업자등록증 첨부', '현금영수증 구분', '현금영수증 발급번호 종류', '현금영수증 발급번호', '수령 방법', '수령처', '희망일', '상태', '처리일시', '처리자', '발급 파일', '전달 방법', '전달처', '관리자 메모', '반려 사유', '처리 히스토리'],
-        ...reqRows.map(q => { const o = orderOf(q), b = bizOf(o); return [q.reqNo, q.at, q.manual ? `관리자 등록 (${q.channel})` : '고객 신청', DocData.typesOf(q).length, DocData.typesOf(q).join(', '), q.orderNo || '주문 전', o ? o.orderedAt : '', DocData.applicantOf(q).name, DocData.applicantOf(q).userId, DocData.applicantOf(q).email, '\t' + DocData.applicantOf(q).phone,
+        ...reqRows.map(q => { const o = orderOf(q), b = bizOf(o); return [q.reqNo, q.at, q.manual ? `관리자 등록 (${q.channel})` : q.web ? '고객 신청 (마이페이지)' : '고객 신청', DocData.typesOf(q).length, DocData.typesOf(q).join(', '), q.orderNo || '주문 전', o ? o.orderedAt : '', DocData.applicantOf(q).name, DocData.applicantOf(q).userId, DocData.applicantOf(q).email, '\t' + DocData.applicantOf(q).phone,
           o ? `${o.member.category}${o.member.subCategory ? ` (${o.member.subCategory})` : ''}` : '', b ? b.companyName : DocData.applicantOf(q).company, b ? b.bizNo : '', o ? o.payMethod : '', o ? o.payStatus : '', o ? (o.payment.total || o.amount) : '',
           (q.contact || {}).name || '', (q.contact || {}).phone ? '\t' + q.contact.phone : '', (q.contact || {}).email || '', (q.contact || {}).org || '',
           q.requirement || '', q.attachment || '', q.bizCert || '', q.cashReceipt ? q.cashReceipt.purpose : '', q.cashReceipt ? q.cashReceipt.idType : '', q.cashReceipt ? q.cashReceipt.idValue : '', q.receiveBy, q.receiveTo || '', q.wantBy || '', STATUS_TEXT[q.status] || q.status, q.processedAt || '', q.processedBy || '',
@@ -567,7 +569,7 @@
     onChange: () => renderLog(),
     units: [{ label: '발급 이력 단위', desc: '발급 1건 = 1행', file: '서류자동발급이력',
       rows: () => [['발급번호', '발급일시', '서류 종류', '용도', '주문번호', '주문자명', '아이디', '이메일', '회원구분', '사업자명', '금액(원)', '발급 경로', '발급 구분', '파일'],
-        ...logRows.map(x => [x.id, x.at, x.docType, x.purpose || '', x.orderNo || '', x.name, x.userId, x.email, x.category || '', x.company || '', x.amount || '', x.channel, x.by === '시스템' ? '자동 발급' : '관리자 발급·재발급', x.file || ''])] }]
+        ...logRows.map(x => [x.id, x.at, x.docType, x.purpose || '', x.orderNo || '', x.name, x.userId, x.email, x.category || '', x.company || '', x.amount || '', x.channel, x.by === '시스템' ? '자동 발급' : x.by === '고객' ? '고객 발급 (마이페이지)' : '관리자 발급·재발급', x.file || ''])] }]
   });
 
   // ===== 발급 신청: 목록 =====
@@ -626,8 +628,8 @@
     // 서류 종류: 증빙서류 / 영수증으로 나눠 표시
     const proofT = DocData.proofTypesOf(q), rcptT = DocData.receiptTypesOf(q);
     $('dDoc').innerHTML = [['증빙서류', proofT], ['영수증', rcptT]].filter(([, l]) => l.length).map(([g, l]) => `<div class="doc-line"><span class="doc-group-label">${g}</span>${l.map(docBadge).join(' ')}</div>`).join('')
-      + `<div class="doc-line"><button type="button" class="btn btn-xs" id="btnDocZip" title="신청한 서류를 압축 파일(zip)로 내려받기">다운로드</button> <span class="muted">${DocData.typesOf(q).length > 1 ? `${DocData.typesOf(q).length}종 · ` : ''}${q.manual ? `관리자 등록 (${esc(q.channel)} 접수)` : '고객 신청'}</span></div>`;
-    $('dReqSource').textContent = q.manual ? `관리자 등록 · ${q.channel} 접수` : '고객 입력';
+      + `<div class="doc-line"><button type="button" class="btn btn-xs" id="btnDocZip" title="신청한 서류를 압축 파일(zip)로 내려받기">다운로드</button> <span class="muted">${DocData.typesOf(q).length > 1 ? `${DocData.typesOf(q).length}종 · ` : ''}${q.manual ? `관리자 등록 (${esc(q.channel)} 접수)` : q.web ? '고객 신청 (마이페이지)' : '고객 신청'}</span></div>`;
+    $('dReqSource').textContent = q.manual ? `관리자 등록 · ${q.channel} 접수` : q.web ? '고객 입력 (마이페이지 신청)' : '고객 입력';
     $('dWantBy').innerHTML = q.wantBy ? `${esc(q.wantBy)}${q.status === '대기' && q.wantBy < fmtDate(listToday()) ? ' <span class="warn">(지남)</span>' : ''}` : '<span class="muted">지정 안 함</span>';
     $('dReceive').innerHTML = `${esc(q.receiveBy)} <span class="muted">${esc(q.receiveTo || '')}</span>`;
     $('dAttachment').innerHTML = q.attachment ? fileLink(q.attachment) : '<span class="muted">없음</span>';
@@ -868,7 +870,7 @@
         <td class="left ellip" title="${esc(x.company)}">${esc(x.company || '-')}</td>
         <td class="num">${x.amount ? won(x.amount) : '<span class="muted">-</span>'}</td>
         <td>${esc(x.channel)}</td>
-        <td>${x.by === '시스템' ? '자동' : `<span title="${esc(x.channel)}">관리자</span>`}</td>
+        <td>${x.by === '시스템' ? '자동' : x.by === '고객' ? `<span title="${esc(x.channel)}">고객</span>` : `<span title="${esc(x.channel)}">관리자</span>`}</td>
         <td><button type="button" class="btn btn-sm" data-dl="${esc(x.id)}">다운로드</button> <button type="button" class="btn btn-sm" data-reissue="${esc(x.id)}">재발급</button></td>
       </tr>`).join('') : '<tr><td colspan="11" class="empty">조건에 맞는 발급 이력이 없습니다.</td></tr>';
     $('logMore').hidden = true;   // 더 보기 대신 페이지 번호 (list-tools.js)

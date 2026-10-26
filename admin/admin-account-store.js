@@ -1,4 +1,4 @@
-// 관리자 계정관리 데이터 (admin-accounts.html)
+// 관리자 계정관리 데이터 (admin-levels.html: 레벨 관리 · admin-accounts.html: 계정 관리. 화면 공통 도우미는 admin-account-ui.js)
 //   레벨: 이름·설명 + 접근 가능한 관리자 메뉴(사이드 메뉴 링크 href 목록)
 //   계정: 사내 구글 계정(@kstudy.com) + 레벨 + 사용 여부
 // 관리자 페이지 로그인은 사내 구글 계정으로만 허용 예정 (등록된 계정 · 사용 중 · 레벨의 접근 메뉴만 열람)
@@ -20,7 +20,7 @@
   const BENEFIT = ['mileage-types.html', 'mileage.html'];
   // 최고 관리자 전용 카테고리·메뉴. 다른 레벨에 주면 스스로 권한을 올릴 수 있으므로 부여 불가
   const SUPER_ONLY_CAT = '관리자계정관리';
-  const SUPER_ONLY = ['admin-accounts.html'];
+  const SUPER_ONLY = ['admin-levels.html', 'admin-accounts.html'];
 
   // 게시판 통합 관리에서 만든 게시판(게시글관리 > board-posts.html?board=코드) 권한
   //   level.boards = { [게시판 코드]: { on, createdAt } } — 레벨 설정에서 직접 켜거나 끈 게시판. createdAt = 그 게시판의 생성 일시
@@ -55,11 +55,12 @@
       // 변경 이력 (레벨·계정 추가·변경·삭제). 삭제한 레벨·계정의 기록도 남음
       audit: [],
       accounts: [
-        { id: 'A1', email: 'ksiailab@kstudy.com', name: '시스템관리자', dept: 'AI랩', level: 'L1', use: true, memo: '', createdAt: at, lastLoginAt: '2026-10-15 08:52', history: h('계정 등록') },
-        { id: 'A2', email: 'ops.lead@kstudy.com', name: '김운영', dept: '운영팀', level: 'L2', use: true, memo: '', createdAt: at, lastLoginAt: '2026-10-14 17:20', history: h('계정 등록') },
-        { id: 'A3', email: 'cs01@kstudy.com', name: '이상담', dept: '고객지원팀', level: 'L3', use: true, memo: '', createdAt: at, lastLoginAt: '2026-10-15 09:05', history: h('계정 등록') },
-        { id: 'A4', email: 'cs02@kstudy.com', name: '박응대', dept: '고객지원팀', level: 'L3', use: false, memo: '휴직 (2026-11 복귀 예정)', createdAt: at, lastLoginAt: '2026-09-02 18:11', history: h('계정 등록') },
-        { id: 'A5', email: 'make01@kstudy.com', name: '최제작', dept: '제작팀', level: 'L4', use: true, memo: '', createdAt: at, lastLoginAt: '', history: h('계정 등록') }
+        // testId = 그 관리자가 쇼핑몰(사용자 페이지) 테스트에 쓰는 스탑북 회원 아이디 (통합 회원 관리의 회원)
+        { id: 'A1', email: 'ksiailab@kstudy.com', name: '시스템관리자', dept: 'AI랩', level: 'L1', use: true, memo: '', testId: 'user001', createdAt: at, lastLoginAt: '2026-10-15 08:52', history: h('계정 등록') },
+        { id: 'A2', email: 'ops.lead@kstudy.com', name: '김운영', dept: '운영팀', level: 'L2', use: true, memo: '', testId: 'user002', createdAt: at, lastLoginAt: '2026-10-14 17:20', history: h('계정 등록') },
+        { id: 'A3', email: 'cs01@kstudy.com', name: '이상담', dept: '고객지원팀', level: 'L3', use: true, memo: '', testId: 'user003', createdAt: at, lastLoginAt: '2026-10-15 09:05', history: h('계정 등록') },
+        { id: 'A4', email: 'cs02@kstudy.com', name: '박응대', dept: '고객지원팀', level: 'L3', use: false, memo: '휴직 (2026-11 복귀 예정)', testId: '', createdAt: at, lastLoginAt: '2026-09-02 18:11', history: h('계정 등록') },
+        { id: 'A5', email: 'make01@kstudy.com', name: '최제작', dept: '제작팀', level: 'L4', use: true, memo: '', testId: 'user005', createdAt: at, lastLoginAt: '', history: h('계정 등록') }
       ]
     };
   };
@@ -137,10 +138,25 @@
     return '';
   };
   const checkAccountName = name => !name ? '이름을 입력하세요.' : name.length > NAME_MAX ? `이름은 ${NAME_MAX}자 이내로 입력하세요.` : '';
+  // 스탑북 테스트 아이디: 관리자가 쇼핑몰 테스트에 쓰는 스탑북 회원 계정(아이디 또는 이메일). 선택 입력이지만 넣으면 가입된(탈퇴 안 한) 회원이어야 함
+  //   member-data.js가 로드된 화면에서만 회원 조회 (없으면 형식만 확인). 저장은 그 회원의 아이디로 통일
+  const testMemberOf = idText => (window.MemberData && MemberData.Auth ? MemberData.Auth.findLoginMember(idText) : null);
+  const checkTestId = (d, idText, id) => {
+    const v = String(idText || '').trim();
+    if (!v) return '';
+    if (v.length > 100 || /\s/.test(v)) return '테스트 아이디는 공백 없이 입력하세요.';
+    const m = testMemberOf(v);
+    if (window.MemberData && !m) return '가입된 스탑북 회원 아이디(또는 이메일)가 아닙니다. 사용자 페이지에서 먼저 가입해 주세요.';
+    const key = (m ? m.userId : v).toLowerCase();
+    if (d.accounts.some(x => x.id !== id && String(x.testId || '').toLowerCase() === key)) return '다른 관리자 계정이 이미 쓰고 있는 테스트 아이디입니다.';
+    return '';
+  };
+  const normalizeTestId = idText => { const v = String(idText || '').trim(); const m = v && testMemberOf(v); return m ? m.userId : v; };
 
   // 최고 관리자 레벨의 사용 중 계정이 최소 1개 남아야 함 (모두 잠기는 것 방지)
   const activeSuperCount = (d, exceptId) => d.accounts.filter(a => a.id !== exceptId && a.use && (d.levels.find(l => l.code === a.level) || {}).system).length;
 
   window.AdminAccountStore = { DOMAIN, NAME_MAX, load, save, menuCatalog, allHrefs, superOnlyHrefs, isSuperOnly, stripSuperOnly, levelMenus, canAccess, checkLevelName, checkEmailId, toIdPart, checkAccountName, activeSuperCount,
+    checkTestId, testMemberOf, normalizeTestId,
     boardCode, boardStamp };
 })();
