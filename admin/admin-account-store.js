@@ -22,16 +22,38 @@
   const SUPER_ONLY_CAT = '관리자계정관리';
   const SUPER_ONLY = ['admin-accounts.html'];
 
+  // 게시판 통합 관리에서 만든 게시판(게시글관리 > board-posts.html?board=코드) 권한
+  //   level.boards = { [게시판 코드]: { on, createdAt } } — 레벨 설정에서 직접 켜거나 끈 게시판. createdAt = 그 게시판의 생성 일시
+  //   level.newBoards = 직접 정하지 않은 게시판(새로 만든 게시판 포함)을 자동 허용할지
+  //   게시판을 지우고 같은 코드로 다시 만들면 생성 일시가 달라지므로 예전 설정은 쓰지 않고 newBoards를 따름
+  const BOARD_RE = /^board-posts\.html\?board=(.+)$/;
+  const boardCode = href => { const m = BOARD_RE.exec(href || ''); return m ? decodeURIComponent(m[1]) : ''; };
+  const boardStamp = code => { const b = window.BoardStore && BoardStore.byCode(code); return b ? String(b.createdAt || '') : ''; };
+  const boardAllowed = (lv, code) => { const x = (lv.boards || {})[code]; return x && x.createdAt === boardStamp(code) ? !!x.on : !!lv.newBoards; };
+  const hasMenu = (lv, href) => (boardCode(href) ? boardAllowed(lv, boardCode(href)) : lv.menus.includes(href));
+  // 예전 저장값: menus에 들어 있던 게시판 링크 → boards로 옮김. newBoards가 없으면 게시글관리 메뉴가 있는 레벨만 자동 허용
+  function normalizeBoards(lv) {
+    if (!lv || lv.all) return lv;
+    lv.boards = lv.boards || {};
+    (lv.menus || []).filter(boardCode).forEach(h => { lv.boards[boardCode(h)] = { on: true, createdAt: boardStamp(boardCode(h)) }; });
+    lv.menus = (lv.menus || []).filter(h => !boardCode(h));
+    if (typeof lv.newBoards !== 'boolean') lv.newBoards = lv.menus.some(h => POST.includes(h));
+    return lv;
+  }
+
   const seed = () => {
     const at = '2026-10-01 09:00', by = '시스템';
     const h = content => [{ at, content, by }];
     return {
       levels: [
         { code: 'L1', name: '최고 관리자', desc: '모든 관리자 메뉴와 관리자 계정·레벨을 관리합니다.', all: true, system: true, menus: [], history: h('기본 레벨 생성') },
-        { code: 'L2', name: '운영 관리자', desc: '관리자 계정관리를 제외한 운영 메뉴 전체', all: false, system: false, menus: [...MEMBER, ...MESSAGE, ...ORDER, ...PRODUCTION, ...CLAIM, ...BOARD, ...POST, ...BENEFIT], history: h('기본 레벨 생성') },
-        { code: 'L3', name: 'CS 담당', desc: '회원·주문·클레임 응대와 게시글 답변', all: false, system: false, menus: [...MEMBER.filter(x => x !== 'member-types.html'), 'message-send.html', ...ORDER, ...CLAIM, ...POST, 'mileage.html'], history: h('기본 레벨 생성') },
-        { code: 'L4', name: '제작 담당', desc: '제작·배송 진행 관리', all: false, system: false, menus: [...PRODUCTION, 'orders.html'], history: h('기본 레벨 생성') }
+        // 게시글을 다루는 레벨은 게시판 통합 관리에서 만든 게시판(제휴문의 등)과 새 게시판을 자동 허용
+        { code: 'L2', name: '운영 관리자', desc: '관리자 계정관리를 제외한 운영 메뉴 전체', all: false, system: false, menus: [...MEMBER, ...MESSAGE, ...ORDER, ...PRODUCTION, ...CLAIM, ...BOARD, ...POST, ...BENEFIT], newBoards: true, boards: {}, history: h('기본 레벨 생성') },
+        { code: 'L3', name: 'CS 담당', desc: '회원·주문·클레임 응대와 게시글 답변', all: false, system: false, menus: [...MEMBER.filter(x => x !== 'member-types.html'), 'message-send.html', ...ORDER, ...CLAIM, ...POST, 'mileage.html'], newBoards: true, boards: {}, history: h('기본 레벨 생성') },
+        { code: 'L4', name: '제작 담당', desc: '제작·배송 진행 관리', all: false, system: false, menus: [...PRODUCTION, 'orders.html'], newBoards: false, boards: {}, history: h('기본 레벨 생성') }
       ],
+      // 변경 이력 (레벨·계정 추가·변경·삭제). 삭제한 레벨·계정의 기록도 남음
+      audit: [],
       accounts: [
         { id: 'A1', email: 'ksiailab@kstudy.com', name: '시스템관리자', dept: 'AI랩', level: 'L1', use: true, memo: '', createdAt: at, lastLoginAt: '2026-10-15 08:52', history: h('계정 등록') },
         { id: 'A2', email: 'ops.lead@kstudy.com', name: '김운영', dept: '운영팀', level: 'L2', use: true, memo: '', createdAt: at, lastLoginAt: '2026-10-14 17:20', history: h('계정 등록') },
@@ -45,7 +67,11 @@
   function load() {
     try {
       const d = JSON.parse(localStorage.getItem(KEY));
-      if (d && Array.isArray(d.levels) && Array.isArray(d.accounts)) { d.levels.forEach(stripSuperOnly); return d; }
+      if (d && Array.isArray(d.levels) && Array.isArray(d.accounts)) {
+        d.levels.forEach(lv => { stripSuperOnly(lv); normalizeBoards(lv); });
+        if (!Array.isArray(d.audit)) d.audit = [];
+        return d;
+      }
     } catch (e) { /* 저장값이 없거나 깨지면 기본값 */ }
     return seed();
   }
@@ -83,10 +109,10 @@
   }
 
   // 레벨이 접근할 수 있는 메뉴 (목록에 없는 메뉴 = 삭제된 게시판 등은 제외)
-  const levelMenus = (lv, catalog) => { const all = allHrefs(catalog); return lv.all ? all : all.filter(h => lv.menus.includes(h) && !isSuperOnly(h, catalog)); };
+  const levelMenus = (lv, catalog) => { const all = allHrefs(catalog); return lv.all ? all : all.filter(h => hasMenu(lv, h) && !isSuperOnly(h, catalog)); };
   // 대시보드는 모든 레벨 접근. 상세 화면은 목록 화면 권한을 따름. 최고 관리자 전용 메뉴는 최고 관리자만
   const PARENT = { 'member-type-detail.html': 'member-types.html', 'order-detail.html': 'orders.html' };
-  const canAccess = (lv, href) => !!lv && (lv.all || href === 'dashboard.html' || (!SUPER_ONLY.includes(PARENT[href] || href) && lv.menus.includes(PARENT[href] || href)));
+  const canAccess = (lv, href) => !!lv && (lv.all || href === 'dashboard.html' || (!SUPER_ONLY.includes(PARENT[href] || href) && hasMenu(lv, PARENT[href] || href)));
 
   // ===== 검사 =====
   const checkLevelName = (d, name, code) => {
@@ -95,11 +121,17 @@
     if (d.levels.some(x => x.code !== code && x.name === name)) return '이미 등록된 레벨명입니다.';
     return '';
   };
-  // 아이디 부분만 입력 (@kstudy.com 고정)
-  const checkEmailId = (d, idPart, id) => {
+  // 아이디 부분만 입력 (@kstudy.com 고정). 전체 이메일을 붙여 넣으면 @kstudy.com은 떼고 봄 (toIdPart)
+  //   구글 Workspace 사용자 이름 규칙: 영문·숫자·마침표·밑줄·하이픈, 처음과 끝은 영문·숫자, 마침표 연속 불가
+  const toIdPart = v => { const s = String(v || '').trim(); const at = s.lastIndexOf('@'); return at > 0 && s.slice(at + 1).toLowerCase() === DOMAIN ? s.slice(0, at) : s; };
+  const checkEmailId = (d, raw, id) => {
+    const idPart = toIdPart(raw);
     if (!idPart) return '구글 계정 아이디를 입력하세요.';
-    if (idPart.includes('@')) return `@${DOMAIN} 앞의 아이디만 입력하세요.`;
-    if (!/^[a-z0-9._-]{2,40}$/i.test(idPart)) return '아이디는 영문·숫자·마침표(.)·밑줄(_)·하이픈(-) 2~40자로 입력하세요.';
+    if (idPart.includes('@')) return `@${DOMAIN} 계정만 등록할 수 있습니다.`;
+    if (idPart.length < 2 || idPart.length > 40) return '아이디는 2~40자로 입력하세요.';
+    if (!/^[a-z0-9._-]+$/i.test(idPart)) return '아이디는 영문·숫자·마침표(.)·밑줄(_)·하이픈(-)만 쓸 수 있습니다.';
+    if (!/^[a-z0-9].*[a-z0-9]$/i.test(idPart)) return '아이디의 처음과 끝은 영문 또는 숫자여야 합니다.';
+    if (idPart.includes('..')) return '마침표(.)를 연속으로 쓸 수 없습니다.';
     const email = `${idPart.toLowerCase()}@${DOMAIN}`;
     if (d.accounts.some(x => x.id !== id && x.email === email)) return '이미 등록된 계정입니다.';
     return '';
@@ -109,5 +141,6 @@
   // 최고 관리자 레벨의 사용 중 계정이 최소 1개 남아야 함 (모두 잠기는 것 방지)
   const activeSuperCount = (d, exceptId) => d.accounts.filter(a => a.id !== exceptId && a.use && (d.levels.find(l => l.code === a.level) || {}).system).length;
 
-  window.AdminAccountStore = { DOMAIN, NAME_MAX, load, save, menuCatalog, allHrefs, superOnlyHrefs, isSuperOnly, stripSuperOnly, levelMenus, canAccess, checkLevelName, checkEmailId, checkAccountName, activeSuperCount };
+  window.AdminAccountStore = { DOMAIN, NAME_MAX, load, save, menuCatalog, allHrefs, superOnlyHrefs, isSuperOnly, stripSuperOnly, levelMenus, canAccess, checkLevelName, checkEmailId, toIdPart, checkAccountName, activeSuperCount,
+    boardCode, boardStamp };
 })();

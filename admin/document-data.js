@@ -47,6 +47,9 @@
     '기타': ['입금확인서 (입금일·입금액 기재) 발급 요청', '계약서(공급 계약) 양식 송부 요청']
   };
   const RECEIVE_METHODS = ['이메일', '팩스', '우편'];
+  // 통장사본: 무통장입금 주문은 가상계좌(PG)로 입금하므로 회사 통장사본을 발급하지 않음 (계좌이체·후결제·별도결제 등 회사 계좌로 입금하는 경우만)
+  const BANK_COPY_BLOCK_REASON = '무통장입금 주문은 가상계좌로 입금하므로 통장사본을 발급할 수 없습니다.';
+  const bankCopyBlocked = o => !!o && o.payMethod === '무통장입금';
   const FAXES = ['02-3141-2200', '031-702-8800', '051-630-1200', '042-480-7700'];
 
   const loadOverlay = key => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { return {}; } };
@@ -92,11 +95,11 @@
     const t0 = toTime(o.orderedAt);
     // 견적서: 주문서에서 결제 전 내려받음 (사업자 회원은 자주). 금액 = 주문 결제 예정 금액
     if (r() < (biz ? 0.6 : 0.12)) issueAt(o, '견적서', t0 + (5 + Math.floor(r() * 90)) * 60000, { amount: o.amount });
-    // 사업자등록증·통장사본: 현금성 결제(입금 처리·거래처 등록용)
+    // 사업자등록증·통장사본: 현금성 결제(입금 처리·거래처 등록용). 무통장입금(가상계좌) 주문은 통장사본 없음
     if (cash && r() < 0.45) {
-      const both = r() < 0.5;
-      issueAt(o, both || r() < 0.5 ? '사업자등록증' : '통장사본', t0 + (10 + Math.floor(r() * 180)) * 60000);
-      if (both) issueAt(o, '통장사본', t0 + (12 + Math.floor(r() * 180)) * 60000);
+      const both = r() < 0.5, bankOk = !bankCopyBlocked(o);
+      issueAt(o, both || r() < 0.5 || !bankOk ? '사업자등록증' : '통장사본', t0 + (10 + Math.floor(r() * 180)) * 60000);
+      if (both && bankOk) issueAt(o, '통장사본', t0 + (12 + Math.floor(r() * 180)) * 60000);
     }
     // 거래내역서: 결제 확인 뒤 주문 상세에서 내려받음 (전체취소 주문은 제외)
     const paidAt = o.payment.paidDateTime;
@@ -118,7 +121,8 @@
     const biz = !!o.member.business;
     if (h >= (biz ? 22 : 5)) return;
     const r = rng(o.orderNo, 79);
-    const docType = biz ? pick(REQUEST_TYPES, r) : pick(['견적서', '거래내역서', '사업자등록증', '기타'], r);
+    let docType = biz ? pick(REQUEST_TYPES, r) : pick(['견적서', '거래내역서', '사업자등록증', '기타'], r);
+    if (docType === '통장사본' && bankCopyBlocked(o)) docType = '사업자등록증';   // 무통장입금 주문은 통장사본 신청 없음
     let t = toTime(o.orderedAt) + (2 + Math.floor(r() * 120)) * HOUR;
     if (t > NOW_END) t = toTime(o.orderedAt) + (1 + Math.floor(r() * 3)) * HOUR;   // 최근 주문은 주문 직후 신청으로
     if (t > NOW_END) return;
@@ -132,7 +136,7 @@
     const r2 = rng(o.orderNo, 83);
     const docTypes = [docType];
     if (r2() < (biz ? 0.35 : 0.1)) {
-      const pool = REQUEST_TYPES.filter(t => t !== docType && t !== '기타' && t !== '세금계산서' && t !== '현금영수증');
+      const pool = REQUEST_TYPES.filter(t => t !== docType && t !== '기타' && t !== '세금계산서' && t !== '현금영수증' && !(t === '통장사본' && bankCopyBlocked(o)));
       const n = r2() < 0.5 ? 1 : 2;
       for (let k = 0; k < n; k++) docTypes.push(pool.splice(Math.floor(r2() * pool.length), 1)[0]);
     }
@@ -163,7 +167,7 @@
     const pending = requests.filter(q => q.status === '대기' && !q.kind).sort((a, b) => b.at.localeCompare(a.at));
     const extra = [['거래내역서', '사업자등록증'], ['통장사본']];
     pending.filter(q => q.docTypes.length === 1).slice(0, Math.max(0, 2 - pending.filter(q => q.docTypes.length > 1).length)).forEach((q, n) => {
-      extra[n].filter(t => !q.docTypes.includes(t)).forEach(t => q.docTypes.push(t));
+      extra[n].filter(t => !q.docTypes.includes(t) && !(t === '통장사본' && bankCopyBlocked(orderOf(q)))).forEach(t => q.docTypes.push(t));
       q.requirement += ` (함께 신청: ${q.docTypes.slice(1).join(', ')})`;
       q.history[0].content = `고객 ${q.docTypes.join(', ')} 별도 발급 신청 (${q.receiveBy} 수령)`;
     });
@@ -386,15 +390,21 @@
     issues.push(rec);
     return saveIssues() ? rec : null;
   }
-  const reissue = (issue, by) => {
-    const rec = addIssue(Object.assign({}, issue, { channel: '관리자 재발급' }), by);
-    if (rec && rec.orderNo) OrderData.addHistory(rec.orderNo, '서류발급', `${rec.docType} 재발급 (${rec.file})`, by);
+  // 재발급: opts = { email(받을 이메일, 기본 = 처음 발급한 이메일), memo }. 다른 이메일로 바꿔 보내면 발급 이력의 이메일도 그 주소
+  const reissue = (issue, by, opts = {}) => {
+    const email = String(opts.email || issue.email || '').trim();
+    const changed = email.toLowerCase() !== String(issue.email || '').toLowerCase();
+    const rec = addIssue(Object.assign({}, issue, { channel: '관리자 재발급', email }), by);
+    if (!rec) return null;
+    Object.assign(rec, { reissueOf: issue.id, prevEmail: changed ? issue.email || '' : '', memo: opts.memo || '' });
+    saveIssues();
+    if (rec.orderNo) OrderData.addHistory(rec.orderNo, '서류발급', `${rec.docType} 재발급 (${rec.file}) → ${email}${changed ? ` (이메일 변경 발급, 이전 ${issue.email || '-'})` : ''}${opts.memo ? ` · ${opts.memo}` : ''}`, by);
     return rec;
   };
 
   const byAt = (a, b) => b.at.localeCompare(a.at);
   window.DocData = {
-    STATUS_TEXT, AUTO_TYPES, REQUEST_TYPES, RECEIVE_METHODS, CHANNEL_OF, RECEIPT_CHANNELS: ['유선', '이메일', '팩스', '방문', '기타'], CASH_ID_TYPES, orderOf, applicantOf, typesOf, typeLabel,
+    STATUS_TEXT, AUTO_TYPES, REQUEST_TYPES, RECEIVE_METHODS, BANK_COPY_BLOCK_REASON, bankCopyBlocked, CHANNEL_OF, RECEIPT_CHANNELS: ['유선', '이메일', '팩스', '방문', '기타'], CASH_ID_TYPES, orderOf, applicantOf, typesOf, typeLabel,
     RECEIPT_TYPES, PROOF_TYPES, TAX_KINDS, CASH_PURPOSES, KINDS, groupOf, proofTypesOf, receiptTypesOf, partsDone, allDone, anyDone, progressOf,
     issues: issues.sort(byAt), requests: requests.sort(byAt),
     completeProof, completeReceipt, saveMemo, reject, addIssue, reissue, addRequest

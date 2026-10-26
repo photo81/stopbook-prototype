@@ -226,15 +226,15 @@ tr.row-withdrawn td { color: var(--muted); }
 
 /* 탈퇴회원 목록: 고정 폭 컬럼 외 남는 공간은 상세사유가 차지 */
 td.reason { overflow: hidden; text-overflow: ellipsis; }
-table.wd-table { table-layout: fixed; min-width: 1300px; }
+table.wd-table { table-layout: fixed; min-width: 1120px; }   /* 1440px 화면에서 가로 스크롤 없이 들어가는 폭 */
 .wd-table .w-id { width: 130px; }
-.wd-table .w-cat { width: 110px; }
-.wd-table .w-mt { width: 84px; }
-.wd-table .w-grade { width: 90px; }
-.wd-table .w-cnt { width: 90px; }
-.wd-table .w-amt { width: 110px; }
-.wd-table .w-date { width: 104px; }
-.wd-table .w-type { width: 148px; }   /* 탈퇴구분 배지 + 재가입 표시가 한 줄에 들어가는 폭 */
+.wd-table .w-cat { width: 96px; }
+.wd-table .w-mt { width: 72px; }
+.wd-table .w-grade { width: 80px; }
+.wd-table .w-cnt { width: 80px; }
+.wd-table .w-amt { width: 100px; }
+.wd-table .w-date { width: 96px; }
+.wd-table .w-type { width: 130px; }   /* 탈퇴구분 배지 + 재가입 표시가 한 줄에 들어가는 폭 */
 .wd-table th.w-cnt, .wd-table th.w-amt { text-align: right; }
 .tag-rejoin { display: inline-block; margin-left: 4px; padding: 0 5px; border: 1px solid #bfdbfe; border-radius: 4px; background: #eff6ff; color: #1d4ed8; font-size: 10px; line-height: 16px; vertical-align: 1px; }
 .chip-sm { display: inline-block; margin: 1px 2px 1px 0; padding: 1px 8px; border: 1px solid var(--border); border-radius: 999px; background: #fff; font-size: 12px; }
@@ -990,6 +990,7 @@ a.btn[data-viewer] { display: inline-flex; align-items: center; text-decoration:
 .check-chip { display: inline-flex; align-items: center; gap: 2px; height: 28px; padding: 0 10px; border: 1px solid var(--border); border-radius: 999px; cursor: pointer; margin: 0 !important; }
 .check-chip:hover { border-color: var(--border-strong); }
 .check-chip:has(input:checked) { border-color: var(--text); background: var(--subtle); font-weight: 600; }
+.check-chip.chip-off { color: var(--muted); background: var(--subtle); cursor: not-allowed; text-decoration: line-through; }   /* 선택 불가 (예: 무통장입금 주문의 통장사본) */
 /* 회원 유형 목록(구분/유형 탭): 설명 외 열은 동일 너비, 설명은 나머지 */
 table.equal-cols { table-layout: fixed; min-width: 900px; }
 table.equal-cols th:not(:last-child) { width: 120px; }

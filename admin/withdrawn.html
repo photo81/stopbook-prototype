@@ -4,12 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 탈퇴 회원 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261020-6">
+<link rel="stylesheet" href="admin.css?v=20261026-4">
 <style>
   /* 실제 탈퇴 기록 / 샘플(분석 예시) 구분 표시 */
-  .wd-table .w-mno { width: 92px; }
-  .tag-sample { display: inline-block; padding: 0 5px; border: 1px solid #e4e4e7; border-radius: 4px; background: #f4f4f5; color: #71717a; font-size: 10px; line-height: 16px; vertical-align: 1px; }
-  tr.row-sample td { color: var(--muted); }
+  .wd-table .col-no { width: 64px; }
   .data-note { margin: -4px 0 12px; }
   .data-note .btn { height: 24px; padding: 0 8px; font-size: 12px; vertical-align: 1px; }
 </style>
@@ -126,7 +124,7 @@
               <label for="sEmail">이메일</label>
               <input type="email" id="sEmail" placeholder="이메일 전체 입력 (예: abc@naver.com)" autocomplete="off" title="원본 이메일은 저장하지 않아 이메일 전체가 일치할 때만 검색됩니다. 마스킹 이메일은 탈퇴 상세에서 확인할 수 있습니다.">
             </div>
-            <div class="field">
+            <div class="field" style="grid-column: span 2">   <!-- 날짜 두 칸이 들어가도록 두 칸 너비 (옆 탈퇴구분 이름과 겹치지 않게) -->
               <label>탈퇴일</label>
               <div class="range">
                 <input type="date" id="sFrom" aria-label="탈퇴일 시작"> ~ <input type="date" id="sTo" aria-label="탈퇴일 종료">
@@ -140,10 +138,10 @@
             </div>
             <div class="field">
               <label for="sData">데이터 범위</label>
-              <!-- 기본은 실제 탈퇴 기록만 (통합 회원 관리 > 회원상태 '탈퇴'와 같은 건수). 샘플은 분석 화면 예시용 -->
+              <!-- 기본은 실제 + 샘플 (샘플은 '샘플' 배지, 분석 화면 예시용). '실제 탈퇴 기록'은 통합 회원 관리 > 회원상태 '탈퇴'와 같은 건수 -->
               <select id="sData">
-                <option value="real" selected>실제 탈퇴 기록</option>
-                <option value="all">실제 + 샘플(분석 예시)</option>
+                <option value="real">실제 탈퇴 기록</option>
+                <option value="all" selected>실제 + 샘플(분석 예시)</option>
                 <option value="sample">샘플만</option>
               </select>
             </div>
@@ -252,7 +250,6 @@
             <thead>
               <tr>
                 <th class="sortable col-no" data-key="no">번호</th>
-                <th class="sortable w-mno" data-key="memberNo">회원번호</th>
                 <th class="sortable w-cat" data-key="category">회원구분</th>
                 <th class="sortable w-mt" data-key="memberType">가입유형</th>
                 <th class="sortable w-grade" data-key="grade">회원등급</th>
@@ -293,10 +290,10 @@
 <div class="viz-tip" id="vizTip" role="tooltip" hidden></div>
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261020-6"></script>
-<script src="member-type-store.js?v=20261020-6"></script>
-<script src="feedback.js?v=20261020-6"></script>
-<script src="member-data.js?v=20261020-6"></script><!-- 실제 탈퇴 기록(MemberData.withdrawals)과 통합 회원 관리 회원 목록 -->
+<script src="board-store.js?v=20261026-1"></script>
+<script src="member-type-store.js?v=20261026-1"></script>
+<script src="feedback.js?v=20261026-1"></script>
+<script src="member-data.js?v=20261026-1"></script><!-- 실제 탈퇴 기록(MemberData.withdrawals)과 통합 회원 관리 회원 목록 -->
 
 <script>
 (function () {
@@ -701,16 +698,12 @@
       : scope === 'sample' ? `샘플 ${SAMPLE_COUNT.toLocaleString()}명`
       : `실제 <b>${REAL_COUNT.toLocaleString()}</b>명 · 샘플 ${SAMPLE_COUNT.toLocaleString()}명`;
 
-    // 회원번호: 실제 기록만 통합 회원 관리 회원 상세로 연결 (샘플은 '샘플' 배지)
-    const memberCell = m => (m.sample ? '<span class="tag-sample" title="분석 예시용 샘플 데이터 (통합 회원 관리에 없는 회원)">샘플</span>'
-      : `<a class="name-link" href="members.html?member=${m.memberNo}" title="통합 회원 관리에서 회원 상세 보기 ('탈퇴' 상태)">No.${m.memberNo}</a>`);
     const emptyMsg = scope === 'real' && !REAL_COUNT
       ? '실제 탈퇴 기록이 없습니다. 데이터 범위를 \'실제 + 샘플\'로 바꾸면 분석 예시용 샘플을 볼 수 있습니다.' : '검색 결과가 없습니다.';
     $('listBody').innerHTML = rows.length ? rows.map(m => {
       const labels = reasonLabels(m);
-      return `<tr${m.sample ? ' class="row-sample"' : ''}>
+      return `<tr>
         <td>${m.no}</td>
-        <td>${memberCell(m)}</td>
         <td>${esc(catText(m))}</td>
         <td>${esc(m.memberType.replace('회원', ''))}</td>
         <td>${esc(m.grade)}</td>
@@ -723,7 +716,7 @@
         <td><span class="badge wd-${m.reasonType}">${m.reasonType}</span>${m.rejoined ? ` <span class="tag-rejoin" title="재가입 ${m.rejoinDate}">재가입</span>` : ''}</td>
         <td class="reason"><a class="name-link" data-no="${m.no}" title="${esc(labels.join(', '))}${m.reasonEtc ? ` / ${esc(m.reasonEtc)}` : ''}">${esc(labels[0] || '선택 안 함')}${labels.length > 1 ? ` <span class="muted">외 ${labels.length - 1}</span>` : ''}</a></td>
       </tr>`;
-    }).join('') : `<tr><td colspan="13" class="empty">${emptyMsg}</td></tr>`;
+    }).join('') : `<tr><td colspan="12" class="empty">${emptyMsg}</td></tr>`;
     $('tabListCount').textContent = total.toLocaleString();
 
     document.querySelectorAll('th.sortable').forEach(th => {
@@ -749,11 +742,11 @@
   // 실제 탈퇴 기록 / 샘플 차이 안내 (데이터 범위에 따라)
   function renderDataNote() {
     const scope = $('sData').value;
-    const real = `실제 탈퇴 기록 ${REAL_COUNT.toLocaleString()}건은 통합 회원 관리에서 회원상태 '탈퇴'로 조회되는 회원입니다 (마이페이지 탈퇴 · 관리자 탈퇴 처리 · 장기미이용 자동 탈퇴). 회원번호를 누르면 회원 상세로 이동합니다.`;
+    const real = `실제 탈퇴 기록 ${REAL_COUNT.toLocaleString()}건은 통합 회원 관리에서 회원상태 '탈퇴'로 조회되는 회원입니다 (마이페이지 탈퇴 · 관리자 탈퇴 처리 · 장기미이용 자동 탈퇴).`;
     const sample = `샘플 ${SAMPLE_COUNT.toLocaleString()}건은 분석 화면 예시용 임의 데이터로, 통합 회원 관리에 없는 회원입니다.`;
     $('dataNote').innerHTML = scope === 'real'
       ? `${esc(real)} ${esc(sample)} <button type="button" class="btn" id="btnWithSample">샘플 포함해서 보기</button>`
-      : `${esc(real)} <b>'샘플' 배지</b>가 붙은 행은 ${esc(sample.replace(/^샘플 [\d,]+건은 /, ''))}`;
+      : `${esc(real)} ${esc(sample)}`;
   }
 
   // 검색하면 리스트와 분석을 함께 다시 그림 (어느 탭에서 검색해도 두 탭 결과가 같음)
@@ -763,7 +756,7 @@
   function openModal(no) {
     const m = items.find(x => x.no === no);
     if (!m) return;
-    $('modalTitle').textContent = `탈퇴 상세 - ${m.userId}${m.sample ? ' (샘플)' : ''}`;
+    $('modalTitle').textContent = `탈퇴 상세 - ${m.userId}`;
     const row = cells => `<tr>${cells.map(([k, v, span]) => `<th>${k}</th><td${span ? ` colspan="${span}"` : ''}>${v}</td>`).join('')}</tr>`;
     const table = rows => `<table class="form-table multi-col"><colgroup><col class="c-th"><col><col class="c-th"><col></colgroup>${rows.join('')}</table>`;
     const none = '<span class="muted">없음</span>';
@@ -771,10 +764,10 @@
       <div class="section-title">기본 정보</div>
       ${table([
         row([['이메일', `<span class="mono">${esc(m.emailMasked || '-')}</span> <span class="readonly">마스킹 저장</span>`, 3]]),
-        // 실제 탈퇴 기록: 통합 회원 관리에 '탈퇴' 상태로 남아 있는 회원번호(회원 상세로 연결)와 재가입 제한 기간
+        // 실제 탈퇴 기록: 통합 회원 관리의 '탈퇴' 상태 회원 상세로 연결 + 재가입 제한 기간
         // 샘플: 통합 회원 관리에 없는 분석 예시용 데이터 (회원 상세 연결 없음)
-        m.real ? row([['회원번호', `<a class="name-link" href="members.html?member=${m.memberNo}">No.${m.memberNo}</a> <span class="readonly">(통합 회원 관리 '탈퇴' 상태)</span>`], ['재가입 제한', m.rejoinUntil ? `${esc(m.rejoinUntil)}까지` : '제한 없음']])
-          : row([['데이터', '<span class="tag-sample">샘플</span> <span class="readonly">분석 화면 예시용 임의 데이터 · 통합 회원 관리에 없는 회원</span>', 3]])
+        m.real ? row([['회원 상세', `<a class="name-link" href="members.html?member=${m.memberNo}">통합 회원 관리에서 보기</a> <span class="readonly">('탈퇴' 상태)</span>`], ['재가입 제한', m.rejoinUntil ? `${esc(m.rejoinUntil)}까지` : '제한 없음']])
+          : ''
       ])}
       <div class="section-title">탈퇴 처리</div>
       ${table([
@@ -822,7 +815,7 @@
   function downloadExcel() {
     if (!state.filtered.length) { toast('다운로드할 데이터가 없습니다.'); return; }
     const cols = [
-      ['no', '번호'], ['dataKind', '데이터'], ['memberNo', '회원번호'], ['userId', '아이디'], ['emailMasked', '이메일(마스킹)'], ['category', '회원구분'], ['kind', '종류'], ['memberType', '가입유형'], ['grade', '회원등급'], ['marketing', '마케팅수신'],
+      ['no', '번호'], ['dataKind', '데이터'], ['userId', '아이디'], ['emailMasked', '이메일(마스킹)'], ['category', '회원구분'], ['kind', '종류'], ['memberType', '가입유형'], ['grade', '회원등급'], ['marketing', '마케팅수신'],
       ['joinDate', '가입일'], ['withdrawDate', '탈퇴일'], ['tenureDays', '이용기간(일)'], ['tenureBucket', '이용기간구간'], ['lastLoginDate', '마지막접속일'], ['inactiveDays', '탈퇴전미접속(일)'],
       ['orderCount', '주문건수'], ['orderAmount', '주문금액'], ['avgOrder', '객단가'], ['orders12m', '최근1년주문'], ['lastOrderDate', '마지막주문일'], ['mainProduct', '주구매상품'],
       ['inquiryCount', '문의건수'], ['openInquiry', '미답변문의'], ['lastInquiryType', '최근문의유형'], ['claimCount', '재제작반품'], ['savedProjects', '남은작업물'], ['cartAmount', '장바구니금액'],
@@ -832,7 +825,6 @@
     ];
     const value = (m, k) => {
       if (k === 'dataKind') return m.sample ? '샘플' : '실제';
-      if (k === 'memberNo') return m.sample ? '' : m.memberNo;
       if (k === 'tenureBucket') return bucketOf(m.tenureDays).label;
       if (k === 'reasonCodes') return m.reasonCodes.join('|');
       if (k === 'reasonLabels') return reasonLabels(m).join(', ');

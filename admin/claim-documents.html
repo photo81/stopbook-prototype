@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 서류 발급 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261020-6">
+<link rel="stylesheet" href="admin.css?v=20261026-4">
 </head>
 <body>
 <div class="layout">
@@ -424,18 +424,47 @@
   </div>
 </div>
 
+<!-- 자동 발급 이력 > 재발급: 받을 이메일 입력 (처음 발급한 이메일이 기본값, 다른 주소로 바꿔 발급 가능) -->
+<div class="modal-bg" id="riModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="riTitle">
+    <div class="modal-header">
+      <h2 id="riTitle">서류 재발급</h2>
+      <button type="button" class="close" data-riclose aria-label="닫기">&times;</button>
+    </div>
+    <form id="riForm" class="modal-body" novalidate>
+      <table class="form-table">
+        <tr><th>서류</th><td id="riDoc"></td></tr>
+        <tr><th>처음 발급 이메일</th><td class="readonly" id="riPrev"></td></tr>
+        <tr><th>받을 이메일 *</th><td>
+          <input type="email" id="riEmail" maxlength="100" placeholder="example@company.com">
+          <div class="readonly at-note">고객이 다른 주소로 받길 원하면 바꿔 입력하세요. 견적서·거래명세서는 수신자 정보의 이메일도 이 주소로 바뀝니다.</div>
+        </td></tr>
+        <tr><th>메모</th><td><input type="text" id="riMemo" maxlength="100" placeholder="재발급 사유 (예: 고객 요청 - 회계 담당자 메일로 발송)"></td></tr>
+      </table>
+      <div class="err" id="riErr"></div>
+    </form>
+    <div class="modal-footer">
+      <button type="button" class="btn" id="riPreview">서류 미리 보기</button>
+      <button type="button" class="btn" data-riclose>닫기</button>
+      <button type="submit" form="riForm" class="btn btn-primary">재발급</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261020-6"></script>
-<script src="member-type-store.js?v=20261020-6"></script>
-<script src="member-data.js?v=20261020-6"></script>
-<script src="order-data.js?v=20261020-6"></script>
-<script src="inquiry-settings.js?v=20261020-6"></script>
-<script src="inquiry-data.js?v=20261020-6"></script>
-<script src="claim-data.js?v=20261020-6"></script>
-<script src="document-data.js?v=20261020-6"></script>
-<script src="list-tools.js?v=20261020-6"></script>
-<script src="feedback.js?v=20261020-6"></script>
+<script src="board-store.js?v=20261026-1"></script>
+<script src="member-type-store.js?v=20261026-1"></script>
+<script src="member-data.js?v=20261026-1"></script>
+<script src="order-data.js?v=20261026-1"></script>
+<script src="inquiry-settings.js?v=20261026-1"></script>
+<script src="inquiry-data.js?v=20261026-1"></script>
+<script src="claim-data.js?v=20261026-1"></script>
+<script src="document-data.js?v=20261026-4"></script>
+<script src="doc-form-assets.js?v=20261026-5"></script>
+<script src="doc-forms.js?v=20261026-4"></script>
+<script src="list-tools.js?v=20261026-1"></script>
+<script src="feedback.js?v=20261026-1"></script>
 <script>
 (function () {
   'use strict';
@@ -666,7 +695,8 @@
     $('proofBox').hidden = !proofT.length || rejected;
     if (proofT.length) {
       const p = q.proofDone;
-      $('proofNote').innerHTML = `${esc(proofT.join(', '))} · ${p ? '<span class="part-done">완료</span>' : '<span class="part-wait">대기</span>'}`;
+      $('proofNote').innerHTML = `${esc(proofT.join(', '))} · ${p ? '<span class="part-done">완료</span>' : '<span class="part-wait">대기</span>'}`
+        + (pending && proofT.includes('통장사본') && DocData.bankCopyBlocked(orderOf(q)) ? ` <span class="warn">통장사본 발급 불가: ${esc(DocData.BANK_COPY_BLOCK_REASON)}</span>` : '');   // 무통장입금(가상계좌) 주문
       $('proofDoneTable').hidden = !p;
       $('proofForm').hidden = !!p || !pending;
       if (p) {
@@ -704,8 +734,22 @@
   //   서류마다 HTML 파일 1개 (브라우저·워드에서 열림). 주문이 있으면 주문 상품·금액을 넣고, 주문 전 요청은 사양 협의 안내
   //   TODO: 실서비스에서는 서버에서 실제 서류(PDF)를 만들어 zip으로 내려받기 (GET /api/admin/documents/requests/{reqNo}/download)
   const STOPBOOK = { name: '(주)스탑북', bizNo: '123-45-67890', ceo: '홍길동', address: '서울특별시 마포구 월드컵북로 12', tel: '02-0000-0000', bank: '국민은행 123456-01-234567 (예금주 (주)스탑북)' };
+  // 견적서·거래내역서는 회사 양식(견적서.pdf · 거래명세서.pdf), 사업자등록증·통장사본은 회사 서류 스캔본 (doc-forms.js). 거래내역서는 거래명세서 양식
+  const FORM_OF = { '견적서': '견적서', '거래내역서': '거래명세서', '사업자등록증': '사업자등록증', '통장사본': '통장사본' };
+  //   src = { customer: { name, org, email }, order, notes }
+  const formHtml = (type, src) => {
+    const kind = FORM_OF[type];
+    if (DocForms.IMAGE_DOCS.includes(kind)) return DocForms.build(kind, { customer: src.customer, issuedAt: listToday() });
+    return DocForms.build(kind, {
+      customer: src.customer, issuedAt: listToday(),
+      payTerms: type === '견적서' || !src.order ? '신용카드/무통장/계좌이체/휴대폰결제' : src.order.payMethod,
+      rows: DocForms.orderRows(src.order, kind),
+      notes: (src.order ? [`주문번호 ${src.order.orderNo} (주문일 ${src.order.orderDate})`] : ['주문 전 요청: 제작 사양(상품·수량·옵션)을 협의한 뒤 금액이 확정됩니다.']).concat(src.notes || [])
+    });
+  };
   function docHtml(type, q) {
     const o = orderOf(q), ct = q.contact || {}, ap = DocData.applicantOf(q), today = fmtDate(listToday());
+    if (FORM_OF[type]) return formHtml(type, { customer: { name: ct.name || ap.name, org: ct.org || ap.company, email: ct.email || ap.email }, order: o, notes: q.requirement ? [`요청 사항: ${q.requirement}`] : [] });
     const row = (k, v) => `<tr><th>${esc(k)}</th><td>${v}</td></tr>`;
     const items = o ? o.items.filter(it => it.payStatus !== '취소') : [];
     const sum = items.reduce((t, it) => t + (it.paid || 0), 0), supply = Math.round(sum / 1.1);
@@ -819,27 +863,75 @@
         <td>${docBadge(x.docType)}${x.purpose ? ` <span class="muted">${esc(x.purpose)}</span>` : ''}</td>
         <td class="mono">${x.orderNo ? `<a class="name-link" href="order-detail.html?orderNo=${encodeURIComponent(x.orderNo)}" target="_blank">${esc(x.orderNo)}</a>` : '<span class="muted">-</span>'}</td>
         <td><b>${esc(x.name)}</b></td>
-        <td class="left ellip" title="${esc(x.email)}">${esc(localPart(x.email))}</td>
+        <td class="left ellip" title="${esc(x.email)}${x.prevEmail ? ` (이메일 변경 발급, 이전 ${esc(x.prevEmail)})` : ''}">${esc(localPart(x.email))}${x.prevEmail ? ' <span class="muted">변경</span>' : ''}</td>
         <td>${esc(x.category || '-')}</td>
         <td class="left ellip" title="${esc(x.company)}">${esc(x.company || '-')}</td>
         <td class="num">${x.amount ? won(x.amount) : '<span class="muted">-</span>'}</td>
         <td>${esc(x.channel)}</td>
         <td>${x.by === '시스템' ? '자동' : `<span title="${esc(x.channel)}">관리자</span>`}</td>
-        <td><button type="button" class="btn btn-sm" data-file="${esc(x.file)}">다운로드</button> <button type="button" class="btn btn-sm" data-reissue="${esc(x.id)}">재발급</button></td>
+        <td><button type="button" class="btn btn-sm" data-dl="${esc(x.id)}">다운로드</button> <button type="button" class="btn btn-sm" data-reissue="${esc(x.id)}">재발급</button></td>
       </tr>`).join('') : '<tr><td colspan="11" class="empty">조건에 맞는 발급 이력이 없습니다.</td></tr>';
     $('logMore').hidden = true;   // 더 보기 대신 페이지 번호 (list-tools.js)
     $('logCount').textContent = issues.length.toLocaleString();
   }
+  // ===== 자동 발급 이력: 다운로드 · 재발급 =====
+  // 견적서·거래내역서는 회사 양식으로 만들어 내려받음 (그 외 서류는 프로토타입에 파일 없음)
+  const issueHtml = x => formHtml(x.docType, { customer: { name: x.name, org: x.company, email: x.email }, order: x.orderNo ? OrderData.find(x.orderNo) : null });
+  function downloadIssue(x) {
+    if (!FORM_OF[x.docType]) { toast(`${x.file} 내려받기 (프로토타입에서는 파일이 없습니다)`); return; }
+    const name = `${FORM_OF[x.docType]}_${x.orderNo || x.id}.html`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([issueHtml(x)], { type: 'text/html;charset=utf-8' }));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast(`${FORM_OF[x.docType]}를 내려받았습니다. (${name}, 브라우저에서 열어 인쇄하면 PDF로 저장할 수 있습니다)`);
+  }
+  // 재발급: 받을 이메일을 입력 (기본값 = 처음 발급한 이메일). 다른 이메일로 바꿔 보낼 수 있음
+  let reissueTarget = null;
   function reissue(id) {
     const x = issues.find(i => i.id === id);
     if (!x) return;
-    if (!confirm(`${x.name}(${x.userId}) 회원의 ${x.docType}${x.orderNo ? ` (주문 ${x.orderNo})` : ''}을(를) 같은 내용으로 재발급하시겠습니까?\n고객 이메일(${x.email})로 전달되고 발급 이력에 관리자 재발급으로 남습니다.`)) return;
-    // TODO: 실서비스에서는 POST /api/admin/documents/issues/{id}/reissue → 서류 재생성 + 이메일 발송
-    const rec = DocData.reissue(x, ADMIN_NAME);
-    if (!rec) { toast('저장소를 사용할 수 없어 재발급하지 못했습니다.'); return; }
-    renderLog();
-    toast(`${rec.docType}을(를) 재발급했습니다. (${rec.file})`);
+    reissueTarget = x;
+    $('riDoc').innerHTML = `${docBadge(x.docType)} ${x.orderNo ? `주문 <span class="mono">${esc(x.orderNo)}</span>` : ''} · ${esc(x.name)}${x.userId ? ` (${esc(x.userId)})` : ''}`;
+    $('riPrev').textContent = x.email || '-';
+    $('riEmail').value = x.email || '';
+    $('riMemo').value = '';
+    $('riErr').classList.remove('show');
+    $('riPreview').hidden = !FORM_OF[x.docType];
+    $('riModal').classList.add('open');
+    $('riEmail').select();
   }
+  const closeReissue = () => { $('riModal').classList.remove('open'); reissueTarget = null; };
+  function submitReissue(e) {
+    e.preventDefault();
+    const x = reissueTarget;
+    if (!x) return;
+    const email = $('riEmail').value.trim(), memo = $('riMemo').value.trim();
+    const msg = !email ? '받을 이메일을 입력하세요.' : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? '이메일 주소를 정확히 입력하세요.' : '';
+    $('riErr').textContent = msg;
+    $('riErr').classList.toggle('show', !!msg);
+    if (msg) { $('riEmail').focus(); return; }
+    const changed = email.toLowerCase() !== String(x.email || '').toLowerCase();
+    if (!confirm(`${x.docType}${x.orderNo ? ` (주문 ${x.orderNo})` : ''}을(를) 재발급해 ${email}(으)로 보내시겠습니까?${changed ? `\n처음 발급한 이메일(${x.email || '-'})과 다른 주소입니다.` : ''}`)) return;
+    // TODO: 실서비스에서는 POST /api/admin/documents/issues/{id}/reissue { email, memo } → 서류 재생성 + 이메일 발송
+    const rec = DocData.reissue(x, ADMIN_NAME, { email, memo });
+    if (!rec) { toast('저장소를 사용할 수 없어 재발급하지 못했습니다.'); return; }
+    closeReissue();
+    renderLog();
+    toast(`${rec.docType}을(를) ${email}(으)로 재발급했습니다.${changed ? ' (이메일 변경 발급)' : ''}`);
+  }
+  $('riForm').addEventListener('submit', submitReissue);
+  $('riPreview').addEventListener('click', () => {   // 보낼 서류 미리 보기 (입력한 이메일이 수신자 정보에 들어감)
+    const x = reissueTarget;
+    if (!x || !FORM_OF[x.docType]) return;
+    const w = window.open('', '_blank');
+    if (!w) { toast('팝업이 차단되어 미리 볼 수 없습니다.'); return; }
+    w.document.write(issueHtml(Object.assign({}, x, { email: $('riEmail').value.trim() || x.email })));
+    w.document.close();
+  });
+  document.querySelectorAll('[data-riclose]').forEach(b => b.addEventListener('click', closeReissue));
+  $('riModal').addEventListener('click', e => { if (e.target === $('riModal')) closeReissue(); });
 
   // ===== 서류 발급 등록 (유선 등으로 받은 별도 발급 신청을 관리자가 직접 입력) =====
   //   주문번호는 선택: 주문이 있으면 주문 확인으로 주문자 정보를, 주문 전 요청(견적서 등)이면 신청자 이름·연락처/이메일을 입력
@@ -888,9 +980,22 @@
   $('gCashPurpose').addEventListener('change', () => { $('gCashId').value = ''; syncCashIdType(); });
   $('gCashIdType').addEventListener('change', () => { $('gCashId').value = ''; syncCashPlaceholder(); });
   $('gBizPick').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) $('gBizCert').value = f.name; });
+  // 통장사본: 무통장입금 주문은 가상계좌로 입금하므로 발급 불가 → 주문을 확인하면 통장사본 칸을 잠그고 안내
+  const bankChip = () => document.querySelector('input[name=gType][value="통장사본"]');
+  const syncBankCopy = () => {
+    const chip = bankChip(), blocked = DocData.bankCopyBlocked(regOrder);
+    if (!chip) return;
+    chip.disabled = blocked;
+    if (blocked) chip.checked = false;
+    chip.closest('label').title = blocked ? DocData.BANK_COPY_BLOCK_REASON : '';
+    chip.closest('label').classList.toggle('chip-off', blocked);
+    $('gTypesHint').textContent = blocked ? `${DocData.BANK_COPY_BLOCK_REASON} 그 외 서류는 함께 신청한 것을 모두 체크하세요.`
+      : '여러 개를 함께 신청한 경우 모두 체크하세요. 증빙서류와 영수증을 함께 받으면 두 건으로 나뉘어 접수됩니다 (영수증은 계산서 영수증 발급 관리).';
+  };
   function findOrder() {
     const no = $('gOrderNo').value.trim();
     regOrder = no ? OrderData.find(no) : null;
+    syncBankCopy();
     $('gOrderInfo').innerHTML = regOrder
       ? `<b>${esc(regOrder.name)}</b> (${esc(regOrder.userId)}) · ${esc(regOrder.phone)} · ${esc(regOrder.email)} · 주문일 ${esc(regOrder.orderDate)} · ${esc(regOrder.title)}${regOrder.member.business ? ` · 사업자 ${esc(regOrder.member.business.companyName)}` : ''}`
       : `<span class="warn">${no ? '해당 주문번호의 주문이 없습니다.' : '주문번호를 입력하세요.'}</span>`;
@@ -910,6 +1015,7 @@
     if (REG_ONLY) $('gTypesProof').closest('.doc-group').hidden = true;   // 영수증 발급 등록: 서류 종류는 영수증만
     regOrder = null;
     $('gOrderInfo').textContent = '주문 전 요청(견적서 등)은 비워 두세요. 주문번호를 넣고 주문 확인을 누르면 아래 담당자 정보가 주문자·사업자 정보로 채워집니다.';
+    syncBankCopy();
     syncTypeRows();
     syncCashIdType();
     regErr('');
@@ -920,7 +1026,7 @@
   $('btnRegister').addEventListener('click', openRegister);
   $('gFind').addEventListener('click', findOrder);
   $('gOrderNo').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); findOrder(); } });
-  $('gOrderNo').addEventListener('input', () => { regOrder = null; });
+  $('gOrderNo').addEventListener('input', () => { regOrder = null; syncBankCopy(); });
   $('gEmail').addEventListener('change', fillReceiveTo);
   $('gReceiveBy').addEventListener('change', fillReceiveTo);
   $('gAttachPick').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) $('gAttachment').value = f.name; });
@@ -943,7 +1049,8 @@
     const msg = orderNoInput && !o ? '입력한 주문번호의 주문이 없습니다. 주문 전 요청이면 주문번호를 비워 주세요.'
       : !contact.name ? '담당자명을 입력하세요.' : !contact.org ? '기관/회사명을 입력하세요.' : !contact.phone ? '연락처를 입력하세요.'
       : !contact.email ? '이메일을 입력하세요.' : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email) ? '이메일 주소를 정확히 입력하세요.' : !wantBy ? '발급 희망일을 입력하세요.'
-      : !types.length ? '서류 종류를 하나 이상 선택하세요.' : needBiz && !bizCert ? '세금계산서 발급에는 사업자등록증 첨부가 필요합니다.'
+      : !types.length ? '서류 종류를 하나 이상 선택하세요.' : types.includes('통장사본') && DocData.bankCopyBlocked(o) ? DocData.BANK_COPY_BLOCK_REASON
+      : needBiz && !bizCert ? '세금계산서 발급에는 사업자등록증 첨부가 필요합니다.'
       : needBiz && !taxInvoice.date ? '세금계산서 일자를 입력하세요.'
       : needCash && !cashReceipt.idValue ? `현금영수증 발급 번호(${cashReceipt.idType})를 입력하세요.` : !requirement ? '요청 사항을 입력하세요.' : !receiveTo ? '수령처(이메일 주소·팩스 번호·우편 주소)를 입력하세요.' : '';
     regErr(msg);
@@ -982,8 +1089,8 @@
   $('logBody').addEventListener('click', e => {
     const r = e.target.closest('[data-reissue]');
     if (r) { reissue(r.dataset.reissue); return; }
-    const f = e.target.closest('[data-file]');
-    if (f) { e.preventDefault(); toast(`${f.dataset.file} 내려받기 (프로토타입에서는 파일이 없습니다)`); }
+    const dl = e.target.closest('[data-dl]');
+    if (dl) { const x = issues.find(i => i.id === dl.dataset.dl); if (x) downloadIssue(x); }
   });
   // 모달 안 파일 링크(첨부·발급 파일) 내려받기 안내, 파일 선택 → 파일명 채움
   $('modal').addEventListener('click', e => {
@@ -1008,6 +1115,7 @@
   document.querySelectorAll('#modal [data-close]').forEach(b => b.addEventListener('click', closeDetail));
   $('modal').addEventListener('click', e => { if (e.target === $('modal')) closeDetail(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && current) closeDetail(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && reissueTarget) closeReissue(); });
 
   // ===== 시작: 기간 기본 1개월, 처리 결과 안내 =====
   setDefaultRange('sFrom', 'sTo');

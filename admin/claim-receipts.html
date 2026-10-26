@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스탑북 관리자 - 계산서 영수증 발급 관리</title>
-<link rel="stylesheet" href="admin.css?v=20261020-6">
+<link rel="stylesheet" href="admin.css?v=20261026-4">
 </head>
 <body>
 <div class="layout">
@@ -155,8 +155,8 @@
         </div>
         <div class="table-wrap">
           <table class="rc-table">
-            <colgroup><col style="width:136px"><col style="width:130px"><col style="width:150px"><col style="width:80px"><col style="width:90px"><col><col style="width:90px"><col style="width:80px"><col style="width:130px"><col style="width:100px"><col style="width:72px"></colgroup>
-            <thead><tr><th>신청일시</th><th>서류종류</th><th>주문번호</th><th>주문자명</th><th>이메일</th><th>기관/회사명</th><th>결제수단</th><th>결제상태</th><th>영수증 처리</th><th>처리상태</th><th>관리</th></tr></thead>
+            <!-- 열은 탭에 따라 그림 (발급 완료 탭: 처리상태 앞에 처리일시) -->
+            <thead><tr id="headRow"></tr></thead>
             <tbody id="listBody"></tbody>
           </table>
         </div>
@@ -175,13 +175,13 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261020-6"></script>
-<script src="member-type-store.js?v=20261020-6"></script>
-<script src="member-data.js?v=20261020-6"></script>
-<script src="order-data.js?v=20261020-6"></script>
-<script src="document-data.js?v=20261020-6"></script>
-<script src="list-tools.js?v=20261020-6"></script>
-<script src="feedback.js?v=20261020-6"></script>
+<script src="board-store.js?v=20261026-1"></script>
+<script src="member-type-store.js?v=20261026-1"></script>
+<script src="member-data.js?v=20261026-1"></script>
+<script src="order-data.js?v=20261026-1"></script>
+<script src="document-data.js?v=20261026-4"></script>
+<script src="list-tools.js?v=20261026-1"></script>
+<script src="feedback.js?v=20261026-1"></script>
 <script>
 (function () {
   'use strict';
@@ -191,7 +191,7 @@
   //   확인 → 신청 상세를 이 화면 위에 띄움(iframe, claim-documents.html?embed=1) → 서류별 처리일자·처리자명 기록·반려
   //   영수증 발급 등록 → 등록 모달을 iframe으로 (claim-documents.html?embed=1&register=영수증)
   //   신청한 영수증의 기록이 모두 끝나면 발급 완료
-  //   목록: 신청일시 · 서류종류 · 주문번호 · 주문자명 · 이메일(@ 앞만) · 기관/회사명 · 결제수단 · 결제상태 · 영수증 처리 · 처리상태 · 확인
+  //   목록: 신청일시 · 서류종류 · 주문번호 · 주문자명 · 이메일(@ 앞만) · 기관/회사명 · 결제수단 · 결제상태 · [발급 완료 탭: 처리일시] · 처리상태 · 확인
   // TODO: 실서비스에서는 GET /api/admin/documents/requests?kind=영수증
   const { esc, toast, initSidebar, setDefaultRange, listToday } = AdminUtil;
   const $ = id => document.getElementById(id);
@@ -262,6 +262,10 @@
     rows = base.filter(x => tab === '전체' || x.status === tab);
     const key = tab + JSON.stringify(search); if (key !== lastKey) { tools.first(); lastKey = key; }
     $('listGuide').innerHTML = `${tabLabel(tab)} <b>${rows.length.toLocaleString()}</b>건 <span class="muted">· 세금계산서 ${rows.filter(x => x.receipts.includes('세금계산서')).length.toLocaleString()} · 현금영수증 ${rows.filter(x => x.receipts.includes('현금영수증')).length.toLocaleString()}</span>`;
+    // 발급 완료 탭: 처리상태 앞에 처리일시 (서류 발급 관리와 같음)
+    const showDone = tab === '완료';
+    const heads = [['신청일시', 136], ['서류종류', 150], ['주문번호', 150], ['주문자명', 80], ['이메일', 100], ['기관/회사명', 0], ['결제수단', 90], ['결제상태', 80], ...(showDone ? [['처리일시', 136]] : []), ['처리상태', 100], ['관리', 72]];
+    $('headRow').innerHTML = heads.map(([h, w]) => `<th${w ? ` style="width:${w}px"` : ''}>${h}</th>`).join('');
     $('listBody').innerHTML = tools.page(rows).map(x => `<tr>
         <td>${esc(x.at)}</td>
         <td title="${esc(x.receipts.join(', '))}">${x.receipts.map(r => `<span class="badge dc-${esc(r)}">${esc(r)}</span>`).join(' ')}</td>
@@ -271,10 +275,10 @@
         <td title="${esc(x.org)}">${x.org ? esc(x.org) : '<span class="muted">-</span>'}</td>
         <td>${esc(x.payMethod || '-')}</td>
         <td>${esc(x.payStatus || '-')}</td>
-        <td>${x.status === '반려' ? '<span class="muted">-</span>' : `<div class="part-progress" style="margin:0">${x.rcptDone.map(([t, d]) => d ? `<span class="part-done" title="${esc(t)} 처리일자 ${esc(d.date)} · ${esc(d.by)}">${esc(t)} ${esc(d.date.slice(5))}</span>` : `<span class="part-wait">${esc(t)} 대기</span>`).join('')}</div>`}</td>
+        ${showDone ? `<td>${esc(x.issuedAt || '-')}</td>` : ''}
         <td>${statusBadge(x.status)}</td>
         <td><button type="button" class="btn btn-sm ${x.status === '대기' ? 'btn-primary' : ''}" data-info="${esc(x.key)}">확인</button></td>
-      </tr>`).join('') || '<tr><td colspan="11" class="empty">조건에 맞는 신청이 없습니다.</td></tr>';
+      </tr>`).join('') || `<tr><td colspan="${heads.length}" class="empty">조건에 맞는 신청이 없습니다.</td></tr>`;
   }
   $('statusTabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { tab = b.dataset.tab; render(); } });
   $('searchForm').addEventListener('submit', e => { e.preventDefault(); const s = readSearch(); if (s) { search = s; render(); } });
