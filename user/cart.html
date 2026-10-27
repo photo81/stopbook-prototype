@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스탑북 장바구니</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="../admin/feedback.css?v=20261026-1"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
+<!-- 장바구니 (IA 유저화면목록 ver0.03 — 주문(ORD) > 장바구니 page · 장바구니(편집상품) section · 옵션변경 modal · 편집본 공유 modal · 견적서 출력 → 2026-10-27 증빙서류 출력 modal(지출증빙: 사업자등록증·통장사본·견적서·거래명세서 바로 발급 + 발급 신청))
+     · 데이터: 회원 장바구니(admin/member-data.js m.cart — 샘플 + 재주문 담기 + 이 화면 저장본 stopbook.cart.v1). 관리자 회원 상세 > 장바구니와 같은 목록
+     · IA 항목 중 미구현: 선물하기(준비 중), 편집수정(편집기 없음 — 준비 중), 주문하기(주문서 화면 없음 — 준비 중), 기성상품 section(기성상품 데이터 없음 — 프로젝트가 없는 항목이 생기면 '기성 상품' 묶음으로 표시)
+     · 배송비 정책: 택배 2,500원 · 할인 후 40,000원 이상 무료 · 회원 구분 무료배송 혜택 (order-data.js·관리자 회원 상세 장바구니 집계와 같은 값. TODO: 쇼핑몰 설정값) -->
+<style>
+  /* 쇼핑몰(고객) 화면 — 마이페이지·고객센터와 같은 토큰·입력 요소. 색·모서리·상단·하단·버튼 톤은 shop.css (이 <style> 다음에 불러옴) */
+  :root {
+    --base: #F5F0E8; --sub: #FCEDD2; --main: #63302B; --accent1: #D3775C; --accent2: #A56255;
+    --bg: #F5F5F3; --surface: #FFFFFF; --band: #191919; --util: #FFFFFF; --util-line: #EBEBE9; --util-ink: #4E4E4C;
+    --ink: #191919; --ink-2: #4E4E4C; --ink-3: #6E6E6B; --ink-4: #ADADAA; --placeholder: #9A9A97;
+    --line: #EDEDEB; --line-2: #DEDEDB;
+    --field: #F3F3F1; --field-hover: #EEEEEC; --tonal: #F1F1EF; --tonal-hover: #E7E7E4; --hover: #FAFAF9;
+    --brand: var(--main); --brand-dark: #4C221E; --brand-soft: #F7F0EF; --accent1-soft: #FBEEE8; --accent1-ink: #AB4B2B;
+    --ring: rgba(46,46,46,.14); --ring-danger: rgba(194,59,41,.14);
+    --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px rgba(46,46,46,.6);
+    --danger: #C23B29; --danger-dark: #A3301F; --danger-soft: #FDF1EF; --ok: #277550; --ok-soft: #EEF7F1;
+    --radius: 20px; --radius-md: 12px; --radius-sm: 8px;
+    --shadow-card: none; --shadow-raised: 0 1px 3px rgba(0,0,0,.08);
+    --shadow-pop: 0 8px 24px rgba(0,0,0,.18); --shadow-modal: 0 30px 80px rgba(0,0,0,.22), 0 2px 8px rgba(0,0,0,.06);
+    --ease: .15s ease; --top-h: 100px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 14px/1.6 "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.01em; word-break: keep-all; overflow-wrap: break-word; }
+  a { color: inherit; }
+  button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
+  [hidden] { display: none !important; }
+  h1, h2, h3 { letter-spacing: -.02em; }
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* 쇼핑몰 공통 상단 (support.html과 같음 — 톤은 shop.css) */
+  .proto-band { background: var(--band); color: var(--sub); text-align: center; font-size: 12px; font-weight: 700; padding: 5px 16px; letter-spacing: .02em; }
+  .util { background: var(--util); border-bottom: 1px solid var(--util-line); }
+  .util-in { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; max-width: 1136px; min-height: 52px; margin: 0 auto; padding: 0 16px; }
+  .brand { display: block; line-height: 0; }
+  .brand img { width: 112px; height: auto; }
+  .util ul { display: flex; align-items: center; gap: 22px; list-style: none; margin: 0; padding: 0; font-size: 13px; color: var(--util-ink); }
+  .util button, .util a { background: none; border: 0; padding: 0; cursor: pointer; color: inherit; text-decoration: none; }
+  .util .me, .util .login, .util [aria-current="page"] { color: var(--main); font-weight: 700; }
+  .util .logout { color: var(--ink-3); margin-left: 8px; font-size: 12px; }
+  .site-top { position: sticky; top: 0; z-index: 15; }
+  html { scroll-padding-top: calc(var(--top-h) + 16px); }
+
+  /* 버튼 (mypage.html과 같은 구조 — 모양은 shop.css) */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 18px; border-radius: var(--radius-md); border: 1px solid transparent; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; white-space: nowrap; transition: background .15s, border-color .15s, color .15s, box-shadow .15s; }
+  .btn-block { width: 100%; }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:hover { background: var(--brand-dark); }
+  .btn-primary:disabled { background: var(--tonal); color: var(--ink-4); cursor: not-allowed; }
+  .btn-line { background: var(--surface); border-color: var(--line-2); color: var(--ink); }
+  .btn-line:hover { border-color: var(--ink-3); }
+  .btn-sm { height: 44px; padding: 0 14px; font-size: 13px; background: var(--tonal); border-color: transparent; color: var(--ink); }
+  .btn-sm:hover { background: var(--tonal-hover); border-color: transparent; }
+  .btn.btn-xs { height: 34px; padding: 0 14px; border-radius: 999px; background: var(--tonal); color: var(--ink); font-size: 13px; font-weight: 700; }
+  .btn.btn-xs:hover { background: var(--tonal-hover); }
+  .btn-text { background: none; border: 0; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0; font-size: 13px; border-radius: 4px; }
+  .btn-text:hover { color: var(--ink); }
+  .btn:focus-visible, .btn-text:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .btn:where(:active:not(:disabled)) { transform: translateY(1px); }
+
+  /* 입력 요소 (mypage.html과 같음) */
+  .field { margin-bottom: 18px; }
+  .field > label, .field > .label { display: block; font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .field .req { color: var(--accent1); margin-left: 2px; }
+  .field .opt { color: var(--ink-3); font-weight: 400; font-size: 12px; margin-left: 4px; }
+  input[type=text], input[type=email] { width: 100%; height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--radius-md); background: var(--field); outline: none; font-size: 14px; transition: border-color .15s, background .15s, box-shadow .15s; }
+  input::placeholder { color: var(--placeholder); }
+  input:hover { background: var(--field-hover); }
+  input:focus { background: #fff; border-color: var(--ink); box-shadow: 0 0 0 3px var(--ring); }
+  input.invalid { background: #fff; border-color: var(--danger); }
+  .hint { font-size: 12px; color: var(--ink-3); margin: 6px 2px 0; line-height: 1.5; }
+  .form-error { font-size: 12.5px; color: var(--danger); background: var(--danger-soft); border-radius: var(--radius-sm); padding: 10px 12px; margin: 0 0 12px; line-height: 1.55; }
+  .check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; position: relative; }
+  .check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .check .box { flex: none; width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--line-2); background: #fff; display: grid; place-items: center; margin-top: 1px; transition: background .15s, border-color .15s, box-shadow .15s; }
+  .check .box::after { content: ""; width: 9px; height: 5px; border: 2px solid transparent; border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
+  .check input:checked + .box { background: var(--brand); border-color: var(--brand); }
+  .check input:checked + .box::after { border-color: #fff; }
+  .check input:indeterminate + .box { background: var(--brand); border-color: var(--brand); }
+  .check input:indeterminate + .box::after { width: 9px; height: 0; border: 0; border-top: 2px solid #fff; transform: none; }
+  .check input:focus-visible + .box { box-shadow: var(--focus-ring); }
+  .check input:disabled + .box { background: var(--field); border-color: var(--line); cursor: not-allowed; }
+  /* 옵션 고르기: 회원가입 성별과 같은 묶음 라디오 (옵션이 4개를 넘으면 칩) */
+  .radio-row { display: flex; gap: 4px; padding: 4px; background: var(--field); border-radius: 999px; }
+  .radio-row label { flex: 1; }
+  .radio-row input { position: absolute; opacity: 0; }
+  .radio-row span { display: flex; align-items: center; justify-content: center; gap: 4px; height: 40px; border-radius: 999px; cursor: pointer; font-size: 14px; color: var(--ink-2); white-space: nowrap; transition: background .15s, box-shadow .15s; }
+  .radio-row span small { font-size: 12px; color: var(--ink-3); }
+  .radio-row input:checked + span { background: #fff; color: var(--ink); font-weight: 700; box-shadow: var(--shadow-raised); }
+  .radio-row input:focus-visible + span { box-shadow: var(--focus-ring); }
+  .extra-list { display: grid; gap: 8px; }
+  .extra-list .check { align-items: center; padding: 12px 16px; border-radius: var(--radius-md); background: var(--field); }
+  .extra-list .check .box { margin-top: 0; }
+  .acc > summary { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: var(--radius-md); background: var(--field); cursor: pointer; list-style: none; }
+  .acc > summary::-webkit-details-marker { display: none; }
+  .acc > summary .label { margin: 0 !important; font-size: 13px; font-weight: 700; color: var(--ink); }
+  .acc > summary .label .opt { margin-left: 4px; font-size: 12px; font-weight: 400; color: var(--ink-3); }
+  .acc > summary::after { content: ""; width: 8px; height: 8px; margin: -4px 4px 0 auto; border: solid var(--ink-2); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); transition: transform .15s; }
+  .acc[open] > summary::after { margin-top: 4px; transform: rotate(-135deg); }
+  .acc .acc-n { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+  .acc > .extra-list { margin-top: 8px; }
+  .extra-list .check .txt { flex: 1; }
+  .extra-list .check b { font-variant-numeric: tabular-nums; }
+  /* 수량 스테퍼 */
+  .qty { display: inline-flex; align-items: center; height: 40px; border-radius: 999px; background: var(--field); }
+  .qty button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; font-size: 18px; line-height: 1; color: var(--ink-2); cursor: pointer; }
+  .qty button:hover:not(:disabled) { background: var(--tonal-hover); color: var(--ink); }
+  .qty button:disabled { color: var(--ink-4); cursor: default; }
+  .qty button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .qty input { width: 44px; height: 40px; padding: 0; border: 0; border-radius: 0; background: none; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+  .qty input::-webkit-outer-spin-button, .qty input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .qty input:focus { background: #fff; box-shadow: none; border-radius: 8px; }
+
+  /* ===== 장바구니 레이아웃: 왼쪽 목록 · 오른쪽 결제 예정 금액(따라오는 상자) ===== */
+  .cart-wrap { max-width: 1280px; margin: 0 auto; padding: 56px 32px 96px; }
+  .cart-wrap > h1 { margin: 0 0 28px; font-size: 40px; font-weight: 800; line-height: 1.25; letter-spacing: -.04em; }
+  .page-sub { margin: 0 0 28px; font-size: 16px; color: var(--ink-2); }
+  .cart-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+  .cart-side { position: sticky; top: calc(var(--top-h) + 16px); }
+  .card { background: var(--surface); border-radius: var(--radius); padding: 36px 40px; }
+  .card + .card { margin-top: 16px; }
+  .card > h2 { margin: 0 0 6px; font-size: 22px; font-weight: 800; letter-spacing: -.035em; }
+  .card-sub { margin: 0 0 18px; color: var(--ink-3); font-size: 14.5px; line-height: 1.6; }
+  .card-sub:last-child { margin-bottom: 0; }
+  .st { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--bg); color: var(--ink-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .st.warn { background: var(--danger-soft); color: var(--danger); }
+  .st.off { background: var(--ink); color: #fff; }
+  /* 재주문·복사본 표시: 아이콘 + 짧은 이름, 테두리 칩 */
+  .st.mark { gap: 4px; padding: 0 9px 0 7px; background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-2); cursor: default; }
+  .st.mark svg { flex: none; }
+
+  /* 목록 머리: 전체 선택 · 선택 삭제 · 전체 삭제 · 견적서 */
+  .cart-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding-bottom: 18px; border-bottom: 2px solid var(--ink); }
+  .cart-tools .check { align-items: center; font-size: 15px; font-weight: 700; }
+  .cart-tools .check .box { margin-top: 0; }
+  .cart-tools .check small { font-weight: 400; color: var(--ink-3); margin-left: 4px; }
+  .cart-tools .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+  .cart-group { margin: 0; padding: 0; list-style: none; }
+  .cart-group-title { display: flex; align-items: center; gap: 8px; margin: 22px 0 0; font-size: 15px; font-weight: 800; }
+  .cart-group-title small { font-weight: 400; color: var(--ink-3); }
+  /* 상품 행 */
+  /* 상품 행 (2026-10-27 표 형태로 정리): 목록 폭에 따라 두 가지 배치 — 목록(.cart-main) 폭 기준 컨테이너 쿼리
+     좁을 때(기본): 체크 · 썸네일 · 상품 정보 / 아래 줄에 보관 만료일, 그 아래 수량(왼쪽)·금액(오른쪽)
+     넓을 때(목록 800px 이상): 체크 · 썸네일 · 상품 정보 · 보관 만료일 · 수량 · 금액이 한 줄 칸, 모두 세로 가운데 */
+  .cart-main { container-type: inline-size; container-name: cartmain; min-width: 0; }
+  .ci { display: grid; grid-template-columns: 20px 72px minmax(0, 1fr) auto; grid-template-areas: "chk thumb body body" "chk thumb keep keep" ". qty qty price"; align-items: start; gap: 10px 14px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+  .ci > .ci-check { grid-area: chk; margin-top: 2px; }
+  .ci > .ci-thumb { grid-area: thumb; width: 72px; height: 72px; font-size: 14px; }
+  .ci > .ci-body { grid-area: body; }
+  .ci > .ci-keep { grid-area: keep; }
+  .ci > .ci-qty { grid-area: qty; justify-self: start; align-self: center; }
+  .ci > .ci-price { grid-area: price; align-self: center; }
+  @container cartmain (min-width: 800px) {
+    .ci { grid-template-columns: 20px 88px minmax(0, 1fr) 80px 108px 104px; grid-template-areas: "chk thumb body keep qty price"; align-items: center; gap: 0 14px; padding: 24px 0; }
+    .ci > .ci-check { margin-top: 0; }
+    .ci > .ci-thumb { width: 88px; height: 88px; font-size: 15px; }
+    .ci > .ci-keep { flex-direction: column; gap: 6px; }
+    .ci > .ci-qty { justify-self: center; }
+    .ci > .ci-price { justify-self: end; }
+  }
+  .ci:last-child { border-bottom: 0; padding-bottom: 8px; }
+  .ci.off { opacity: .55; }
+  /* 편집 상품 썸네일 = 편집본 첫 페이지: 상품 색 여백(페이지 바탕) 안에 사진. 목록에서는 누르면 미리보기(새 창) */
+  /*   사진은 칸 안쪽 여백(--pg)에 맞춰 절대 위치로 고정 — 그리드 행 높이·사진 원본 비율과 상관없이 칸을 벗어나지 않음 */
+  .ci-thumb.page { --pg: 10px; position: relative; display: block; flex: none; padding: 0; overflow: hidden; text-decoration: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.04); }
+  .ci-thumb.page img { position: absolute; top: var(--pg); left: var(--pg); width: calc(100% - var(--pg) * 2); height: calc(100% - var(--pg) * 2); max-width: none; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,.12); }
+  .dlg-item .ci-thumb.page { --pg: 7px; }
+  a.ci-thumb.page { cursor: zoom-in; }
+  .ci-thumb.prod { position: relative; padding: 0; overflow: hidden; background: #F4F1EC; }   /* 기성 상품 이미지 */
+  .ci-thumb.prod img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; }
+  a.ci-thumb.page .pv { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: rgba(28,28,28,.55); color: #fff; font-size: 12px; font-weight: 700; opacity: 0; transition: opacity var(--ease); }
+  a.ci-thumb.page:hover .pv, a.ci-thumb.page:focus-visible .pv { opacity: 1; }
+  a.ci-thumb.page:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .ci-thumb { display: grid; place-items: center; width: 96px; height: 96px; border-radius: var(--radius-md); background: var(--bg); color: var(--ink-2); font-size: 16px; font-weight: 800; letter-spacing: -.02em; }
+  .ci-body { min-width: 0; }
+  .ci-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  .ci-head b { font-size: 17px; font-weight: 800; letter-spacing: -.03em; }
+  .ci-opt { margin-top: 4px; font-size: 14px; color: var(--ink-2); }
+  .ci-memo { margin-top: 2px; font-size: 13.5px; color: var(--ink-3); }
+  .ci-memo em { font-style: normal; color: var(--ink); font-weight: 600; }
+  /* 보관 만료일: 오른쪽 별도 칸 (D-day 칩 + 날짜) */
+  .ci-keep { display: flex; flex-direction: row; align-items: center; gap: 8px; text-align: center; font-variant-numeric: tabular-nums; }
+  .ci-keep .dd { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .ci-keep.soon .dd, .ci-keep.over .dd { background: var(--danger-soft); color: var(--danger); }
+  .ci-keep .date { font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .ci-acts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px; }
+  .ci-acts .btn.btn-xs { height: 28px; padding: 0 10px; font-size: 12px; font-weight: 600; }   /* 상품 행 버튼은 작게 (2026-10-27) */
+  .ci-price { text-align: right; }
+  .ci-price b { display: block; font-size: 20px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .ci-price small { font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  /* 이벤트 할인: 기본가(취소선) + 할인율·할인가 */
+  .ci-price.ev .was { display: flex; align-items: baseline; justify-content: flex-end; gap: 5px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .ci-price.ev .was s { color: var(--ink-3); }
+  .ci-price.ev .rate { font-weight: 800; color: var(--danger); }
+  .st.ev { background: var(--danger-soft); color: var(--danger); font-weight: 700; }
+  .ci-acts .btn.btn-xs.del { color: var(--ink-3); }
+  .ci-acts .btn.btn-xs.del:hover { color: var(--danger); background: var(--danger-soft); }
+  /* 수량: 상품 행에서는 조금 작게 */
+  .ci-qty { height: 36px; }
+  .ci-qty button { width: 34px; height: 36px; font-size: 16px; }
+  .ci-qty input { width: 40px; height: 36px; }
+  /* 비어 있음 · 로그인 필요 */
+  .empty { padding: 56px 40px; text-align: center; }
+  .empty b { display: block; margin-bottom: 6px; font-size: 22px; font-weight: 800; letter-spacing: -.035em; }
+  .empty p { margin: 0; font-size: 15px; color: var(--ink-2); }
+  .empty .btn { margin-top: 20px; }
+  .gate { max-width: 520px; }
+
+  /* 결제 예정 금액 */
+  .sum dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; margin: 20px 0 0; font-size: 15px; }
+  .sum dt { color: var(--ink-2); }
+  .sum dt small { display: block; font-size: 12.5px; color: var(--ink-3); }
+  .sum dd { margin: 0; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .sum dd.minus { color: var(--danger); }
+  .sum-total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 18px; padding-top: 18px; border-top: 2px solid var(--ink); font-size: 17px; font-weight: 800; }
+  .sum-total b { font-size: 28px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .sum .btn-primary { margin-top: 20px; height: 56px; font-size: 16px; }
+  .sum-note { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 12.5px; line-height: 1.6; color: var(--ink-3); }
+  .sum-note li { position: relative; padding-left: 10px; }
+  .sum-note li::before { content: "·"; position: absolute; left: 0; }
+  /* 무료배송 혜택 달성 (IA: 현재 금액 · 남은 금액 · 받는 혜택) */
+  .goal { margin-top: 20px; padding: 16px 18px; border-radius: var(--radius-md); background: var(--bg); font-size: 13.5px; line-height: 1.55; }
+  .goal b { color: var(--ink); }
+  .goal .bar { height: 6px; margin-top: 10px; border-radius: 999px; background: var(--line-2); overflow: hidden; }
+  .goal .bar i { display: block; height: 100%; border-radius: 999px; background: var(--ink); transition: width .3s ease; }
+
+  /* 함께 구매하면 좋은 상품 (IA: 상품 썸네일 · 상품명 · 정가 · 할인율 — 할인율은 상품 데이터에 없어 생략) */
+  .reco { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 6px; }
+  .reco-card { display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: var(--radius-md); background: var(--bg); }
+  .reco-card .ci-thumb { width: 100%; height: 108px; font-size: 20px; background: var(--surface); }
+  .reco-card b { display: block; font-size: 15px; font-weight: 800; letter-spacing: -.03em; }
+  .reco-card small { display: block; font-size: 12.5px; color: var(--ink-3); }
+  .reco-card .price { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .reco-card .st { align-self: flex-start; }
+  .reco-card .btn { margin-top: auto; }
+  /* 유의사항 */
+  .notes { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; line-height: 1.7; color: var(--ink-2); }
+  .notes li { position: relative; padding-left: 12px; }
+  .notes li::before { content: "·"; position: absolute; left: 2px; color: var(--ink-3); }
+
+  /* 모달 (주문 신청 모달과 같은 모양) */
+  .dlg { border: 0; padding: 0; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px); border-radius: 28px; background: var(--surface); color: var(--ink); box-shadow: 0 30px 80px rgba(0,0,0,.24); overflow: hidden; }
+  .dlg[open] { display: flex; flex-direction: column; animation: pop .22s cubic-bezier(.2,.9,.3,1); }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+  .dlg::backdrop { background: rgba(0,0,0,.5); }
+  body:has(dialog[open]) { overflow: hidden; }
+  .dlg > form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .dlg-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 24px 20px 12px 32px; }
+  .dlg-head h2 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.035em; outline: none; }
+  .dlg-head button { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; color: var(--ink-2); cursor: pointer; }
+  .dlg-head button:hover { background: var(--tonal); color: var(--ink); }
+  .dlg-body { flex: 1; min-height: 0; overflow: auto; padding: 4px 32px 20px; font-size: 14.5px; scrollbar-width: thin; }
+  .dlg-foot { flex: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 32px 28px; border-top: 1px solid var(--line); }
+  .dlg-foot .form-error { flex-basis: 100%; margin: 0 0 4px; }
+  .dlg-foot .btn { height: 52px; }
+  .dlg-foot .btn-line { flex: 0 0 120px; }
+  .dlg-foot .btn-primary { flex: 1; }
+  .dlg-item { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 14px; align-items: center; margin: 0 0 20px; padding: 14px 16px; border-radius: var(--radius-md); background: var(--bg); }
+  .dlg-item .ci-thumb { width: 64px; height: 64px; background: var(--surface); font-size: 14px; }
+  .dlg-item b { display: block; font-size: 15px; font-weight: 800; }
+  .proj-in { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .proj-in label { flex: none; font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
+  .proj-in label .opt { margin-left: 2px; font-weight: 400; color: var(--ink-3); }
+  body .dlg .proj-in input { flex: 1; min-width: 0; height: 36px; background: var(--surface); font-size: 13px; }
+  /* 옵션 변경 상단 상품 사양 (읽기 전용) */
+  .spec-box { margin: -8px 0 22px; padding: 16px 18px; border: 1px solid var(--line-2); border-radius: var(--radius-md); }
+  .spec-box h3 { margin: 0 0 12px; font-size: 13px; font-weight: 800; }
+  .spec-box dl { display: grid; margin: 0; gap: 12px 16px; }
+  .spec-main { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0 !important; }   /* 한 줄 5칸, 칸 너비 같게 — 칸 사이 세로선·가운데 정렬 (2026-10-27) */
+  .spec-main > div { min-width: 0; padding: 2px 8px; text-align: center; }
+  .spec-main > div + div { border-left: 1px solid var(--line-2); }
+  #optDlg { width: min(680px, calc(100vw - 32px)); }   /* 상품 사양 5칸이 한 줄에 들어가도록 넓힘 */
+  @media (max-width: 560px) { #optDlg { width: 100%; } .spec-main { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 12px !important; } .spec-main > div:nth-child(3n+1) { border-left: 0; } }
+  .spec-box dt { font-size: 11.5px; color: var(--ink-3); }
+  .spec-box dd { margin: 2px 0 0; font-size: 13px; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+  .dlg-item small { display: block; font-size: 13px; color: var(--ink-3); }
+  .notice { margin: 0 0 18px; padding: 14px 18px; border-radius: var(--radius-md); background: var(--bg); font-size: 14px; line-height: 1.7; color: var(--ink-2); }
+  .notice b { color: var(--ink); }
+
+  /* 증빙서류 출력 모달 (마이페이지 주문 상세 > 증빙서류 발급과 같은 모양) */
+  input[type=tel], input[type=date] { width: 100%; height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--radius-md); background: var(--field); outline: none; font-size: 14px; transition: border-color .15s, background .15s, box-shadow .15s; }
+  textarea.ta { display: block; width: 100%; min-height: 110px; padding: 12px 14px; border: 1px solid transparent; border-radius: var(--radius-md); background: var(--field); font: inherit; font-size: 14px; line-height: 1.6; resize: vertical; outline: none; transition: border-color .15s, background .15s, box-shadow .15s; }
+  textarea.ta::placeholder { color: var(--placeholder); }
+  textarea.ta:focus { background: #fff; border-color: var(--ink); box-shadow: 0 0 0 3px var(--ring); }
+  textarea.ta.invalid { background: #fff; border-color: var(--danger); }
+  .form-inline .field { display: grid; grid-template-columns: 110px minmax(0, 1fr); column-gap: 12px; align-items: start; margin-bottom: 14px; }
+  .form-inline .field:last-child { margin-bottom: 0; }
+  .form-inline .field > label, .form-inline .field > .label { margin: 0; min-height: 44px; display: flex; align-items: center; flex-wrap: wrap; line-height: 1.3; }
+  .form-inline .field .opt { display: block; width: 100%; margin: 2px 0 0; }
+  .dlg-sub { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 28px 0 12px; font-size: 17px; font-weight: 800; }
+  .dlg-sub:first-child { margin-top: 4px; }
+  .dlg-sub small { font-size: 13px; font-weight: 400; color: var(--ink-3); }
+  /* 바로 발급: 서류 이름만 작은 버튼 4개 한 줄 */
+  .doc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .doc-grid .btn { height: 44px; padding: 0 8px; font-size: 14px; white-space: nowrap; }
+  .doc-grid .btn:disabled { cursor: not-allowed; color: var(--ink-4); }
+  /* 별도 발급 신청: 서류 칩 한 줄 (좁으면 가로 스크롤) */
+  .chip-row { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: none; border-radius: var(--radius-md); }
+  .chip-row::-webkit-scrollbar { display: none; }
+  .chip-row .chip-check { flex: none; }
+  .chip-row.invalid { box-shadow: 0 0 0 1.5px var(--danger); padding: 4px; }
+  .chip-check { position: relative; }
+  .chip-check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .chip-check span { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 999px; background: var(--tonal); font-size: 13.5px; white-space: nowrap; color: var(--ink-2); cursor: pointer; transition: background .15s, color .15s; }
+  .chip-check span:hover { background: var(--tonal-hover); }
+  .chip-check input:checked + span { background: var(--ink); color: #fff; font-weight: 600; }
+  .chip-check input:focus-visible + span { box-shadow: var(--focus-ring); }
+  .file-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+  .file-chips:empty { display: none; }
+  .file-chips li { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 32px; padding: 0 4px 0 14px; border-radius: 999px; background: var(--tonal); font-size: 13px; }
+  .file-chips li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-chips button { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 50%; background: none; color: var(--ink-2); font-size: 16px; cursor: pointer; }
+  #docDlg { width: min(640px, calc(100vw - 32px)); }
+
+  /* 좁은 화면 아래 고정 띠: 결제 예정 금액 + 주문하기 */
+  .cart-bar { display: none; }
+  .toast { z-index: 20; position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 20px); background: rgba(28,28,28,.95); color: #fff; font-size: 13.5px; padding: 12px 18px; border-radius: 999px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 32px); text-align: center; box-shadow: var(--shadow-pop); }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 1080px) {
+    .cart-grid { grid-template-columns: minmax(0, 1fr); }
+    .cart-side { position: static; }
+    .reco { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 760px) {
+    .cart-wrap { padding: 32px 20px 120px; }
+    .cart-wrap > h1 { font-size: 30px; }
+    .card { padding: 24px 20px; }
+    .cart-tools .acts { margin-left: 0; flex-basis: 100%; }
+    .empty { padding: 40px 16px; }
+    .sum .btn-primary { display: none; }
+    .cart-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.96); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-top: 1px solid var(--line-2); }
+    .cart-bar small { display: block; font-size: 12px; color: var(--ink-3); }
+    .cart-bar b { font-size: 20px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+    .cart-bar .btn { height: 48px; padding: 0 24px; }
+    .toast { bottom: 88px; }
+  }
+  @media (max-width: 560px) {
+    .dlg { width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0; }
+    .dlg-head { padding: 16px 12px 8px 20px; }
+    .dlg-body { padding: 4px 20px 16px; }
+    .dlg-foot { padding: 12px 20px 20px; }
+    .dlg-foot .btn-line { flex-basis: 96px; }
+    .radio-row { flex-wrap: wrap; border-radius: var(--radius-md); }
+    .radio-row label { flex: 1 1 40%; }
+  }
+  @media (max-width: 480px) {
+    .cart-wrap { padding-left: 16px; padding-right: 16px; }
+    .reco { grid-template-columns: minmax(0, 1fr); }
+    .form-inline .field { grid-template-columns: minmax(0, 1fr); }
+    .form-inline .field > label, .form-inline .field > .label { min-height: 0; margin-bottom: 6px; }
+    .form-inline .field .opt { display: inline; width: auto; margin: 0 0 0 4px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  }
+</style>
+<link rel="stylesheet" href="shop.css?v=20261027-1"><!-- 쇼핑몰 공통: 색·상단·하단·버튼 톤 (popsa 콘셉트) — 이 화면 스타일을 덮어씀 -->
+<style>
+  /* 장바구니 글자 크기 한 단계 줄임 (2026-10-27) — shop.css 다음에 두어 공통 크기(.btn 15px·.card > h2 22px·입력칸 15px 등)보다 우선 */
+  body .cart-wrap > h1 { font-size: 32px; margin-bottom: 24px; }
+  body .card > h2 { font-size: 18px; }
+  body .card-sub { font-size: 13.5px; }
+  body .cart-tools .check { font-size: 14px; }
+  body .cart-tools .acts .btn.btn-xs { height: 32px; font-size: 12.5px; }
+  body .cart-group-title { font-size: 14px; }
+  body .ci-head b { font-size: 15px; }
+  body .ci-opt { font-size: 13px; }
+  body .ci-memo { font-size: 12.5px; }
+  body .ci-keep .dd { font-size: 11.5px; height: 22px; }
+  body .ci-keep .date { font-size: 12.5px; }
+  body .ci-acts .btn.btn-xs { height: 24px; padding: 0 9px; font-size: 11px; font-weight: 500; color: var(--ink-2); }   /* 행 버튼·수량은 작고 옅게 — 눈에 덜 띄도록 (2026-10-27) */
+  body .ci-acts .btn.btn-xs.del { color: var(--ink-3); }
+  body .ci-acts .btn.btn-xs.del:hover { color: var(--danger); }
+  body .ci-qty { height: 30px; }
+  body .ci-qty button { width: 28px; height: 30px; }
+  body .ci-qty input { width: 32px; height: 30px; }
+  body .ci-qty input { font-size: 13px; }
+  body .ci-qty button { font-size: 15px; }
+  body .ci-price b { font-size: 16px; }
+  body .ci-price small, body .ci-price.ev .was { font-size: 12px; }
+  body .empty b { font-size: 19px; }
+  body .empty p { font-size: 14px; }
+  body .sum dl { font-size: 14px; }
+  body .sum dt small, body .sum-note { font-size: 12px; }
+  body .sum-total { font-size: 15px; }
+  body .sum-total b { font-size: 24px; }
+  body .sum-cta { display: flex; gap: 8px; margin-top: 20px; }
+  body .sum-cta .btn-primary { flex: 1; margin-top: 0; height: 46px; font-size: 15px; }
+  body .sum-cta .btn-gift { flex: none; gap: 5px; height: 46px; padding: 0 14px; background: var(--tonal); color: var(--ink); font-size: 13px; font-weight: 700; }
+  body .sum-cta .btn-gift { color: var(--danger); }   /* 선물하기는 붉은 글자 (2026-10-27) */
+  body .sum-cta .btn-gift:hover:not(:disabled) { background: var(--danger-soft); }
+  body .sum-cta .btn-gift:disabled { background: var(--tonal); color: var(--ink-4); cursor: default; }
+  body .goal { font-size: 13px; }
+  body .reco-card b, body .reco-card .price { font-size: 14px; }
+  body .reco-card small { font-size: 12px; }
+  body .notes { font-size: 13px; }
+  body .cart-bar b { font-size: 18px; }
+  /* 모달 */
+  body .dlg-head h2 { font-size: 20px; }
+  body .dlg-body { font-size: 13.5px; }
+  body .dlg-sub { font-size: 15px; }
+  body .dlg-sub small, body .dlg-item small { font-size: 12.5px; }
+  body .dlg-item b { font-size: 14px; }
+  body .dlg .field > label, body .dlg .field > .label { font-size: 13px; }
+  body .dlg input[type=text], body .dlg input[type=email], body .dlg input[type=tel], body .dlg input[type=date], body .dlg textarea.ta { font-size: 14px; }
+  body .radio-row span { font-size: 13px; }
+  body .notice { font-size: 13px; }
+  body .doc-grid .btn { font-size: 13px; }
+  body .chip-check span { font-size: 13px; }
+  body .dlg-foot .btn { height: 48px; font-size: 14px; }
+  /* 왼쪽·오른쪽 위쪽 선 맞춤: 숨겨 둔 카드(빈 장바구니 안내) 다음 카드는 위 간격 없음 (2026-10-27) */
+  body .cart-main > [hidden] + .card { margin-top: 0; }
+  /* 결제 예정 금액 상자: 폭 320px(2026-10-27 360에서 줄임), 안쪽 여백도 좁게 */
+  @media (min-width: 1081px) { body .cart-side .card { padding: 30px 28px; } }
+  @media (max-width: 760px) {
+    body .cart-wrap > h1 { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+<header class="site-top" id="siteTop">
+<div class="proto-band">PROTOTYPE - 장바구니<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.6</span></div>
+<div class="util two-row">
+<!-- 1줄: 이용 메뉴 (최상단 오른쪽) / 2줄: 로고 + 대메뉴 — 모든 쇼핑몰 화면 동일 (index.html과 같은 구조) -->
+<div class="util-in util-top">
+  <nav class="util-menu" aria-label="이용 메뉴">
+    <ul>
+      <li id="authMenu"><a class="login" href="signup.html#login" data-go-login>로그인/회원가입</a></li>
+      <li><a href="mypage.html">마이페이지</a></li>
+      <li><a href="cart.html" aria-current="page">장바구니 (<span id="utilCart">0</span>)</a></li>
+      <li><a href="support.html">고객센터</a></li>
+    </ul>
+  </nav>
+</div>
+<div class="util-in">
+  <a class="brand" href="index.html" aria-label="스탑북 메인으로"><img src="images/logo-stopbook.png" alt="STOPBOOK" width="128" height="18"></a>
+  <nav class="gnb" aria-label="상품 메뉴">
+    <ul>
+      <li><a href="#" data-todo="포토북">포토북</a></li>
+      <li><a href="#" data-todo="사진인화">사진인화</a></li>
+      <li><a href="#" data-todo="액자">액자</a></li>
+      <li><a href="#" data-todo="캘린더">캘린더</a></li>
+      <li><a href="#" data-todo="포토굿즈">포토굿즈</a></li>
+      <li><a href="#" data-todo="디자인샵">디자인샵</a></li>
+    </ul>
+    <ul class="gnb-side" aria-label="서비스 메뉴">
+      <li><a href="index.html#agency">편집대행</a></li>
+      <li><a href="#" data-todo="이벤트">이벤트</a></li>
+    </ul>
+  </nav>
+</div>
+</div>
+</header>
+
+<main class="cart-wrap">
+  <h1>장바구니</h1>
+
+  <!-- 로그인 필요 (장바구니는 회원의 편집 작업물 단위라 비회원 장바구니 없음) -->
+  <section class="card gate" id="viewNeedLogin" hidden>
+    <h2>로그인이 필요합니다</h2>
+    <p class="card-sub">장바구니는 로그인한 뒤 이용할 수 있습니다. 편집한 작업물과 담아 둔 상품은 계정에 보관됩니다.</p>
+    <a class="btn btn-primary btn-block" href="signup.html#login" data-go-login>로그인하기</a>
+  </section>
+
+  <div class="cart-grid" id="viewCart" hidden>
+    <div class="cart-main">
+      <!-- 비어 있음 -->
+      <section class="card empty" id="cartEmpty" hidden>
+        <b>장바구니가 비어 있습니다.</b>
+        <p>포토북·캘린더·액자를 편집해서 담아 보세요. 담은 작업물은 90일 동안 보관됩니다.</p>
+        <a class="btn btn-primary" href="index.html#cats">상품 둘러보기</a>
+      </section>
+
+      <!-- 담긴 상품 (IA: 장바구니(편집상품) section — 편집본 썸네일 · 상품명 · 옵션 · 메모(프로젝트) · 가격 · 보관 만료 안내 · 선택 · 미리보기 · 옵션수정 · 수량 · 편집수정 · 복사 · 삭제) -->
+      <section class="card" id="cartListCard" hidden>
+        <div class="cart-tools">
+          <label class="check"><input type="checkbox" id="chkAll"><span class="box" aria-hidden="true"></span><span>전체 선택<small id="selCount"></small></span></label>
+          <div class="acts">
+            <button type="button" class="btn btn-xs" id="delSel">선택상품 삭제</button>
+            <button type="button" class="btn btn-xs" id="delAll">전체상품 삭제</button>
+            <button type="button" class="btn btn-xs" id="docBtn" aria-haspopup="dialog">증빙서류 출력</button>
+          </div>
+        </div>
+        <div id="cartGroups"></div>
+      </section>
+
+      <!-- 함께 구매하면 좋은 상품 (IA 컨텐츠(광고): 크로스셀링 + 무료배송 달성용 상품 추천. 디자인·기획전 관리 연동 전 — 상품 목록에서 고름) -->
+      <section class="card" id="recoCard">
+        <h2>함께 구매하면 좋은 상품</h2>
+        <p class="card-sub" id="recoSub">담긴 상품과 어울리는 상품입니다. [담기]를 누르면 기본 옵션으로 장바구니에 들어갑니다.</p>
+        <div class="reco" id="recoList"></div>
+      </section>
+
+      <!-- 유의사항 (IA 컨텐츠(정보)) -->
+      <section class="card">
+        <h2>유의사항</h2>
+        <ul class="notes">
+          <li>장바구니의 작업물은 담은 날로부터 <b>90일</b> 동안 보관됩니다. 보관 기간이 지나면 자동으로 삭제됩니다.</li>
+          <li>옵션(용지·코팅·추가 구입 등)을 바꾸면 가격이 달라집니다. 바뀐 가격은 상품 행과 결제 예정 금액에 바로 반영됩니다.</li>
+          <li>쿠폰·마일리지·상품권은 주문서에서 적용됩니다. 여기 표시된 회원 할인과 배송비는 주문서에서 다시 계산됩니다.</li>
+          <li>배송비는 택배 2,500원이며 할인 후 상품 금액 40,000원 이상이면 무료입니다. 제주·도서산간은 추가 배송비가 붙을 수 있습니다.</li>
+          <li>품절·품절 예정 상품은 주문할 수 없습니다. 옵션을 바꾸거나 다른 상품으로 담아 주세요.</li>
+          <li>맞춤 제작 상품은 제작이 시작되면 취소·변경이 어렵습니다. 주문 전 미리보기로 편집본을 확인해 주세요.</li>
+          <li>편집본을 공유하면 수량은 1개로 공유됩니다. 받는 분이 수량을 바꿔 주문할 수 있습니다.</li>
+        </ul>
+      </section>
+    </div>
+
+    <!-- 결제 예정 금액 (IA 필드:총금액 — 정가 · 할인가 · 할인율 · 장바구니가 + 주문하기 + 무료배송 혜택 달성 조건) -->
+    <aside class="cart-side">
+      <section class="card sum" aria-labelledby="sumTitle">
+        <h2 id="sumTitle">결제 예정 금액</h2>
+        <p class="card-sub sum-empty" id="sumEmpty" role="status" hidden>주문할 상품을 선택해 주세요.</p><!-- 선택한 상품이 없을 때만 (2026-10-27) -->
+        <dl id="sumList"></dl>
+        <div class="sum-total"><span>결제 예정 금액</span><b id="sumTotal">0원</b></div>
+        <div class="goal" id="goal"></div>
+        <div class="sum-cta"><!-- 주문하기 + 작은 선물하기, 증빙서류 출력 링크 삭제 (2026-10-27) -->
+          <button type="button" class="btn btn-primary" id="orderBtn">주문하기</button>
+          <button type="button" class="btn btn-gift" id="giftBtn" data-todo="선물하기" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8v13M12 8S10.5 3 7.8 3.6C6 4 6.3 7 8.5 8M12 8s1.5-5 4.2-4.4C18 4 17.7 7 15.5 8"/></svg>선물하기</button>
+        </div>
+        <ul class="sum-note">
+          <li>쿠폰·마일리지·상품권은 주문서에서 적용합니다.</li>
+          <li id="sumNoteDisc"></li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<!-- 좁은 화면 아래 고정 띠 -->
+<div class="cart-bar" id="cartBar" hidden>
+  <div><small>결제 예정 금액</small><b id="barTotal">0원</b></div>
+  <button type="button" class="btn btn-primary" id="orderBtn2">주문하기</button>
+</div>
+
+<!-- 하단 정보 (index·signup·mypage·support 같은 내용 — 모양은 shop.css, 회사 정보: admin/doc-forms.js SUPPLIER와 같은 값) -->
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <img src="images/logo-stopbook.png" alt="STOPBOOK" width="128" height="18">
+        <p>사진으로 남기는 기록, 포토북·캘린더·사진인화·액자·포토굿즈 제작 서비스</p>
+      </div>
+      <nav aria-labelledby="fProd"><h2 id="fProd">상품</h2><ul>
+        <li><button type="button" data-todo="포토북">포토북</button></li><li><button type="button" data-todo="캘린더">캘린더</button></li><li><button type="button" data-todo="사진인화">사진인화</button></li><li><button type="button" data-todo="액자">액자</button></li><li><button type="button" data-todo="포토굿즈">포토굿즈</button></li>
+      </ul></nav>
+      <nav aria-labelledby="fSvc"><h2 id="fSvc">서비스</h2><ul>
+        <li><a href="index.html#agency">편집대행</a></li><li><button type="button" data-todo="디자인">디자인</button></li><li><button type="button" data-todo="이벤트">이벤트</button></li><li><button type="button" data-todo="대량 구매 할인">대량 구매 할인</button></li><li><a href="mypage.html">마이페이지</a></li>
+      </ul></nav>
+      <nav aria-labelledby="fCs"><h2 id="fCs">고객센터</h2><ul>
+        <li><a href="support.html#faq">FAQ</a></li><li><a href="support.html#inquiry">1:1 문의</a></li><li><a href="support.html#partner">제휴문의</a></li><li><button type="button" data-todo="공지사항">공지사항</button></li>
+      </ul></nav>
+      <div class="cs"><h2>고객행복센터</h2><b class="ft-tel">080-860-1119</b><span class="ft-hours">평일 10:00~17:00 (점심 12:00~13:00)</span><br><span>주말·공휴일 휴무</span></div>
+    </div>
+    <div class="foot-legal">
+      <button type="button" data-todo="이용약관">이용약관</button>
+      <button type="button" data-todo="개인정보처리방침">개인정보처리방침</button>
+      <button type="button" data-todo="회사 소개">회사 소개</button>
+    </div>
+    <p class="foot-info"><span>상호 한국학술정보㈜</span><span>대표 채종준</span><span>사업자등록번호 111-81-26181</span><span>개인정보보호책임자 조동범</span><span>경기도 파주시 회동길 230 (문발동)</span><span>이메일 stopbook@kstudy.com</span></p>
+    <p class="foot-copy">© 2026 STOPBOOK. All rights reserved.</p>
+  </div>
+</footer>
+
+<!-- 옵션변경 (IA modal: 프로젝트명 · 사이즈/제본/용지/기타 단일선택 · 추가구입상품 · 수량) -->
+<dialog class="dlg" id="optDlg" aria-labelledby="optTitle">
+  <div class="dlg-head"><h2 id="optTitle" tabindex="-1">옵션 변경</h2><button type="button" data-dlg-close aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <form id="optForm" novalidate>
+    <div class="dlg-body" id="optBody"></div>
+    <div class="dlg-foot">
+      <div class="form-error" id="optErr" role="alert" hidden></div>
+      <button type="button" class="btn btn-line" data-dlg-close>닫기</button>
+      <button type="submit" class="btn btn-primary">변경 적용</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 편집본 공유 (IA modal: 상품 정보 · 미리보기 · 유의 문구 · 공유 대상 · 공유하기) -->
+<dialog class="dlg" id="shareDlg" aria-labelledby="shareTitle">
+  <div class="dlg-head"><h2 id="shareTitle" tabindex="-1">편집본 공유</h2><button type="button" data-dlg-close aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <form id="shareForm" novalidate>
+    <div class="dlg-body" id="shareBody"></div>
+    <div class="dlg-foot">
+      <div class="form-error" id="shareErr" role="alert" hidden></div>
+      <button type="button" class="btn btn-line" data-dlg-close>닫기</button>
+      <button type="submit" class="btn btn-primary">공유하기</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 증빙서류 출력 (IA 견적서 출력 → 지출증빙: 사업자등록증·통장사본·견적서·거래명세서 바로 발급 + 기관 양식 등 발급 신청) -->
+<dialog class="dlg" id="docDlg" aria-labelledby="docTitle">
+  <div class="dlg-head"><h2 id="docTitle" tabindex="-1">증빙서류 출력</h2><button type="button" data-dlg-close aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <form id="docForm" novalidate>
+    <div class="dlg-body" id="docBody"></div>
+    <div class="dlg-foot">
+      <div class="form-error" id="docErr" role="alert" hidden></div>
+      <button type="button" class="btn btn-line" data-dlg-close>닫기</button>
+      <button type="submit" class="btn btn-primary">발급 신청</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- 회원·장바구니 데이터는 관리자 화면(admin)과 같은 저장소(localStorage) 사용 → 수량·옵션 변경·삭제가 관리자 회원 상세 > 장바구니에 그대로 보임
+     견적서: admin/doc-forms.js(관리자 증빙서류·마이페이지 주문 상세와 같은 양식)
+     TODO: 실서비스에서는 GET/PUT/DELETE /api/members/me/cart, POST /api/members/me/cart/{id}/share, GET /api/products/recommend -->
+<script src="../admin/member-type-store.js?v=20261026-7"></script>
+<script src="../admin/mileage-types.js?v=20261026-1"></script>
+<script src="../admin/message-store.js?v=20261026-2"></script>
+<script src="../admin/member-data.js?v=20261027-2"></script>
+<script src="../admin/order-data.js?v=20261027-3"></script><!-- document-data.js가 OrderData를 씀 -->
+<script src="../admin/document-data.js?v=20261027-1"></script><!-- 증빙서류: 바로 발급 기록·발급 신청 (관리자 클레임관리 > 서류 발급 관리와 같은 저장소) -->
+<script src="../admin/doc-form-assets.js?v=20261026-5"></script>
+<script src="../admin/doc-forms.js?v=20261026-4"></script>
+<script src="../admin/feedback.js?v=20261026-1"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const won = n => Number(n || 0).toLocaleString();
+  const wonT = n => `${won(n)}원`;
+  const MD = window.MemberData, MTS = window.MemberTypeStore;
+  const SESSION_KEY = 'stopbook.session', AFTER_LOGIN_KEY = 'stopbook.afterLogin';
+  // 배송비·보관 기간 (order-data.js·관리자 회원 상세 장바구니 집계와 같은 값. TODO: 쇼핑몰 설정값)
+  const SHIP_FEE = 2500, FREE_SHIP_MIN = 40000, KEEP_DAYS = 90, QTY_MAX = 99;
+  const thumbOf = cat => esc(String(cat || '').replace(/[·\s]/g, '').slice(0, 2));
+  // 썸네일 색 (편집본·상품 이미지 연동 전): 상품명마다 정해진 차분한 색 — 같은 상품은 늘 같은 색. [바탕, 글자]
+  // TODO: 실서비스에서는 편집본 첫 페이지·상품 대표 이미지
+  const THUMB_TONES = [['#E8DED3', '#6B5643'], ['#DCE5DD', '#46604C'], ['#DDE3EC', '#45566E'], ['#EBDDE0', '#704A53'], ['#E9E4D2', '#655B36'], ['#DFDDEA', '#544F72'], ['#D9E6E6', '#3F6464'], ['#EEDFD4', '#7A4F33'], ['#F1E3C4', '#7A5A1E'], ['#E6DCE8', '#644B6B']];
+  //   상품 목록(편집 상품 PRODUCTS + 기성 상품 READY) 순서대로 색을 차례로 배정 → 목록에서 이웃한 상품은 늘 다른 색. 목록에 없는 상품명은 이름으로 계산
+  let toneIndex = null;
+  const toneOf = name => {
+    if (!toneIndex) { toneIndex = new Map(); (MD.PRODUCTS || []).map(p => p[0]).concat(READY.map(p => p[0])).forEach((t, i) => { if (!toneIndex.has(t)) toneIndex.set(t, i); }); }
+    const i = toneIndex.has(name) ? toneIndex.get(name) : [...String(name || '')].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 9973, 7);
+    return THUMB_TONES[i % THUMB_TONES.length];
+  };
+  const thumbStyle = name => { const [bg, fg] = toneOf(name); return ` style="background:${bg};color:${fg}"`; };
+  // 편집 상품 썸네일 = 고객이 편집한 첫 페이지 (편집본 이미지 연동 전 — 샘플 사진을 프로젝트별로 고정 배정, 상품 색 여백 안에 사진 + 프로젝트명)
+  // TODO: 실서비스에서는 편집본(mskey) 첫 페이지 렌더 이미지 URL
+  const PAGE_PHOTOS = ['lake-boat', 'beach', 'child', 'friends', 'hero-family-beach', 'mountain', 'portrait', 'road', 'valley', 'wedding', 'camping', 'cat'];
+  const pagePhotoOf = c => PAGE_PHOTOS[[...`${c.title}|${String(c.project || '').replace(/ \(복사\)$/, '')}|${c.fromOrderNo || ''}`].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 9973, 11) % PAGE_PHOTOS.length];
+  // size: 'row'(목록, 누르면 미리보기) | 'mini'(모달)
+  function pageThumb(c, size) {
+    const [bg] = toneOf(c.title);
+    const inner = `<img src="images/photos/${pagePhotoOf(c)}.jpg" alt="" loading="lazy">`;
+    if (size === 'row') return `<a class="ci-thumb page" href="${esc(c.previewUrl)}" target="_blank" rel="noopener" style="background:${bg}" title="편집본 미리보기 (새 창)" aria-label="${esc(c.title)} 편집본 미리보기 (새 창)">${inner}<span class="pv" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>미리보기</span></a>`;
+    return `<span class="ci-thumb page" aria-hidden="true" style="background:${bg}">${inner}</span>`;
+  }
+  // 기성 상품 썸네일: 상품 이미지가 있으면 사진, 없으면 상품명 두 글자 색 칸 (2026-10-27)
+  const readyThumb = (title, text) => { const p = READY.find(x => x[0] === title); return p && p[3] ? `<span class="ci-thumb prod" aria-hidden="true"><img src="images/product/thumb/${p[3]}.jpg" alt="" loading="lazy"></span>` : `<span class="ci-thumb" aria-hidden="true"${thumbStyle(title)}>${text}</span>`; };
+  const thumbHtml = (c, size) => (isReady(c) ? readyThumb(c.title, size === 'row' ? esc(c.title.slice(0, 2)) : thumbOf(c.productCategory)) : pageThumb(c, size));
+
+  // ===== 공통: 토스트 · 준비 중 =====
+  let toastTimer;
+  function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2400); }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-todo]'); if (!b) return;
+    e.preventDefault();
+    toast(`프로토타입: ${b.dataset.todo} 화면은 준비 중입니다.`);
+  });
+
+  // ===== 로그인 상태 (signup·mypage·support와 같은 sessionStorage) =====
+  let me = null;
+  try { const no = Number(sessionStorage.getItem(SESSION_KEY)); me = (no && MD && MD.members.find(x => x.no === no && !x.withdrawn)) || null; if (no && !me) sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* 무시 */ }
+  function renderUtil() {
+    $('authMenu').innerHTML = me
+      ? `<span class="me">${esc(me.name)}님</span> <button type="button" id="logoutBtn" class="logout">로그아웃</button>`
+      : '<a class="login" href="signup.html#login" data-go-login>로그인/회원가입</a>';
+    $('utilCart').textContent = me ? cart().length : 0;
+  }
+  document.addEventListener('click', e => {
+    // 로그인하러 signup.html로 가면 로그인 후 이 화면으로 돌아옴 (signup.html completeLogin)
+    if (e.target.closest('[data-go-login]')) { try { sessionStorage.setItem(AFTER_LOGIN_KEY, 'cart.html'); } catch (err) { /* 무시 */ } }
+    if (e.target.closest('#logoutBtn')) {
+      try { sessionStorage.removeItem(SESSION_KEY); } catch (err) { /* 무시 */ }
+      me = null; selected = new Set(); renderUtil(); render();
+      toast('로그아웃되었습니다.');
+    }
+  });
+
+  // ===== 장바구니 데이터 (MemberData m.cart — 항목: id · title · productCategory · price(현재 옵션 단가) · basePrice · option · extras · project · qty · savedAt · previewUrl · fromOrderNo · status) =====
+  const cart = () => (me && me.cart) || [];
+  const persist = list => { if (!MD.setCart(me.no, list)) toast('장바구니를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'); };
+  const itemOf = id => cart().find(c => c.id === id) || null;
+  const orderable = c => (c.status || '정상') !== '품절' && keepLeft(c) >= 0;
+  const expireOf = c => { const d = new Date(`${c.savedAt}T00:00:00`); d.setDate(d.getDate() + KEEP_DAYS); return d; };
+  const keepLeft = c => { const today = new Date(); today.setHours(0, 0, 0, 0); return Math.round((expireOf(c) - today) / 86400000); };
+  const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  let selected = new Set();   // 선택한 항목 id (처음에는 주문 가능한 항목 모두)
+  const selectedItems = () => cart().filter(c => selected.has(c.id) && orderable(c));
+
+  // 옵션 정의 (상품 정의 전 프로토타입 값. 라벨은 샘플 장바구니 option 문구와 같아 그대로 미리 선택됨. 금액 = 기본 옵션 대비 추가 금액)
+  // TODO: 실서비스에서는 상품별 옵션 정의(단일/복수 선택, 필수/선택, 옵션가) API
+  //   묶음 4번째 값 true = 편집 정보(레이아웃)와 연결된 옵션 → 장바구니 옵션 변경에 표시하지 않음 (페이지 수·사이즈, 편집기에서만)
+  const OPT = {
+    // 포토북 (2026-10-27): 표지 종류(유광·무광 × 하드·소프트, 하드 +4,000) · 내지 종류(무광·유광)만 변경. 페이지는 고정. 예전 '하드커버'·'소프트커버' 문구는 COVER_ALIAS로 무광 하드·무광 소프트로 읽음
+    '포토북': { groups: [['표지 종류', ['유광 하드', '유광 소프트', '무광 하드', '무광 소프트'], [4000, 0, 4000, 0]], ['페이지', ['24페이지', '30페이지', '40페이지'], [0, 3000, 8000], true], ['내지 종류', ['무광', '유광'], [0, 0]]], extras: [['보관 케이스', 3000], ['기본 금박', 1500], ['맞춤 금박', 3000]] },
+    '캘린더': { groups: [['연도', ['2027년'], [0]], ['시작 월', ['1월 시작', '3월 시작'], [0, 0]]], extras: [['선물 포장', 2000]] },
+    '액자': { groups: [['사이즈', ['12.7×17.8cm', '20.3×25.4cm', '21×29.7cm'], [0, 5000, 8000], true], ['프레임', ['화이트', '내추럴', '블랙'], [0, 0, 0]]], extras: [['벽걸이 고리', 1000]] },
+    '팬시·굿즈': { groups: [['코팅', ['기본', '무광 코팅', '유광 코팅'], [0, 500, 500]]], extras: [['선물 포장', 2000]] },
+    '기성 상품': { groups: [], extras: [['선물 포장', 2000]] }   // 편집 없이 바로 담는 상품 (함께 구매하면 좋은 상품)
+  };
+  // 함께 구매하면 좋은 기성 상품 (IA 컨텐츠(광고): 상품 썸네일·상품명·정가. 상품 관리 연동 전 예시)
+  // TODO: 실서비스에서는 GET /api/products/recommend (장바구니 상품 기준 크로스셀링)
+  // [이름, 가격, 설명, 상품 이미지(images/product/thumb/*.jpg — 원본 PNG를 480px로 줄인 것, 없으면 색 칸)]
+  const READY = [['포장 박스', 3500, '선물용 하드 박스', 'box'], ['디자인 엽서 세트', 4500, '10장 · 봉투 포함', 'card'], ['책갈피 세트', 3000, '5개 · 종이 소재', 'bookmark'], ['다이어리', 12000, '2027 먼슬리 · A5', 'diary'], ['포토 보관함', 9800, '사진 100장 보관'], ['사진 클립 세트', 2800, '우드 클립 10개 · 끈']];
+  const isReady = c => !(c.project || c.previewUrl);   // 기성 상품: 편집본(프로젝트·미리보기) 없음
+  // option 문구('하드커버 · 24페이지 · +보관 케이스') → { sel: { 그룹: 라벨 }, extras: [], rest: [] }
+  // ===== 상품 정보 줄: 형태 | 사이즈(cm) | 커버 | 코팅 | 페이지 (2026-10-27) =====
+  //   option 문구(샘플 '하드커버 · 24페이지', 재주문 'A5 가로 · 정사각 · 린넨 · 무광 · 24p(+16p)' 등)를 항목별로 나누고, 없는 형태·사이즈는 상품 기본값으로 채움
+  //   사이즈는 모두 cm (인치·A판·B판 표기를 cm로 바꿈, '가로'면 가로가 긴 쪽). 나머지(프레임 색·캘린더 시작 월·기성 상품 설명)는 뒤에, 추가 구입은 괄호
+  // TODO: 실서비스에서는 상품 옵션 정의의 항목·표시 순서와 상품별 규격(cm)
+  const SIZE_CM = { 'A4': [21, 29.7], 'A5': [14.8, 21], 'B4': [25.7, 36.4], '5x7': [12.7, 17.8], '8x8': [20.3, 20.3], '10x10': [25.4, 25.4], '8x10': [20.3, 25.4], '미니': [7, 10], '기본': [10, 15] };
+  const cmText = (w, h) => `${w}×${h}cm`;
+  function sizeCm(t) {
+    if (/cm$/.test(t)) return t;
+    const m = t.match(/^(A4|A5|B4|\d+x\d+|미니)(?:\s*(가로|세로))?$/); if (!m || !SIZE_CM[m[1]]) return '';
+    let [w, h] = SIZE_CM[m[1]]; if (m[2] === '가로' && w < h) [w, h] = [h, w];
+    return cmText(w, h);
+  }
+  function specOf(c) {
+    const out = { form: '', size: '', cover: '', coating: '', pages: '' }, rest = [], extras = [];
+    String(c.option || '').split(' · ').map(s => s.trim()).filter(Boolean).map(t => (c.productCategory === '포토북' && COVER_ALIAS[t]) || t).forEach(t => {
+      if (t.startsWith('+')) { extras.push(t.slice(1)); return; }
+      const sz = sizeCm(t);
+      if (sz && !out.size) { out.size = sz; const o = t.match(/(가로|세로)$/); if (o && !out.form) out.form = `${o[1]}형`; return; }
+      if (/^(정사각|가로형|세로형|탁상형|벽걸이형)$/.test(t)) { out.form = t; return; }
+      if (/(커버|레이플랫|린넨|가죽|하드|소프트)/.test(t)) { out.cover = out.cover ? `${out.cover} · ${t}` : t; return; }
+      if (/^(무광|유광)( 코팅)?$|^코팅 안함$/.test(t)) { out.coating = t.replace(' 코팅', ''); return; }
+      if (/^\d+(페이지|p)/.test(t)) { out.pages = t.replace('페이지', 'p'); return; }
+      if (c.productCategory === '팬시·굿즈' && t === '기본') { out.coating = '코팅 안함'; return; }
+      rest.push(t);
+    });
+    // 상품 기본값 (편집 상품만)
+    const cat = c.productCategory, title = c.title || '';
+    if (cat === '포토북') {
+      if (!out.size) { const a5 = /A5/.test(title); out.size = a5 ? cmText(14.8, 21) : cmText(20.3, 20.3); if (!out.form) out.form = a5 ? '세로형' : '정사각'; }
+      if (!out.form) out.form = '정사각';
+      if (!out.coating) out.coating = '무광';
+    } else if (cat === '캘린더') {
+      const wall = /월캘린더|벽걸이/.test(title);
+      if (!out.form) out.form = wall ? '벽걸이형' : '탁상형';
+      if (!out.size) out.size = wall ? cmText(21, 29.7) : cmText(21, 15);
+      if (!out.pages) out.pages = '13p';
+    } else if (cat === '액자') {
+      if (!out.form) out.form = '세로형';
+    } else if (cat === '팬시·굿즈') {
+      if (!out.size) out.size = cmText(10, 15);
+    }
+    return { parts: [out.form, out.size, out.cover, out.coating, out.pages].filter(Boolean), rest, extras };
+  }
+  const specText = c => { const s = specOf(c); return s.parts.concat(s.rest).join(' | ') || '기본 옵션'; };
+  const SIZE_ALIAS = { '5x7': '12.7×17.8cm', '8x10': '20.3×25.4cm', 'A4': '21×29.7cm' };   // 예전 액자 사이즈 표기 → cm
+  // 시티북 = 기성 표지 상품 → 옵션 변경에서 표지 디자인(여행지) 선택 (2026-10-27). TODO: 상품 정의의 표지 디자인 목록
+  const CITY_RE = /^시티북/, CITY_COVER = ['표지 디자인', ['유럽', '하와이', '일본', '뉴질랜드', '호주'], [0, 0, 0, 0, 0]];
+  const COVER_ALIAS = { '하드커버': '무광 하드', '소프트커버': '무광 소프트' };   // 예전 포토북 표지 표기 → 표지 종류
+  function parseOption(c) {
+    const def0 = OPT[c.productCategory] || { groups: [], extras: [] };
+    const def = CITY_RE.test(c.title || '') ? Object.assign({}, def0, { groups: [CITY_COVER].concat(def0.groups) }) : def0;   // 시티북은 표지 디자인도 고름
+    const sel = {}, extras = [], rest = [];
+    String(c.option || '').split(' · ').map(s => s.trim()).filter(Boolean).forEach(t0 => {
+      const t = c.productCategory === '액자' && SIZE_ALIAS[t0] ? SIZE_ALIAS[t0] : c.productCategory === '포토북' && COVER_ALIAS[t0] ? COVER_ALIAS[t0] : t0;
+      if (t.startsWith('+')) { extras.push(t.slice(1)); return; }
+      const g = def.groups.find(x => x[1].includes(t));
+      if (g) sel[g[0]] = t; else rest.push(t);
+    });
+    def.groups.forEach(g => { if (!sel[g[0]]) sel[g[0]] = g[1][0]; });
+    return { def, sel, extras, rest };
+  }
+  const deltaOf = (def, sel, extras) => def.groups.reduce((s, g) => s + (g[2][g[1].indexOf(sel[g[0]])] || 0), 0) + extras.reduce((s, x) => s + ((def.extras.find(e => e[0] === x) || [0, 0])[1]), 0);
+  // 기본 단가: 처음 옵션을 바꿀 때 현재 가격에서 현재 옵션 추가 금액을 뺀 값으로 정해 둠 (그 뒤로는 고정)
+  const baseOf = c => { if (c.basePrice == null) { const p = parseOption(c); c.basePrice = Math.max(0, c.price - deltaOf(p.def, p.sel, p.extras)); } return c.basePrice; };
+
+  // ===== 화면 =====
+  // ===== 이벤트 할인 (샘플): 장바구니의 편집 상품 1건에는 늘 이벤트 할인가가 적용된 상태로 보여 줌 =====
+  //   item.event = { name, rate(%), until } → 할인가 = 기본가 × (1 − rate) (10원 단위 내림). 기본가(price)는 그대로 두고 표시·합계만 할인가
+  //   샘플 지정: 이벤트가 붙은 항목이 없으면 주문 가능한 첫 편집 상품(없으면 첫 항목)에 붙임 — 저장하지 않고 화면에서만 (삭제하면 다음 항목으로 옮겨감)
+  // TODO: 실서비스에서는 이벤트·기획전 관리의 적용 상품·할인율로 서버가 계산
+  const EVENT_SAMPLE = { name: '가을 포토북 기획전', rate: 20, until: '2026-11-30' };
+  const unitOf = c => (c.event ? Math.floor(c.price * (100 - c.event.rate) / 100 / 10) * 10 : c.price);
+  function ensureEventSample(list) {
+    list.forEach(c => { if (c.event && c.event.sample) delete c.event; });
+    if (!list.length || list.some(c => c.event)) return;
+    const target = list.find(c => !isReady(c) && orderable(c)) || list[0];
+    target.event = Object.assign({ sample: true }, EVENT_SAMPLE);
+  }
+  function render() {
+    const list = cart();
+    if (me) ensureEventSample(list);
+    $('viewNeedLogin').hidden = !!me;
+    $('viewCart').hidden = !me;
+    $('cartBar').hidden = !me || !list.length;
+    if (!me) return;
+    list.forEach(c => { if (!selected.has(c.id) && !c._touched) { selected.add(c.id); c._touched = true; } });   // 새로 들어온 항목은 선택 상태로
+    $('cartEmpty').hidden = list.length > 0;
+    $('cartListCard').hidden = !list.length;
+    renderList(list);
+    renderSummary();
+    renderReco();
+    $('utilCart').textContent = list.length;
+  }
+  function itemRow(c) {
+    const left = keepLeft(c), status = c.status || '정상';
+    const expired = left < 0, soldOut = status === '품절';
+    const dday = expired ? '보관 기간 만료' : left === 0 ? 'D-day' : `D-${left}`;
+    // 재주문·복사본: 메모 줄 대신 상품명 옆 아이콘 표시 (자세한 내용은 마우스를 올리면). 예전 복사본의 ' (복사)' 이름 꼬리도 표시로 바꿈
+    const copied = c.copied || / \(복사\)$/.test(c.project || '');
+    const project = String(c.project || '').replace(/ \(복사\)$/, '');
+    const memo = c.fromOrderNo ? '' : (project ? `프로젝트 <em>${esc(project)}</em>` : '');
+    const marks = (c.fromOrderNo ? `<span class="st mark" title="주문 ${esc(c.fromOrderNo)}의 편집본을 다시 담았습니다"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>재주문</span>` : '')
+      + (copied ? '<span class="st mark" title="장바구니에서 복사한 편집본입니다"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>복사본</span>' : '');
+    const extras = (c.extras || []).length ? ` <span class="muted">(+${esc(c.extras.join(', '))})</span>` : '';
+    return `<li class="ci${soldOut || expired ? ' off' : ''}" data-id="${esc(c.id)}">
+      <label class="check ci-check"><input type="checkbox" data-sel ${selected.has(c.id) && orderable(c) ? 'checked' : ''}${orderable(c) ? '' : ' disabled'}><span class="box" aria-hidden="true"></span><span class="sr-only">${esc(c.title)} 선택</span></label>
+      ${thumbHtml(c, 'row')}
+      <div class="ci-body">
+        <div class="ci-head"><b>${esc(c.title)}</b><span class="st">${esc(c.productCategory)}</span>${marks}${c.event ? `<span class="st ev" title="${esc(c.event.name)} · ${esc(c.event.until)}까지">이벤트 ${c.event.rate}%</span>` : ''}${status === '품절예정' ? '<span class="st warn">품절 예정</span>' : ''}${soldOut ? '<span class="st off">품절</span>' : ''}${expired ? '<span class="st warn">보관 만료</span>' : ''}</div>
+        <div class="ci-opt">${esc(specText(c))}${extras}</div>
+        ${memo ? `<div class="ci-memo">${memo}</div>` : ''}
+        <div class="ci-acts">${isReady(c)
+          ? `<button type="button" class="btn btn-xs" data-todo="상품 상세">상품 보기</button><button type="button" class="btn btn-xs" data-opt>옵션 변경</button>`
+          : `<button type="button" class="btn btn-xs" data-opt>옵션 변경</button>
+          <button type="button" class="btn btn-xs" data-todo="편집기">편집 수정</button>
+          <button type="button" class="btn btn-xs" data-copy>복사</button>
+          <button type="button" class="btn btn-xs" data-share>공유</button>`}
+          <button type="button" class="btn btn-xs del" data-del aria-label="${esc(c.title)} 삭제">삭제</button>
+        </div>
+      </div>
+      <!-- 오른쪽 칸 (넓은 화면: 보관 만료일 · 수량 · 금액이 각자 칸, 세로 가운데 정렬) -->
+      <div class="ci-keep${expired ? ' over' : left <= 30 ? ' soon' : ''}" title="보관 만료일 — 담은 날로부터 90일"><span class="dd">${dday}</span><span class="date">${ymd(expireOf(c))}</span></div>
+      <div class="qty ci-qty" role="group" aria-label="${esc(c.title)} 수량">
+        <button type="button" data-qty="-1" aria-label="수량 줄이기"${c.qty <= 1 ? ' disabled' : ''}>−</button>
+        <input type="number" min="1" max="${QTY_MAX}" value="${c.qty}" data-qty-input aria-label="수량">
+        <button type="button" data-qty="1" aria-label="수량 늘리기"${c.qty >= QTY_MAX ? ' disabled' : ''}>+</button>
+      </div>
+      ${c.event
+        ? `<div class="ci-price ev"><span class="was"><span class="rate">${c.event.rate}%</span><s aria-label="기본가">${wonT(c.price * c.qty)}</s></span><b>${wonT(unitOf(c) * c.qty)}</b><small>${wonT(unitOf(c))} × ${c.qty}개</small></div>`
+        : `<div class="ci-price"><b>${wonT(c.price * c.qty)}</b><small>${wonT(c.price)} × ${c.qty}개</small></div>`}
+    </li>`;
+  }
+  function renderList(list) {
+    // IA: 편집상품 / 기성상품 section — 프로젝트(편집본)가 있는 항목과 없는 항목을 나눔 (샘플은 모두 편집 상품)
+    const edit = list.filter(c => c.project || c.previewUrl), ready = list.filter(c => !(c.project || c.previewUrl));
+    const group = (title, arr) => arr.length ? `${ready.length && edit.length ? `<h3 class="cart-group-title">${title}<small>${arr.length}종</small></h3>` : ''}<ul class="cart-group">${arr.map(itemRow).join('')}</ul>` : '';
+    $('cartGroups').innerHTML = group('편집 상품', edit) + group('기성 상품', ready);
+    const able = list.filter(orderable), sel = selectedItems();
+    const all = $('chkAll');
+    all.checked = able.length > 0 && sel.length === able.length;
+    all.indeterminate = sel.length > 0 && sel.length < able.length;
+    all.disabled = !able.length;
+    $('selCount').textContent = `(${sel.length}/${able.length})`;
+    $('delSel').disabled = !sel.length;
+  }
+  function summary() {
+    const sel = selectedItems();
+    const saleSum = sel.reduce((s, c) => s + c.price * c.qty, 0);   // 기본가(정가) 합계
+    const eventDisc = sel.reduce((s, c) => s + (c.price - unitOf(c)) * c.qty, 0);   // 이벤트 할인 합계
+    const afterEvent = saleSum - eventDisc;
+    const cat = MTS && MTS.categoryByCode ? MTS.categoryByCode(me.categoryCode) : null;
+    const rate = cat && cat.discountRate ? Number(cat.discountRate) : 0;
+    const discount = Math.floor(afterEvent * rate / 100);   // 회원 할인은 이벤트 할인가 기준
+    const afterDisc = afterEvent - discount;
+    const freeByCategory = !!(cat && cat.freeShipping);
+    const ship = !sel.length || freeByCategory || afterDisc >= FREE_SHIP_MIN ? 0 : SHIP_FEE;
+    return { sel, qty: sel.reduce((s, c) => s + c.qty, 0), saleSum, eventDisc, afterEvent, rate, discount, afterDisc, ship, total: afterDisc + ship, freeByCategory, catName: cat ? cat.name : '' };
+  }
+  function renderSummary() {
+    const s = summary();
+    $('sumList').innerHTML = `
+      <dt>상품 금액</dt><dd>${wonT(s.saleSum)}</dd>
+      ${s.eventDisc ? `<dt>이벤트 할인</dt><dd class="minus">-${wonT(s.eventDisc)}</dd>` : ''}
+      ${s.rate ? `<dt>회원 할인</dt><dd class="minus">-${wonT(s.discount)}</dd>` : ''}
+      ${s.eventDisc || s.rate ? `<dt>할인 후 금액</dt><dd>${wonT(s.afterDisc)}</dd>` : ''}
+      <dt>배송비</dt><dd>${s.sel.length ? (s.ship ? `+${wonT(s.ship)}` : '무료') : '-'}</dd>`;
+    $('sumEmpty').hidden = s.sel.length > 0;   // 선택한 상품이 없으면 안내
+    $('sumTotal').textContent = wonT(s.total); $('barTotal').textContent = wonT(s.total);
+    $('sumNoteDisc').textContent = s.rate ? `회원 구분(${s.catName}) 할인율 ${s.rate}%는 주문서에서 다시 계산됩니다.` : '회원 등급·구분 할인은 주문서에서 적용됩니다.';
+    // 무료배송 혜택 달성 조건 (IA: 현재 금액 · 남은 금액 · 받는 혜택)
+    const g = $('goal');
+    // 무료배송 안내: 미선택 = 기준 금액 / 기준 미달 = 남은 금액 / 무료배송 적용(금액·회원 구분) = 상자 숨김 (2026-10-27)
+    g.hidden = s.sel.length > 0 && s.ship === 0;
+    if (!s.sel.length) { g.innerHTML = `<b>${won(FREE_SHIP_MIN)}원</b> 이상 구매 시 무료 배송됩니다.`; }
+    else if (s.ship > 0) { const left = FREE_SHIP_MIN - s.afterDisc; g.innerHTML = `<b>${wonT(left)}</b> 더 담고 무료 배송 받으세요.<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${FREE_SHIP_MIN}" aria-valuenow="${s.afterDisc}"><i style="width:${Math.min(100, Math.round(s.afterDisc / FREE_SHIP_MIN * 100))}%"></i></div>`; }
+    const label = s.sel.length ? `주문하기 (${s.sel.length})` : '주문하기';
+    $('orderBtn').textContent = label; $('orderBtn2').textContent = label;
+    $('orderBtn').disabled = !s.sel.length; $('orderBtn2').disabled = !s.sel.length; $('giftBtn').disabled = !s.sel.length;   // 선택한 상품이 있어야 주문·선물 가능
+  }
+  // 함께 구매하면 좋은 상품: 편집 없이 바로 담는 기성 상품(포장 박스·디자인 엽서·책갈피·다이어리 …). 이미 담긴 상품은 제외, 무료배송까지 남은 금액을 채우는 상품에 표시
+  function renderReco() {
+    const list = cart(), s = summary();
+    const have = new Set(list.map(c => c.title));
+    const left = s.sel.length && !s.freeByCategory && s.ship ? FREE_SHIP_MIN - s.afterDisc : 0;
+    const picks = READY.filter(p => !have.has(p[0])).slice(0, 4);
+    $('recoSub').textContent = '포토북·액자와 함께 쓰기 좋은 기성 상품입니다. [담기]를 누르면 편집 없이 바로 장바구니에 들어갑니다.';
+    $('recoList').innerHTML = picks.map(p => `<div class="reco-card">
+      ${readyThumb(p[0], esc(p[0].slice(0, 2)))}
+      <div><b>${esc(p[0])}</b><small>기성 상품 · ${esc(p[2])}</small></div>
+      <span class="price">${wonT(p[1])}</span>
+      ${left && p[1] >= left ? '<span class="st">담으면 무료배송</span>' : ''}
+      <button type="button" class="btn btn-xs" data-add="${esc(p[0])}">담기</button>
+    </div>`).join('');
+  }
+
+  // ===== 동작: 선택 · 수량 · 삭제 · 복사 · 담기 =====
+  $('chkAll').addEventListener('change', () => {
+    const able = cart().filter(orderable);
+    selected = new Set($('chkAll').checked ? able.map(c => c.id) : []);
+    cart().forEach(c => { c._touched = true; });
+    renderList(cart()); renderSummary(); renderReco();
+  });
+  $('cartGroups').addEventListener('change', e => {
+    const chk = e.target.closest('[data-sel]');
+    if (chk) { const id = chk.closest('.ci').dataset.id; if (chk.checked) selected.add(id); else selected.delete(id); itemOf(id)._touched = true; renderList(cart()); renderSummary(); renderReco(); return; }
+    const inp = e.target.closest('[data-qty-input]');
+    if (inp) setQty(inp.closest('.ci').dataset.id, Number(inp.value));
+  });
+  $('cartGroups').addEventListener('click', e => {
+    const row = e.target.closest('.ci'); if (!row) return;
+    const id = row.dataset.id, c = itemOf(id); if (!c) return;
+    const q = e.target.closest('[data-qty]');
+    if (q) { setQty(id, c.qty + Number(q.dataset.qty)); return; }
+    if (e.target.closest('[data-del]')) { removeItems([id], `'${c.title}'을(를) 장바구니에서 삭제할까요?`); return; }
+    if (e.target.closest('[data-copy]')) { copyItem(c); return; }
+    if (e.target.closest('[data-opt]')) { openOpt(c); return; }
+    if (e.target.closest('[data-share]')) { openShare(c); return; }
+  });
+  function setQty(id, n) {
+    const c = itemOf(id); if (!c) return;
+    const qty = Math.min(QTY_MAX, Math.max(1, Math.round(Number(n) || 1)));
+    if (qty === c.qty) { renderList(cart()); return; }
+    c.qty = qty; persist(cart()); render();
+  }
+  function removeItems(ids, msg) {
+    if (!ids.length) return;
+    if (!confirm(msg)) return;
+    const next = cart().filter(c => !ids.includes(c.id));
+    ids.forEach(id => selected.delete(id));
+    persist(next); render();
+    toast(ids.length === 1 ? '장바구니에서 삭제했습니다.' : `${ids.length}종을 장바구니에서 삭제했습니다.`);
+  }
+  $('delSel').addEventListener('click', () => { const ids = selectedItems().map(c => c.id); removeItems(ids, `선택한 상품 ${ids.length}종을 장바구니에서 삭제할까요?`); });
+  $('delAll').addEventListener('click', () => removeItems(cart().map(c => c.id), `장바구니의 상품 ${cart().length}종을 모두 삭제할까요?`));
+  // 편집본 복사: 같은 옵션·수량 1개로 바로 아래에 (IA 편집본 복사)
+  function copyItem(c) {
+    const copy = Object.assign({}, c, { id: `c${me.no}-${Date.now().toString(36)}`, project: String(c.project || '').replace(/ \(복사\)$/, ''), copied: true, qty: 1, savedAt: ymd(new Date()), fromOrderNo: '' });   // 복사본 표시는 copied 아이콘 (이름에 '(복사)'를 붙이지 않음)
+    delete copy._touched;
+    const list = cart().slice(); list.splice(list.indexOf(c) + 1, 0, copy);
+    persist(list); render();
+    toast('편집본을 복사해 담았습니다.');
+  }
+  // 추천 상품 담기 (기본 옵션)
+  $('recoList').addEventListener('click', e => {
+    const b = e.target.closest('[data-add]'); if (!b) return;
+    const p = READY.find(x => x[0] === b.dataset.add); if (!p) return;
+    // 기성 상품: 편집본(프로젝트·미리보기) 없이 담김 → 목록의 '기성 상품' 묶음, 옵션 변경은 추가 구입(선물 포장)만
+    const ok = MD.addToCart(me.no, [{ title: p[0], productCategory: '기성 상품', price: p[1], basePrice: p[1], option: p[2], extras: [], project: '', previewUrl: '', qty: 1 }]);
+    if (!ok) { toast('장바구니에 담지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
+    if (!Array.isArray(JSON.parse(localStorage.getItem(MD.CART_STATE_KEY) || '{}')[me.no])) persist(cart());   // 저장본이 없던 회원은 지금 목록으로 저장본 시작
+    render();
+    toast(`'${p[0]}'을(를) 장바구니에 담았습니다.`);
+  });
+
+  // ===== 옵션 변경 모달 =====
+  let optTarget = null;
+  const dlgClose = d => { if (d.open) d.close(); };
+  document.querySelectorAll('.dlg').forEach(d => d.addEventListener('click', e => { if (e.target.closest('[data-dlg-close]')) d.close(); }));
+  // 옵션 변경 상단 상품 사양 (2026-10-27): 상품형태·사이즈·커버종류·코팅종류·페이지 한 줄. 해당 없으면 '-'
+  //   값은 상품 정보 줄(specOf)과 같음. TODO: 실서비스에서는 작업물의 옵션 정보
+  function specGrid(c) {
+    if (isReady(c)) return '';
+    const s = specOf(c), o = {};
+    s.parts.forEach(v => {
+      if (/형$|^정사각$/.test(v)) o.form = v; else if (/cm$/.test(v)) o.size = v; else if (/^\d+p/.test(v)) o.pages = v;
+      else if (/^(무광|유광|코팅 안함)$/.test(v)) o.coating = v; else o.cover = v;
+    });
+    if (c.productCategory === '포토북' && !o.pages) o.pages = '24p';
+    const cell = (k, v) => `<div><dt>${k}</dt><dd>${esc(v || '-')}</dd></div>`;
+    return `<section class="spec-box" aria-label="상품 사양"><h3>상품 사양</h3>
+      <dl class="spec-main">${cell('상품형태', o.form)}${cell('사이즈', o.size)}${cell('커버종류', o.cover)}${cell('코팅종류', o.coating)}${cell('페이지', o.pages)}</dl></section>`;
+  }
+  function openOpt(c) {
+    optTarget = c;
+    const p = parseOption(c);
+    // 편집 정보와 연결된 옵션(페이지·사이즈)은 표시하지 않음 — 현재 값 그대로 유지 (readOpt)
+    const groupHtml = p.def.groups.filter(g => !g[3]).map(([name, labels, prices]) => `<div class="field"><span class="label">${esc(name)}</span>
+      <div class="radio-row" role="radiogroup" aria-label="${esc(name)}">${labels.map((l, i) => `<label><input type="radio" name="g-${esc(name)}" value="${esc(l)}"${p.sel[name] === l ? ' checked' : ''}><span>${esc(l)}${prices[i] ? `<small>+${won(prices[i])}</small>` : ''}</span></label>`).join('')}</div></div>`).join('');
+    // 추가 구입은 아코디언으로 접어 둠 — 제목에 고른 개수 (2026-10-27)
+    const extraHtml = p.def.extras.length ? `<details class="field acc"><summary><span class="label">추가 구입<span class="opt">(선택)</span></span><span class="acc-n" id="accN">${p.extras.length ? `${p.extras.length}개 선택` : ''}</span></summary><div class="extra-list">${p.def.extras.map(([l, price]) => `<label class="check"><input type="checkbox" name="extra" value="${esc(l)}"${p.extras.includes(l) ? ' checked' : ''}><span class="box" aria-hidden="true"></span><span class="txt">${esc(l)}</span><b>+${won(price)}원</b></label>`).join('')}</div></details>` : '';
+    $('optBody').innerHTML = `
+      <div class="dlg-item">${thumbHtml(c, 'mini')}<div><b>${esc(c.title)}</b>${isReady(c) ? '' : `<div class="proj-in"><label for="optProject">프로젝트명<span class="opt">(메모)</span></label><input type="text" id="optProject" maxlength="30" value="${esc(c.project || '')}" placeholder="예) 제주 여름 여행"></div>`}</div></div><!-- 상품명 아래 분류·기본가 문구 삭제, 프로젝트명 입력을 그 자리로 (2026-10-27) -->
+      ${specGrid(c)}
+      ${groupHtml}${extraHtml}`;
+    $('optErr').hidden = true;
+    const d = $('optDlg'); if (!d.open) d.showModal();
+    $('optTitle').focus({ preventScroll: true });
+  }
+  function readOpt() {
+    const p = parseOption(optTarget), sel = {};
+    p.def.groups.forEach(g => { if (g[3]) { sel[g[0]] = p.sel[g[0]]; return; } const r = $('optBody').querySelector(`input[name="g-${CSS.escape(g[0])}"]:checked`); sel[g[0]] = r ? r.value : g[1][0]; });   // 고정 옵션(페이지·사이즈)은 현재 값 그대로
+    const extras = [...$('optBody').querySelectorAll('input[name="extra"]:checked')].map(x => x.value);
+    const qty = optTarget.qty;   // 수량은 장바구니 행에서만 바꿈 (옵션 변경 모달 수량 삭제, 2026-10-27)
+    const price = baseOf(optTarget) + deltaOf(p.def, sel, extras);
+    return { def: p.def, sel, extras, rest: p.rest, qty, price };
+  }
+  $('optBody').addEventListener('change', e => { if (e.target.name !== 'extra') return; const n = $('optBody').querySelectorAll('input[name="extra"]:checked').length; $('accN').textContent = n ? `${n}개 선택` : ''; });
+  $('optForm').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!optTarget) return;
+    const o = readOpt();
+    const project = $('optProject') ? $('optProject').value.trim() : '';
+    if (project.length > 30) { $('optErr').textContent = '프로젝트명은 30자 이내로 입력해 주세요.'; $('optErr').hidden = false; return; }
+    const labels = o.def.groups.map(g => o.sel[g[0]]).concat(o.rest).concat(o.extras.map(x => `+${x}`));
+    Object.assign(optTarget, { option: labels.join(' · '), extras: o.extras, price: o.price, qty: o.qty, project: project || optTarget.project });
+    persist(cart()); dlgClose($('optDlg')); render();
+    toast('옵션을 변경했습니다.');
+  });
+
+  // ===== 편집본 공유 모달 =====
+  let shareTarget = null;
+  function openShare(c) {
+    shareTarget = c;
+    $('shareBody').innerHTML = `
+      <div class="dlg-item">${thumbHtml(c, 'mini')}<div><b>${esc(c.title)}</b><small>${esc(specText(c))}${c.project ? ` · ${esc(c.project)}` : ''} · ${wonT(c.price)}</small></div></div>
+      <p class="notice">공유받은 분은 스탑북에 로그인한 뒤 이 편집본을 보고 <b>자신의 장바구니에 복사해 주문</b>할 수 있습니다.<br>수량은 1개로 공유되며, 사진과 문구는 공유 시점의 편집본 그대로입니다. 공유한 뒤 편집본을 고쳐도 받는 분에게는 반영되지 않습니다.</p>
+      <div class="field"><label for="shareTo">공유받을 분의 아이디 또는 이메일<span class="req">*</span></label><input type="text" id="shareTo" maxlength="100" placeholder="예) user002 또는 friend@example.com" autocomplete="off"></div>
+      <div class="field"><label for="shareMsg">전할 말<span class="opt">(선택)</span></label><input type="text" id="shareMsg" maxlength="100" placeholder="예) 우리 여행 포토북이야. 수량 바꿔서 주문해!"></div>
+      <p class="hint"><a href="${esc(c.previewUrl || '#')}" target="_blank" rel="noopener">편집본 미리보기 ↗</a> — 공유 전에 편집본을 확인해 주세요.</p>`;
+    $('shareErr').hidden = true;
+    const d = $('shareDlg'); if (!d.open) d.showModal();
+    $('shareTo').focus({ preventScroll: true });
+  }
+  $('shareForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const to = $('shareTo').value.trim();
+    if (!to) { $('shareErr').textContent = '공유받을 분의 아이디 또는 이메일을 입력해 주세요.'; $('shareErr').hidden = false; $('shareTo').classList.add('invalid'); $('shareTo').focus(); return; }
+    const found = MD.members.find(m => !m.withdrawn && (m.userId === to || (m.email || '').toLowerCase() === to.toLowerCase()));
+    if (!found) { $('shareErr').textContent = '일치하는 스탑북 회원이 없습니다. 아이디 또는 가입 이메일을 확인해 주세요.'; $('shareErr').hidden = false; $('shareTo').classList.add('invalid'); $('shareTo').focus(); return; }
+    if (found.no === me.no) { $('shareErr').textContent = '본인에게는 공유할 수 없습니다.'; $('shareErr').hidden = false; return; }
+    // TODO: 실서비스에서는 POST /api/members/me/cart/{id}/share (받는 분 알림)
+    dlgClose($('shareDlg'));
+    toast(`${found.name}님에게 '${shareTarget.project || shareTarget.title}' 편집본을 공유했습니다.`);
+  });
+  $('shareBody').addEventListener('input', e => { if (e.target.classList) e.target.classList.remove('invalid'); $('shareErr').hidden = true; });
+
+  // ===== 증빙서류 출력 (IA 견적서 출력 → 지출증빙 서류: 바로 발급 + 발급 신청. 마이페이지 주문 상세 > 증빙서류 발급과 같은 구성) =====
+  //   바로 발급: 견적서·거래명세서(선택한 장바구니 상품 기준) · 사업자등록증·통장사본(회사 서류) → 새 창(인쇄 → PDF) + 관리자 서류 발급 관리 > 자동 발급 이력(경로 '장바구니')
+  //   발급 신청: 기관 양식·직인 등 담당자 처리가 필요한 증빙서류 → DocData.submitCartRequest (주문 전 요청, 관리자 서류 발급 관리 > 별도 발급 신청 '고객 신청 (장바구니)')
+  //   세금계산서·현금영수증은 결제 후 마이페이지 > 주문 상세 > 증빙서류 발급에서 (결제 수단에 따라 가능 여부가 정해짐)
+  const DD = window.DocData;
+  const DOC_LABEL = { '거래내역서': '거래명세서' };   // 고객 화면 표기 (IA: 거래명세서)
+  const docLabel = t => DOC_LABEL[t] || t;
+  const FORM_OF = { '견적서': '견적서', '거래내역서': '거래명세서', '사업자등록증': '사업자등록증', '통장사본': '통장사본' };
+  const DC_FIELD = { docTypes: 'dcTypes', name: 'dcName', phone: 'dcPhone', email: 'dcEmail', receiveTo: 'dcEmail', wantBy: 'dcWant', requirement: 'dcReq' };
+  let dcAtt = '';
+  function cartRows(s) {
+    const rows = s.sel.map(c => ({ name: c.title, sub: c.project || '', spec: specText(c), specSub: (c.extras || []).length ? `추가 ${c.extras.join(', ')}` : '', pages: '', qty: c.qty, unitPrice: c.price, total: c.price * c.qty }));
+    if (s.eventDisc) rows.push({ name: '할인', sub: `이벤트 할인 (${[...new Set(s.sel.filter(c => c.event).map(c => `${c.event.name} ${c.event.rate}%`))].join(', ')})`, spec: '', qty: '', unitPrice: -s.eventDisc, total: -s.eventDisc });
+    if (s.discount) rows.push({ name: '할인', sub: `회원 구분 ${s.catName} ${s.rate}%`, spec: '', qty: '', unitPrice: -s.discount, total: -s.discount });
+    if (s.ship) rows.push({ name: '배송비', sub: '택배', spec: '', qty: '', unitPrice: s.ship, total: s.ship });
+    return rows;
+  }
+  function docErr(msg, id) {
+    $('docErr').textContent = msg || ''; $('docErr').hidden = !msg;
+    $('docBody').querySelectorAll('.invalid').forEach(x => x.classList.remove('invalid'));
+    const el = id && $(id);
+    if (el) { el.classList.add('invalid'); el.scrollIntoView({ block: 'center' }); if (el.focus && el.tagName !== 'DIV') el.focus({ preventScroll: true }); }
+  }
+  function openDocs() {
+    const s = summary(), b = me.business || {}, want = new Date(); want.setDate(want.getDate() + 3);
+    const noSel = '장바구니에서 상품을 선택해 주세요';
+    const inst = [['견적서', s.sel.length > 0], ['사업자등록증', true], ['통장사본', true]]   // 거래명세서는 주문 전이라 제외 (주문 상세에서 발급)
+      .map(([t, ok]) => `<button type="button" class="btn btn-line" data-issue="${esc(t)}"${ok ? '' : ` disabled title="${noSel}"`}>${esc(docLabel(t))}</button>`).join('');
+    const chips = (DD ? DD.PROOF_TYPES : []).map(t => `<label class="chip-check"><input type="checkbox" name="dcType" value="${esc(t)}"><span>${esc(docLabel(t))}</span></label>`).join('');
+    dcAtt = '';
+    $('docBody').innerHTML = `<h3 class="dlg-sub">바로 발급 <small>장바구니에 담긴 정보 그대로 서류를 발급합니다.</small></h3>
+      <div class="doc-grid">${inst}</div>
+      ${s.sel.length ? '' : `<p class="hint">견적서는 ${noSel}.</p>`}
+      <h3 class="dlg-sub">별도 발급 신청 <small>자동 발급 서류 외 필요한 서류를 발급합니다.</small></h3>
+      <div class="chip-row" id="dcTypes" role="group" aria-label="신청할 서류">${chips}</div>
+      <div id="dcForm" hidden style="margin-top:16px">
+        <div class="form-inline">
+          <div class="field"><label for="dcName">담당자명<span class="req">*</span></label><input type="text" id="dcName" maxlength="20" value="${esc(b.managerName || me.name)}"></div>
+          <div class="field"><label for="dcPhone">연락처<span class="req">*</span></label><input type="tel" id="dcPhone" maxlength="13" inputmode="numeric" value="${esc(b.managerPhone || me.phone || '')}"></div>
+          <div class="field"><label for="dcEmail">이메일<span class="req">*</span></label><input type="email" id="dcEmail" maxlength="100" value="${esc(b.managerEmail || me.email || '')}"></div>
+          <div class="field"><label for="dcOrg">기관/회사명<span class="opt">(선택)</span></label><input type="text" id="dcOrg" maxlength="50" value="${esc(b.companyName || '')}"></div>
+          <div class="field"><label for="dcWant">발급 희망일<span class="req">*</span></label><input type="date" id="dcWant" min="${ymd(new Date())}" value="${ymd(want)}"></div>
+          <div class="field"><label for="dcReq">요청 사항<span class="opt" id="dcReqOpt">(선택)</span></label><textarea class="ta" id="dcReq" maxlength="${DD ? DD.REQUIREMENT_MAX : 500}" placeholder="기관 양식·직인·수신처 등 필요한 내용을 적어 주세요."></textarea></div>
+          <div class="field"><span class="label">양식 파일<span class="opt">(선택)</span></span><div><button type="button" class="btn btn-sm" id="dcAttBtn">파일 첨부</button><input type="file" id="dcAtt" hidden><ul class="file-chips" id="dcAttName"></ul></div></div>
+        </div>
+        <p class="hint">현금영수증 및 세금계산서는 주문 접수 이후 발급 가능합니다.</p>
+      </div>`;
+    docErr('');
+    const d = $('docDlg'); if (!d.open) d.showModal();
+    $('docBody').scrollTop = 0;
+    $('docTitle').focus({ preventScroll: true });
+    $('dcTypes').addEventListener('change', () => {
+      const t = [...$('docBody').querySelectorAll('input[name=dcType]:checked')].map(c => c.value);
+      $('dcTypes').classList.remove('invalid');
+      $('dcForm').hidden = !t.length;
+      $('dcReqOpt').textContent = t.includes('기타') || t.includes('납품서') ? '(필수)' : '(선택)';
+    });
+    $('dcAttBtn').addEventListener('click', () => $('dcAtt').click());
+    $('dcAtt').addEventListener('change', e => {
+      const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      if (f.size > 10 * 1024 * 1024) { docErr(`10MB 이하 파일만 첨부할 수 있습니다: ${f.name}`); return; }
+      dcAtt = f.name; $('dcAttName').innerHTML = `<li><span>${esc(f.name)}</span><button type="button" data-unfile aria-label="${esc(f.name)} 첨부 취소">&times;</button></li>`;
+    });
+    $('dcAttName').addEventListener('click', e => { if (!e.target.closest('[data-unfile]')) return; dcAtt = ''; $('dcAttName').innerHTML = ''; });
+  }
+  // 바로 발급: 새 창으로 양식 열기 + 관리자 자동 발급 이력에 기록
+  function instantIssue(type) {
+    const s = summary();
+    if (FORM_OF[type] && (type === '견적서' || type === '거래내역서') && !s.sel.length) { docErr('견적서·거래명세서에 넣을 상품을 장바구니에서 선택해 주세요.'); return; }
+    if (!window.DocForms) { docErr('서류 양식을 불러오지 못했습니다. 새로 고친 뒤 다시 시도해 주세요.'); return; }
+    const kind = FORM_OF[type], b = me.business || {};
+    const customer = { name: me.name, org: b.companyName || '', email: me.email || '' };
+    const html = DocForms.IMAGE_DOCS.includes(kind) ? DocForms.build(kind, { customer, issuedAt: new Date() })
+      : DocForms.build(kind, { customer, issuedAt: new Date(), payTerms: '신용카드/무통장/계좌이체/휴대폰결제', rows: cartRows(s),
+        notes: kind === '견적서' ? ['*옵션 변경시 금액 변동', '*쿠폰·마일리지는 주문서에서 적용'] : ['*주문 전 장바구니 기준 — 실제 결제 금액과 다를 수 있음'] });
+    const w = window.open('', `stopbookDoc${Date.now()}`, 'width=900,height=1100,resizable=yes,scrollbars=yes');
+    if (!w) { docErr('팝업이 막혀 서류를 열지 못했습니다. 팝업을 허용한 뒤 다시 시도해 주세요.'); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+    if (DD) DD.addIssue({ docType: type, orderNo: '', userId: me.userId, name: me.name, email: me.email || '', category: me.category || '', company: b.companyName || '', amount: kind === '견적서' || kind === '거래명세서' ? s.total : 0, channel: '장바구니' }, '고객');
+    docErr('');
+    toast(`${docLabel(type)}를 새 창에서 열었습니다. 인쇄 화면에서 PDF로 저장할 수 있습니다.`);
+  }
+  $('docBody').addEventListener('click', e => { const bt = e.target.closest('[data-issue]'); if (bt && !bt.disabled) instantIssue(bt.dataset.issue); });
+  $('docBody').addEventListener('input', e => { if (e.target.classList) e.target.classList.remove('invalid'); });
+  $('docForm').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!DD) { docErr('서류 신청 기능을 불러오지 못했습니다. 새로 고친 뒤 다시 시도해 주세요.'); return; }
+    const types = [...$('docBody').querySelectorAll('input[name=dcType]:checked')].map(c => c.value);
+    if (!types.length) { docErr('발급 신청할 서류를 선택해 주세요. 표준 양식은 위의 바로 발급에서 열 수 있습니다.', 'dcTypes'); return; }
+    const s = summary(), recv = '이메일';   // 받는 방법은 이메일 고정 (담당자 이메일로 발송)
+    const r = DD.submitCartRequest({
+      docTypes: types, contact: { name: $('dcName').value, phone: $('dcPhone').value, email: $('dcEmail').value, org: $('dcOrg').value },
+      requirement: $('dcReq').value, receiveBy: recv, receiveTo: $('dcEmail').value, wantBy: $('dcWant').value, attachment: dcAtt,
+      items: s.sel.map(c => `${c.title}(${specText(c)}) ×${c.qty}`).join(', ') + (s.sel.length ? ` · 결제 예정 ${wonT(s.total)}` : '')
+    }, me);
+    if (!r.ok) { docErr(r.error, DC_FIELD[r.field]); return; }
+    dlgClose($('docDlg'));
+    toast(`증빙서류 발급 신청을 접수했습니다. (${r.parts.map(q => q.reqNo).join(', ')}) 담당자가 확인한 뒤 ${recv}(으)로 보내 드립니다.`);
+  });
+  $('docBtn').addEventListener('click', openDocs);
+
+  // ===== 주문하기 (주문서 화면 연결 전) =====
+  // TODO: 선택 항목 id를 sessionStorage에 두고 주문서(order.html)로 이동
+  const goOrder = () => { const s = summary(); if (!s.sel.length) { toast('주문할 상품을 선택해 주세요.'); return; } try { sessionStorage.setItem('stopbook.orderItems', JSON.stringify(s.sel.map(c => c.id))); } catch (e) { /* 무시 */ } toast(`프로토타입: 주문서 화면은 준비 중입니다. (선택 ${s.sel.length}종 · ${wonT(s.total)})`); };
+  $('orderBtn').addEventListener('click', goOrder);
+  $('orderBtn2').addEventListener('click', goOrder);
+
+  // 상단 높이 → 아래 고정 상자 위치
+  const setTop = () => document.documentElement.style.setProperty('--top-h', `${$('siteTop').offsetHeight}px`);
+  setTop(); window.addEventListener('resize', setTop);
+
+  renderUtil();
+  render();
+})();
+</script>
+</body>
+</html>

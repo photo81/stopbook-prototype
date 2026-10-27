@@ -671,11 +671,11 @@
     .od-stages button b { font-size: 22px; }
   }
 </style>
-<link rel="stylesheet" href="shop.css?v=20261026-3"><!-- 쇼핑몰 공통: 색·상단·하단·버튼 톤 (popsa 콘셉트) — 이 화면 스타일을 덮어씀 -->
+<link rel="stylesheet" href="shop.css?v=20261027-1"><!-- 쇼핑몰 공통: 색·상단·하단·버튼 톤 (popsa 콘셉트) — 이 화면 스타일을 덮어씀 -->
 </head>
 <body>
 <header class="site-top" id="siteTop">
-<div class="proto-band">PROTOTYPE - 마이페이지</div>
+<div class="proto-band">PROTOTYPE - 마이페이지<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.6</span></div>
 <div class="util two-row">
 <!-- 1줄: 이용 메뉴 (최상단 오른쪽) / 2줄: 로고 + 대메뉴 — 모든 쇼핑몰 화면 동일 (index.html과 같은 구조) -->
 <div class="util-in util-top">
@@ -683,7 +683,7 @@
     <ul>
       <li id="authMenu"><button type="button" class="login" data-open-login>로그인/회원가입</button></li>
       <li><a href="mypage.html" aria-current="page">마이페이지</a></li>
-      <li><button type="button" data-todo="장바구니">장바구니 (<span id="utilCart">0</span>)</button></li>
+      <li><a href="cart.html">장바구니 (<span id="utilCart">0</span>)</a></li>
       <li><a href="support.html">고객센터</a></li>
     </ul>
   </nav>
@@ -1136,7 +1136,7 @@
       <button type="button" data-todo="개인정보처리방침">개인정보처리방침</button>
       <button type="button" data-todo="회사 소개">회사 소개</button>
     </div>
-    <p class="foot-info"><span>상호 한국학술정보㈜</span><span>대표 채종준</span><span>사업자등록번호 111-81-26181</span><span>경기도 파주시 회동길 230 (문발동)</span><span>이메일 <span class="ft-mail">stopbook@kstudy.com</span></span></p>
+    <p class="foot-info"><span>상호 한국학술정보㈜</span><span>대표 채종준</span><span>사업자등록번호 111-81-26181</span><span>개인정보보호책임자 조동범</span><span>경기도 파주시 회동길 230 (문발동)</span><span>이메일 <span class="ft-mail">stopbook@kstudy.com</span></span></p>
     <p class="foot-copy">© 2026 STOPBOOK. All rights reserved.</p>
   </div>
 </footer>
@@ -1144,17 +1144,17 @@
 
 <!-- 회원 데이터·로그인 정보는 관리자 화면(admin)과 같은 저장소(localStorage) 사용 → 수정 내용이 관리자 회원 상세·변경 히스토리에 반영
      TODO: 실서비스에서는 회원 API로 대체 -->
-<script src="../admin/member-type-store.js?v=20261026-6"></script>
+<script src="../admin/member-type-store.js?v=20261026-7"></script>
 <script src="../admin/mileage-types.js?v=20261026-1"></script>
 <script src="../admin/message-store.js?v=20261026-2"></script>
-<script src="../admin/member-data.js?v=20261026-7"></script>
+<script src="../admin/member-data.js?v=20261027-2"></script>
 <!-- 주문/배송: 관리자 주문·클레임·서류 발급 데이터를 그대로 사용 (같은 localStorage → 고객 신청이 관리자 화면에 바로 보이고, 관리자 처리 결과가 여기 반영)
      claim-data.js·document-data.js는 member-type-store.js의 AdminUtil(처리 대기 샘플·새 신청 알림)을 씀. 관리자 화면 전용 요소가 없으면 그냥 넘어감
      서류 양식(doc-forms.js · doc-form-assets.js 직인·로고)은 크기가 커서 증빙서류를 처음 내려받을 때 불러옴 (loadForms)
      TODO: 실서비스에서는 고객용 주문 API (GET /api/members/me/orders 등) -->
-<script src="../admin/order-data.js?v=20261026-2"></script>
+<script src="../admin/order-data.js?v=20261027-3"></script>
 <script src="../admin/claim-data.js?v=20261026-2"></script>
-<script src="../admin/document-data.js?v=20261026-5"></script>
+<script src="../admin/document-data.js?v=20261027-1"></script>
 <script src="../admin/feedback.js?v=20261026-1"></script>
 <!-- 카카오 우편번호 서비스: https://postcode.map.kakao.com/guide (file://에서도 열리도록 https 사용)
      가이드 기준 현재 주소(t1.kakaocdn.net)·이름(kakao.Postcode) 사용 (예전 다음 주소 t1.daumcdn.net에서는 결과 선택이 되지 않는 문제가 있었음) -->
@@ -1541,7 +1541,7 @@
     const inq = m.inquiries || [], waiting = inq.filter(q => q.status === '답변대기').length;
     $('hInquiry').innerHTML = `<div class="k">1:1 문의</div><div class="v">${inq.length}건</div><div class="s">${waiting ? `답변 대기 <b>${waiting}</b>건` : inq.length ? '모두 답변 완료' : '문의 내역이 없습니다'}</div>`;
     const cart = m.cart || [], qty = cart.reduce((s, c) => s + (c.qty || 1), 0);
-    $('hCart').innerHTML = `<div class="k">장바구니</div><div class="v">${cart.length}종 ${qty}개</div><div class="s">${cart.length ? `결제 예정 ${won(cart.reduce((s, c) => s + c.price * (c.qty || 1), 0))}원` : '담긴 상품이 없습니다'}</div>`;
+    $('hCart').innerHTML = `<div class="k">장바구니</div><div class="v">${cart.length}종 ${qty}개</div><div class="s">${cart.length ? `결제 예정 ${won(cart.reduce((s, c) => s + c.price * (c.qty || 1), 0))}원` : '담긴 상품이 없습니다'}</div><a class="btn-text" href="cart.html" style="display:inline-block;margin-top:10px">장바구니 보기</a>`;
 
     // 내 정보 (가린 값. 원래 값은 회원정보 수정에서 확인)
     const none = t => `<span class="muted">${t}</span>`;
@@ -2788,7 +2788,7 @@
     const cart = (me && me.cart) || [];
     const qty = cart.reduce((s, c) => s + (c.qty || 1), 0);
     const u = $('utilCart'); if (u) u.textContent = cart.length;
-    const h = $('hCart'); if (h && me) h.innerHTML = `<div class="k">장바구니</div><div class="v">${cart.length}종 ${qty}개</div><div class="s">${cart.length ? `결제 예정 ${won(cart.reduce((s, c) => s + c.price * (c.qty || 1), 0))}원` : '담긴 상품이 없습니다'}</div>`;
+    const h = $('hCart'); if (h && me) h.innerHTML = `<div class="k">장바구니</div><div class="v">${cart.length}종 ${qty}개</div><div class="s">${cart.length ? `결제 예정 ${won(cart.reduce((s, c) => s + c.price * (c.qty || 1), 0))}원` : '담긴 상품이 없습니다'}</div><a class="btn-text" href="cart.html" style="display:inline-block;margin-top:10px">장바구니 보기</a>`;
   }
 
   // ----- 목록·상세의 버튼 (한 곳에서 처리) -----

@@ -490,11 +490,11 @@
     .ed-tools button { width: 36px; height: 36px; }
   }
 </style>
-<link rel="stylesheet" href="shop.css?v=20261026-3"><!-- 쇼핑몰 공통: 색·상단·하단·버튼 톤 (popsa 콘셉트) — 이 화면 스타일을 덮어씀 -->
+<link rel="stylesheet" href="shop.css?v=20261027-1"><!-- 쇼핑몰 공통: 색·상단·하단·버튼 톤 (popsa 콘셉트) — 이 화면 스타일을 덮어씀 -->
 </head>
 <body>
 <header class="site-top" id="siteTop">
-<div class="proto-band">PROTOTYPE - 고객센터</div>
+<div class="proto-band">PROTOTYPE - 고객센터<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.6</span></div>
 <div class="util two-row">
 <!-- 1줄: 이용 메뉴 (최상단 오른쪽) / 2줄: 로고 + 대메뉴 — 모든 쇼핑몰 화면 동일 (index.html과 같은 구조) -->
 <div class="util-in util-top">
@@ -502,7 +502,7 @@
     <ul>
       <li id="authMenu"><a class="login" href="signup.html#login" data-go-login>로그인/회원가입</a></li>
       <li><a href="mypage.html">마이페이지</a></li>
-      <li><button type="button" data-todo="장바구니">장바구니 (0)</button></li>
+      <li><a href="cart.html">장바구니 (<span id="utilCart">0</span>)</a></li>
       <li><a href="support.html" aria-current="page">고객센터</a></li>
     </ul>
   </nav>
@@ -827,7 +827,7 @@
       <button type="button" data-todo="개인정보처리방침">개인정보처리방침</button>
       <button type="button" data-todo="회사 소개">회사 소개</button>
     </div>
-    <p class="foot-info"><span>상호 한국학술정보㈜</span><span>대표 채종준</span><span>사업자등록번호 111-81-26181</span><span>경기도 파주시 회동길 230 (문발동)</span><span>이메일 <span class="ft-mail">stopbook@kstudy.com</span></span></p>
+    <p class="foot-info"><span>상호 한국학술정보㈜</span><span>대표 채종준</span><span>사업자등록번호 111-81-26181</span><span>개인정보보호책임자 조동범</span><span>경기도 파주시 회동길 230 (문발동)</span><span>이메일 <span class="ft-mail">stopbook@kstudy.com</span></span></p>
     <p class="foot-copy">© 2026 STOPBOOK. All rights reserved.</p>
   </div>
 </footer>
@@ -837,17 +837,17 @@
        → 1:1 문의 접수 내용은 관리자 게시글관리 > 1:1 문의·회원 상세 문의 이력에, 제휴문의는 게시글관리 > 제휴문의에 반영
      1:1 문의: order-data.js(최근 3개월 주문 상품 선택, member-type-store·member-data 다음) → inquiry-settings.js(문의 유형) → inquiry-data.js(관리자 문의 목록) → inquiry-user.js(접수·내역·취소)
      TODO: 실서비스에서는 FAQ 조회·1:1 문의 접수/조회·제휴문의 접수 API로 대체 -->
-<script src="../admin/board-store.js?v=20261026-5"></script>
-<script src="../admin/member-type-store.js?v=20261026-6"></script>
+<script src="../admin/board-store.js?v=20261027-1"></script>
+<script src="../admin/member-type-store.js?v=20261026-7"></script>
 <script src="../admin/mileage-types.js?v=20261026-1"></script>
 <script src="../admin/message-store.js?v=20261026-2"></script>
-<script src="../admin/member-data.js?v=20261026-7"></script>
-<script src="../admin/order-data.js?v=20261026-2"></script>
+<script src="../admin/member-data.js?v=20261027-2"></script>
+<script src="../admin/order-data.js?v=20261027-3"></script>
 <script src="../admin/inquiry-settings.js?v=20261026-3"></script>
 <script src="../admin/inquiry-data.js?v=20261026-3"></script>
 <script src="../admin/inquiry-user.js?v=20261026-6"></script>
-<script src="../admin/faq-store.js?v=20261026-1"></script>
-<script src="../admin/partner-store.js?v=20261026-2"></script>
+<script src="../admin/faq-store.js?v=20261027-3"></script>
+<script src="../admin/partner-store.js?v=20261027-1"></script>
 <script src="../admin/feedback.js?v=20261026-1"></script>
 <script>
 (function () {
@@ -909,6 +909,7 @@
     $('authMenu').innerHTML = me
       ? `<span class="me">${esc(me.name)}님</span> <button type="button" id="logoutBtn" class="logout">로그아웃</button>`
       : '<a class="login" href="signup.html#login" data-go-login>로그인/회원가입</a>';
+    const u = $('utilCart'); if (u) u.textContent = me ? (me.cart || []).length : 0;   // 상단 [장바구니 (n)] (cart.html)
   }
   document.addEventListener('click', e => {
     // 로그인하러 회원가입 화면(signup.html)으로 가면 로그인 후 이 화면으로 돌아옴 (signup.html completeLogin)

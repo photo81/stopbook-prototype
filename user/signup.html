@@ -351,10 +351,10 @@
     .pw-toggle { min-height: 36px; }   /* 누르기 쉬운 높이 */
   }
 </style>
-<link rel="stylesheet" href="shop.css?v=20261026-3"><!-- 쇼핑몰 공통: 색·상단·하단·버튼 톤 (popsa 콘셉트) — 이 화면 스타일을 덮어씀 -->
+<link rel="stylesheet" href="shop.css?v=20261027-1"><!-- 쇼핑몰 공통: 색·상단·하단·버튼 톤 (popsa 콘셉트) — 이 화면 스타일을 덮어씀 -->
 </head>
 <body>
-<div class="proto-band">PROTOTYPE - 회원가입/로그인</div>
+<div class="proto-band">PROTOTYPE - 회원가입/로그인<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.6</span></div>
 <div class="util two-row">
 <!-- 1줄: 이용 메뉴 (최상단 오른쪽) / 2줄: 로고 + 대메뉴 — 모든 쇼핑몰 화면 동일 (index.html과 같은 구조) -->
 <div class="util-in util-top">
@@ -362,7 +362,7 @@
     <ul>
       <li id="authMenu"><button type="button" id="openAuth" aria-haspopup="dialog">로그인/회원가입</button></li>
       <li><button type="button" id="goMypage">마이페이지</button></li>
-      <li><button type="button" data-todo="장바구니">장바구니 (0)</button></li>
+      <li><a href="cart.html">장바구니 (<span id="utilCart">0</span>)</a></li>
       <li><a href="support.html">고객센터</a></li>
     </ul>
   </nav>
@@ -677,7 +677,7 @@
       <button type="button" data-todo="개인정보처리방침">개인정보처리방침</button>
       <button type="button" data-todo="회사 소개">회사 소개</button>
     </div>
-    <p class="foot-info"><span>상호 한국학술정보㈜</span><span>대표 채종준</span><span>사업자등록번호 111-81-26181</span><span>경기도 파주시 회동길 230 (문발동)</span><span>이메일 <span class="ft-mail">stopbook@kstudy.com</span></span></p>
+    <p class="foot-info"><span>상호 한국학술정보㈜</span><span>대표 채종준</span><span>사업자등록번호 111-81-26181</span><span>개인정보보호책임자 조동범</span><span>경기도 파주시 회동길 230 (문발동)</span><span>이메일 <span class="ft-mail">stopbook@kstudy.com</span></span></p>
     <p class="foot-copy">© 2026 STOPBOOK. All rights reserved.</p>
   </div>
 </footer>
@@ -686,10 +686,10 @@
 <!-- 회원 유형 설정·회원 데이터·마일리지 유형·메시지 발송 기록을 관리자 화면(admin)과 공유
      localStorage를 함께 쓰므로 두 폴더를 같은 출처(같은 서버 또는 둘 다 file://)로 열어야 관리자 화면에 가입 회원이 보임
      TODO: 실서비스에서는 회원 API로 대체 -->
-<script src="../admin/member-type-store.js?v=20261026-6"></script>
+<script src="../admin/member-type-store.js?v=20261026-7"></script>
 <script src="../admin/mileage-types.js?v=20261026-1"></script>
 <script src="../admin/message-store.js?v=20261026-2"></script>
-<script src="../admin/member-data.js?v=20261026-7"></script>
+<script src="../admin/member-data.js?v=20261027-2"></script>
 <!-- 피드백 입력: 관리자 화면과 같은 구글 시트로 전송 (사이트 = 사용자) -->
 <script src="../admin/feedback.js?v=20261026-1"></script>
 <script>
@@ -814,11 +814,13 @@
   const loginEnv = () => (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'MO' : 'PC');
   function signedIn(m) {
     $('authMenu').innerHTML = `<span class="me">${esc(m.name)}님</span> <button type="button" id="logoutBtn" class="logout">로그아웃</button>`;
+    $('utilCart').textContent = (m.cart || []).length;   // 상단 [장바구니 (n)] (cart.html)
     try { sessionStorage.setItem(SESSION_KEY, String(m.no)); } catch (e) { /* 저장 불가 시 이 화면에서만 로그인 */ }
   }
   function logout() {
     try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* 무시 */ }
     $('authMenu').innerHTML = '<button type="button" id="openAuth" aria-haspopup="dialog">로그인/회원가입</button>';
+    $('utilCart').textContent = 0;
     toast('로그아웃되었습니다.');
   }
   // 로그인 완료: 상단 표시 · 모달 닫기 · 최근 접속 기록 (관리자 회원 목록의 최근접속일에 반영)
