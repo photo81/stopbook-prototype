@@ -482,6 +482,44 @@
     parts.forEach(q => OrderData.addHistory(q.orderNo, '서류발급', `${q.docTypes.join(', ')} ${q.kind} 발급 신청 (${q.reqNo}, 마이페이지, ${q.receiveBy} 수령)`, '고객'));
     return { ok: true, parts };
   }
+  // 장바구니(주문 전) 발급 신청 (user/cart.html 증빙서류 출력): 주문 없이 접수 — 샘플의 '주문 전 요청'과 같은 구조(orderNo '', customer). 증빙서류만(세금계산서·현금영수증은 결제 후 주문 상세에서)
+  //   input = { docTypes[], contact{ name, phone, email, org }, requirement, receiveBy, receiveTo, wantBy('YYYY-MM-DD'), attachment, items(선택 상품 요약 문구) }, member = 로그인 회원
+  //   접수번호 DC{YYYYMMDD}(-n). channel '장바구니' → 서류 발급 관리 목록·상세에 '고객 신청 (장바구니)'
+  function submitCartRequest(input, member) {
+    if (!member) return fail('로그인 정보를 찾을 수 없습니다.');
+    const types = [...new Set(input.docTypes || [])].filter(t => PROOF_TYPES.includes(t));
+    if (!types.length) return fail('신청할 서류를 선택해 주세요.', 'docTypes');
+    const dup = [...new Set(requests.filter(q => !q.orderNo && q.customer && q.customer.userId === member.userId && q.status === '대기').flatMap(typesOf).filter(t => types.includes(t)))];
+    if (dup.length) return fail(`이미 접수되어 처리 중인 서류가 있습니다: ${dup.join(', ')}`, 'docTypes');
+    const c = input.contact || {}, ct = { name: String(c.name || '').trim(), phone: String(c.phone || '').trim(), email: String(c.email || '').trim(), org: String(c.org || '').trim() };
+    if (!ct.name) return fail('담당자명을 입력해 주세요.', 'name');
+    if (!/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(ct.phone)) return fail('연락처를 정확히 입력해 주세요.', 'phone');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ct.email)) return fail('이메일 주소를 정확히 입력해 주세요.', 'email');
+    if (!RECEIVE_METHODS.includes(input.receiveBy)) return fail('받는 방법을 선택해 주세요.', 'receiveBy');
+    const receiveTo = String(input.receiveTo || '').trim();
+    if (!receiveTo) return fail(`받을 ${input.receiveBy === '이메일' ? '이메일 주소' : input.receiveBy === '팩스' ? '팩스 번호' : '주소'}를 입력해 주세요.`, 'receiveTo');
+    const at = nowText();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.wantBy || '') || input.wantBy < at.slice(0, 10)) return fail('발급 희망일을 오늘 이후 날짜로 선택해 주세요.', 'wantBy');
+    const requirement = String(input.requirement || '').trim();
+    if ((types.includes('기타') || types.includes('납품서')) && !requirement) return fail('요청 사항에 필요한 서류와 양식을 적어 주세요.', 'requirement');
+    if (requirement.length > REQUIREMENT_MAX) return fail(`요청 사항은 ${REQUIREMENT_MAX}자 이내로 입력해 주세요.`, 'requirement');
+    const base = `DC${at.slice(0, 10).replace(/-/g, '')}`;
+    const used = no => requests.some(q => q.reqNo === no || q.reqNo === rNo(no));
+    let reqNo = base;
+    for (let n = 2; used(reqNo); n++) reqNo = `${base}-${n}`;
+    const items = String(input.items || '').trim();
+    const app = { reqNo, web: true, channel: '장바구니', orderNo: '', at,
+      customer: { name: member.name, phone: member.phone, email: member.email, company: ct.org || (member.business && member.business.companyName) || '', userId: member.userId },
+      docType: types[0], docTypes: types, requirement: `${items ? `[장바구니 상품] ${items}\n` : ''}${requirement || `${types.join(', ')} 발급 요청`}`, attachment: input.attachment || '',
+      contact: ct, bizCert: '', taxInvoice: null, cashReceipt: null,
+      receiveBy: input.receiveBy, receiveTo, wantBy: input.wantBy,
+      status: '대기', processedAt: '', processedBy: '', file: '', sentBy: '', sentTo: '', memo: '', rejectReason: '',
+      history: [{ at, content: `고객 ${types.join(', ')} 발급 신청 (장바구니 · 주문 전, ${input.receiveBy} 수령)`, by: '고객' }] };
+    const parts = splitApplication(app);
+    requests.unshift(...parts);
+    if (!saveReq(parts[0])) { parts.forEach(q => requests.splice(requests.indexOf(q), 1)); return fail('일시적인 오류로 신청하지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
+    return { ok: true, parts };
+  }
 
   const byAt = (a, b) => b.at.localeCompare(a.at);
   window.DocData = {
@@ -490,6 +528,8 @@
     issues: issues.sort(byAt), requests: requests.sort(byAt),
     completeProof, completeReceipt, saveMemo, reject, addIssue, reissue, addRequest,
     // 고객 신청·발급 (마이페이지 > 주문/배송 > 증빙서류 발급)
-    INSTANT_TYPES, CUSTOMER_REQUEST_TYPES, REQUIREMENT_MAX, receiptAllowed, issueByCustomer, submitRequest
+    INSTANT_TYPES, CUSTOMER_REQUEST_TYPES, REQUIREMENT_MAX, receiptAllowed, issueByCustomer, submitRequest,
+    // 장바구니(주문 전) 발급 신청 (user/cart.html 증빙서류 출력)
+    PROOF_TYPES, submitCartRequest
   };
 })();

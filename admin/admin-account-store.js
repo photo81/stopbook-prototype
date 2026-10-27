@@ -15,6 +15,7 @@
   const ORDER = ['orders.html', 'paid-orders.html', 'unpaid-orders.html', 'postpay-orders.html', 'prepaid-orders.html', 'canceled-orders.html', 'extra-payments.html'];
   const PRODUCTION = ['production-orders.html', 'ordered-orders.html', 'making-orders.html', 'shipping-orders.html', 'delivered-orders.html', 'outsource-orders.html'];
   const CLAIM = ['claim-cancel.html', 'claim-exchange.html', 'claim-documents.html', 'claim-receipts.html'];
+  const EDIT = ['draft-requests.html', 'draft-works.html', 'agency-requests.html', 'agency-orders.html'];   // 편집대행 > 초안서비스 · 디자이너편집대행
   const BOARD = ['board-all.html', 'board-admin-notice.html', 'board-inquiry-settings.html'];
   const POST = ['board-notice.html', 'board-inquiry.html', 'board-faq.html', 'board-review.html'];
   const BENEFIT = ['mileage-types.html', 'mileage.html'];
@@ -48,9 +49,9 @@
       levels: [
         { code: 'L1', name: '최고 관리자', desc: '모든 관리자 메뉴와 관리자 계정·레벨을 관리합니다.', all: true, system: true, menus: [], history: h('기본 레벨 생성') },
         // 게시글을 다루는 레벨은 게시판 통합 관리에서 만든 게시판(제휴문의 등)과 새 게시판을 자동 허용
-        { code: 'L2', name: '운영 관리자', desc: '관리자 계정관리를 제외한 운영 메뉴 전체', all: false, system: false, menus: [...MEMBER, ...MESSAGE, ...ORDER, ...PRODUCTION, ...CLAIM, ...BOARD, ...POST, ...BENEFIT], newBoards: true, boards: {}, history: h('기본 레벨 생성') },
+        { code: 'L2', name: '운영 관리자', desc: '관리자 계정관리를 제외한 운영 메뉴 전체', all: false, system: false, menus: [...MEMBER, ...MESSAGE, ...ORDER, ...PRODUCTION, ...CLAIM, ...EDIT, ...BOARD, ...POST, ...BENEFIT], newBoards: true, boards: {}, history: h('기본 레벨 생성') },
         { code: 'L3', name: 'CS 담당', desc: '회원·주문·클레임 응대와 게시글 답변', all: false, system: false, menus: [...MEMBER.filter(x => x !== 'member-types.html'), 'message-send.html', ...ORDER, ...CLAIM, ...POST, 'mileage.html'], newBoards: true, boards: {}, history: h('기본 레벨 생성') },
-        { code: 'L4', name: '제작 담당', desc: '제작·배송 진행 관리', all: false, system: false, menus: [...PRODUCTION, 'orders.html'], newBoards: false, boards: {}, history: h('기본 레벨 생성') }
+        { code: 'L4', name: '제작 담당', desc: '제작·배송 진행 관리', all: false, system: false, menus: [...PRODUCTION, ...EDIT, 'orders.html'], newBoards: false, boards: {}, history: h('기본 레벨 생성') }
       ],
       // 변경 이력 (레벨·계정 추가·변경·삭제). 삭제한 레벨·계정의 기록도 남음
       audit: [],

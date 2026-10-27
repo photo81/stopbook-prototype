@@ -801,7 +801,7 @@
   window.AdminUtil = { fmtDateTime, esc, toast, initSidebar, setDefaultRange, listToday, keepTodayPending, ADMIN_NAME: '관리자' };  // TODO: 로그인 관리자명
 
   // 상단바 프로토타입 버전 표시. 버전을 올릴 때는 여기만 바꾸면 모든 화면에 반영됨 (HTML의 같은 문구는 스크립트 실패 시 대비용)
-  const PROTO_VERSION = '프로토타입 v2.76 (2026-10-15)';
+  const PROTO_VERSION = '프로토타입 v3.1 (2026-10-27)';
   document.querySelectorAll('[data-proto-version]').forEach(el => { el.textContent = PROTO_VERSION; });
   // 사용자(쇼핑몰) 화면 바로가기: 모든 관리자 화면 상단바의 프로토타입 버전 왼쪽 (새 탭으로 쇼핑몰 메인 user/index.html)
   document.querySelectorAll('.topbar [data-proto-version]').forEach(el => {
@@ -817,12 +817,13 @@
 
   // ===== 상단 대메뉴(GNB): 회원 / 주문·배송 =====
   // 상단바 왼쪽에 대메뉴를 넣고, 누르면 사이드 메뉴에 그 대메뉴의 카테고리만 보여줌
-  //   회원 → 회원관리 / 주문·배송 → 주문관리 · 제작/배송관리 · 클레임관리 / 게시판 → 게시판관리 · 게시글관리 / 혜택 → 혜택관리 · 혜택내역
+  //   회원 → 회원관리 / 주문·배송 → 주문관리 · 제작/배송관리 · 클레임관리 / 편집대행 → 초안서비스 · 디자이너편집대행 / 게시판 → 게시판관리 · 게시글관리 / 혜택 → 혜택관리 · 혜택내역
   // 처음 열면 현재 화면이 속한 대메뉴가 선택됨 (선택된 화면이 없으면 주문·배송). 사이드 메뉴 마크업은 각 화면에 그대로 두고 여기서 보이기만 조절
   // TODO: 실서비스에서는 메뉴 구성을 공통 레이아웃(서버 템플릿/컴포넌트)에서 그림
   const GNB = [
     { key: 'member', label: '회원', cats: ['회원관리', '메시지전송관리', '관리자계정관리'] },
     { key: 'order', label: '주문/배송', cats: ['주문관리', '제작/배송관리', '클레임관리'] },
+    { key: 'edit', label: '편집대행', cats: ['초안서비스', '디자이너편집대행'] },   // 초안서비스(사진만 보내면 초안 완성) / 디자이너편집대행(IA 접수리스트·주문완료 리스트)
     { key: 'board', label: '게시판', cats: ['게시판관리', '게시글관리'] },   // 게시판관리(통합·관리자 공지·1:1 문의 설정) / 게시글관리(공지사항·1:1 문의·FAQ·이용후기)
     { key: 'benefit', label: '혜택', cats: ['혜택관리', '혜택내역'] }   // 혜택관리(마일리지 유형 관리) / 혜택내역(마일리지 내역)
   ];
@@ -834,7 +835,7 @@
     const catOf = li => (li.querySelector('.menu-parent').childNodes[0].textContent || '').trim();
     const sectionOf = li => (GNB.find(g => g.cats.includes(catOf(li))) || GNB[1]).key;
     // 카테고리 구분 표시용 (admin.css .sidebar li[data-cat]: 카테고리명 연한 회색 배경)
-    const CAT_KEYS = { '회원관리': 'member', '메시지전송관리': 'message', '관리자계정관리': 'account', '주문관리': 'order', '제작/배송관리': 'production', '클레임관리': 'claim', '게시판관리': 'board', '게시글관리': 'post', '혜택관리': 'benefit', '혜택내역': 'benefitlog' };
+    const CAT_KEYS = { '회원관리': 'member', '메시지전송관리': 'message', '관리자계정관리': 'account', '주문관리': 'order', '제작/배송관리': 'production', '클레임관리': 'claim', '초안서비스': 'draft', '디자이너편집대행': 'agency', '게시판관리': 'board', '게시글관리': 'post', '혜택관리': 'benefit', '혜택내역': 'benefitlog' };
     groups.forEach(li => { li.dataset.cat = CAT_KEYS[catOf(li)] || 'etc'; });
     const activeLi = groups.find(li => li.querySelector('.submenu a.active'));
     let current = activeLi ? sectionOf(activeLi) : 'order';

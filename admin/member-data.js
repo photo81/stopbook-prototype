@@ -41,6 +41,42 @@
       history: [{ at: fmtDate(join) + ' 00:00', content: '회원 가입', by: '시스템' }]   // { at, content, by }
     });
   }
+  // 고정 샘플 회원 (시연용 김지영, 2026-10-27): 난수 생성 뒤에 붙여 다른 회원 샘플 값이 바뀌지 않게 함. 로그인 photo81@kstudy.com / SAMPLE_PASSWORD
+  //   프로필·혜택(마일리지·쿠폰)·주문 일자/금액은 아래 FIXED_* 값으로 덮어씀 (상품명·결제수단·상태 등 주문 상세는 다른 회원과 같은 규칙으로 생성)
+  //   fixedSample: 회원 목록 순번으로 고르는 샘플(단체 신청·상품권 결제 주문)에서는 제외
+  const FIXED_MEMBERS = [{
+    no: 1150, category: '일반', memberType: '스탑북회원', userId: 'photo81@kstudy.com', name: '김지영', email: 'photo81@kstudy.com', phone: '010-7666-2917',
+    grade: '홀리커', marketingSms: 'Y', marketingEmail: 'Y', joinDate: '2025-03-14', lastLogin: fmtDate(new Date(base)), fixedSample: true,
+    profile: { nickname: '사진찍는기록가', gender: '여', birth: '1981-12-28', zipcode: '04001', address1: '서울 마포구 월드컵북로 12', address2: '3층 302호', interests: ['여행', '키즈', '일상'], interestEtc: '' },
+    // 주문 실적: 최근 1년 [주문일, 결제금액]. 기준일(오늘) 주문 포함
+    orders: [['2025-11-02', 45800], ['2025-12-15', 62400], ['2026-01-20', 28900], ['2026-03-08', 54200], ['2026-04-27', 21000], ['2026-06-12', 38700],
+      ['2026-07-30', 47500], ['2026-09-03', 32800], ['2026-09-28', 26000], ['2026-10-07', 17500], ['2026-10-08', 35600]],
+    // 혜택 원장 (주문 데이터 기간 밖·주문과 무관한 기록). 최근 1년 구매 확정·리뷰 적립과 주문 사용은 아래 '마일리지 주문 사용·적립'에서 실제 주문으로 만듦
+    mileage: [
+      { at: '2025-03-14 10:12', type: '적립', item: '', reason: '회원가입 적립', by: '시스템', delta: 2000 },
+      { at: '2025-05-20 11:40', type: '적립', item: '', reason: '구매 확정 적립', by: '시스템', delta: 400 },
+      { at: '2025-07-02 15:05', type: '적립', item: '', reason: '리뷰 작성 적립', by: '시스템', delta: 500 },
+      { at: '2025-08-11 14:20', type: '지급', item: '', reason: '이벤트 당첨 보상', by: '김태복', delta: 3000, source: 'manual' },
+      { at: '2026-05-04 10:30', type: '지급', item: '', reason: 'CS 보상 (배송 지연)', by: '이고은', delta: 2000, source: 'manual' }
+    ],
+    coupon: [
+      { at: '2025-03-14 10:12', type: '발급', item: '신규가입 10% 할인', reason: '회원가입 자동 발급', by: '시스템', delta: 1 },
+      { at: '2025-05-12 13:22', type: '사용', item: '신규가입 10% 할인', reason: '', by: '시스템', delta: -1 },
+      { at: '2025-12-01 09:00', type: '발급', item: '생일축하 5,000원', reason: '생일 자동 발급', by: '시스템', delta: 1 },
+      { at: '2025-12-15 20:41', type: '사용', item: '생일축하 5,000원', reason: '', by: '시스템', delta: -1 },
+      { at: '2026-07-01 09:00', type: '발급', item: '무료배송', reason: '이벤트 자동 발급', by: '시스템', delta: 1 },
+      { at: '2026-09-01 09:00', type: '발급', item: '3,000원 할인', reason: '이벤트 자동 발급', by: '시스템', delta: 1 },
+      { at: '2026-10-01 09:00', type: '발급', item: '도서 2권 이상 15% 할인', reason: '등급 혜택 발급', by: '시스템', delta: 1 }
+    ]
+  }];
+  const FIXED = {};
+  FIXED_MEMBERS.forEach(f => {
+    FIXED[f.no] = f;
+    members.push({ no: f.no, category: f.category, memberType: f.memberType, userId: f.userId, name: f.name, email: f.email, phone: f.phone, grade: f.grade,
+      marketingSms: f.marketingSms, marketingEmail: f.marketingEmail, joinDate: f.joinDate, lastLogin: f.lastLogin, fixedSample: true,
+      memos: [], history: [{ at: f.joinDate + ' 00:00', content: '회원 가입', by: '시스템' }] });
+  });
+  const isFixed = m => !!FIXED[m.no];
 
   // ===== 프로필 샘플 (닉네임·성별·생일) =====
   // 가입 시 선택 입력 항목이라 비어 있는 회원도 있음. 위 회원 데이터에 영향 없도록 회원별 별도 난수로 생성
@@ -77,6 +113,7 @@
     m.interests = r() < 0.65 ? [...new Set(Array.from({ length: 1 + Math.floor(r() * 3) }, () => INTERESTS[Math.floor(r() * INTERESTS.length)]))] : [];
     m.interestEtc = r() < 0.06 ? ETC_SAMPLES[Math.floor(r() * ETC_SAMPLES.length)] : '';
   });
+  members.forEach(m => { if (isFixed(m)) Object.assign(m, JSON.parse(JSON.stringify(FIXED[m.no].profile))); });
   // 표시용: '여행 · 키즈 · 반려동물(직접 입력)' / 주소: '(04001) 기본 주소 상세 주소'
   const interestText = m => [...(m.interests || []), ...(m.interestEtc ? [`${m.interestEtc}(${INTEREST_ETC})`] : [])].join(' · ');
   const addressText = m => (m.address1 ? `(${m.zipcode}) ${m.address1}${m.address2 ? ' ' + m.address2 : ''}` : '');
@@ -119,6 +156,13 @@
   }
 
   function makeLedger(m) {
+    if (isFixed(m)) {
+      const f = FIXED[m.no];
+      m.ledger = { mileage: [], giftCard: [], coupon: [] };
+      ['mileage', 'coupon'].forEach(k => f[k].forEach(e => pushEntry(m.ledger[k], Object.assign({}, e))));
+      Object.keys(m.ledger).forEach(k => { const list = m.ledger[k]; m[k] = list.length ? list[list.length - 1].balance : 0; });
+      return;
+    }
     let s = (m.no * 7919) % 233280;
     const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
     const from = new Date(m.joinDate).getTime();
@@ -227,6 +271,7 @@
   // 주문 리스트 화면은 아직 없음. 등급 산정에 필요한 최소 정보(주문일·결제금액)만 회원별로 생성
   // TODO: 주문 리스트 구현 후 실제 주문 데이터(또는 GET /api/admin/members/{no}/order-stats)로 대체
   function makeOrders(m) {
+    if (isFixed(m)) { m.orders = FIXED[m.no].orders.map(([at, amount]) => ({ at, amount })); return; }
     let s = (m.no * 104729) % 233280;
     const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
     const from = Math.max(new Date(m.joinDate).getTime(), base - 365 * 86400000);
@@ -382,14 +427,36 @@
   let CART_ADDS = {};
   try { CART_ADDS = JSON.parse(localStorage.getItem(CART_KEY)) || {}; } catch (e) { /* 저장소 사용 불가 시 기록 없음 */ }
   members.forEach(m => { const adds = CART_ADDS[m.no]; if (adds && adds.length && !m.withdrawn) m.cart = adds.concat(m.cart || []); });
+  // ===== 쇼핑몰 장바구니 화면(user/cart.html)에서 바꾼 장바구니 =====
+  //   CART_STATE_KEY: { [회원no]: [항목…] } — 수량·옵션 변경, 삭제, 복사를 하면 그 회원의 장바구니 전체를 저장. 저장본이 있으면 샘플·재주문 담기 대신 저장본을 씀 (회원 상세 > 장바구니도 같은 목록)
+  //   항목 id: 샘플·재주문 항목은 불러올 때 'c{회원no}-{순번}', 장바구니 화면에서 만든 항목은 'c{회원no}-{시각}'
+  // TODO: 실서비스에서는 PUT/DELETE /api/members/me/cart/{id}
+  const CART_STATE_KEY = 'stopbook.cart.v1';
+  let CART_STATE = {};
+  try { CART_STATE = JSON.parse(localStorage.getItem(CART_STATE_KEY)) || {}; } catch (e) { /* 저장소 사용 불가 시 기록 없음 */ }
+  members.forEach(m => {
+    if (m.withdrawn) return;
+    if (Array.isArray(CART_STATE[m.no])) m.cart = CART_STATE[m.no];
+    (m.cart || []).forEach((c, i) => { if (!c.id) c.id = `c${m.no}-${i}`; });
+  });
+  const saveCartState = () => { try { localStorage.setItem(CART_STATE_KEY, JSON.stringify(CART_STATE)); return true; } catch (e) { return false; } };
+  // 장바구니 전체 바꾸기 (장바구니 화면). items = 항목 배열. 반환: 저장 성공 여부
+  function setCart(no, items) {
+    const m = members.find(x => x.no === no && !x.withdrawn);
+    if (!m) return false;
+    m.cart = items.slice();
+    CART_STATE[no] = m.cart;
+    return saveCartState();
+  }
   // 장바구니에 담기. items = 위 항목 배열(savedAt·previewUrl은 없으면 채움). 반환: 저장 성공 여부
   function addToCart(no, items) {
     const m = members.find(x => x.no === no && !x.withdrawn);
     if (!m || !items.length) return false;
-    const today = fmtDate(new Date());
-    const recs = items.map(c => Object.assign({ savedAt: today, previewUrl: viewerUrl(VIEWER_SAMPLE.mskey, VIEWER_SAMPLE.userId) }, c));
+    const today = fmtDate(new Date()), stamp = Date.now().toString(36);
+    const recs = items.map((c, i) => Object.assign({ id: `c${no}-${stamp}${i ? `-${i}` : ''}`, savedAt: today, previewUrl: viewerUrl(VIEWER_SAMPLE.mskey, VIEWER_SAMPLE.userId) }, c));
     CART_ADDS[no] = recs.concat(CART_ADDS[no] || []);
     m.cart = recs.concat(m.cart || []);
+    if (Array.isArray(CART_STATE[no])) { CART_STATE[no] = m.cart; saveCartState(); }   // 장바구니 화면에서 바꾼 저장본이 있으면 거기에도 반영
     try { localStorage.setItem(CART_KEY, JSON.stringify(CART_ADDS)); return true; } catch (e) { return false; }
   }
 
@@ -595,7 +662,7 @@
   const appOverlay = loadAppOverlay();
 
   // 기본 구분 회원 중 일부가 신청한 것으로 생성 (최근 신청이 위)
-  const applications = members.filter(m => m.categoryCode === mainCat.code).filter((_, i) => i % 8 === 3).map((m, k) => {
+  const applications = members.filter(m => m.categoryCode === mainCat.code && !m.fixedSample).filter((_, i) => i % 8 === 3).map((m, k) => {
     // 고객이 신청한 회원구분·종류: 신청 가능한 구분을 번갈아, 종류가 있는 구분은 종류도 번갈아
     const reqCat = applyCats[k % applyCats.length];
     const groupType = subOf(reqCat, k);
@@ -758,7 +825,8 @@
     members.push(m);
     return m;
   }
-  loadSignups().forEach(attachSignup);
+  // 고정 샘플 회원과 같은 이메일로 예전에 가입해 둔 기록은 붙이지 않음 (같은 사람이 두 번 보이지 않게)
+  loadSignups().filter(rec => !members.some(x => x.fixedSample && x.email === rec.email)).forEach(attachSignup);
 
   // ===== 회원 로그인 (user 로그인 화면 ↔ 관리자 회원 상세의 패스워드 초기화·변경) =====
   // 비밀번호 정보와 최근 접속 기록을 localStorage에 보관해 쇼핑몰 로그인과 관리자 화면이 같은 정보를 봄
@@ -1297,6 +1365,9 @@
     stored[no] = rec;
     if (!writeJson(WITHDRAW_KEY, stored)) return { error: '탈퇴 처리를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.' };
     Object.assign(WITHDRAWALS, stored);
+    // 장바구니 즉시 파기 (재주문 담기 기록 · 장바구니 화면 저장본)
+    if (CART_ADDS[no]) { delete CART_ADDS[no]; try { localStorage.setItem(CART_KEY, JSON.stringify(CART_ADDS)); } catch (e) { /* 무시 */ } }
+    if (CART_STATE[no]) { delete CART_STATE[no]; saveCartState(); }
 
     // 저장소에 남은 개인정보 파기 (회원정보 수정 값·비밀번호·로그인 기록·가입 정보)
     [[PROFILE_KEY, PROFILES], [AUTH_KEY, AUTH], [LOGIN_KEY, LOGINS], [LOGIN_LOG_KEY, {}]].forEach(([key, mem]) => {   // 로그인 로그(접속 IP 등)도 파기
@@ -1471,7 +1542,7 @@
   window.MemberData = {
     members, GRADE_ORDER, gradeRun, saveAdminEdit, dormantRun, dormantNotice, runDormantBatch, BENEFITS, COUPONS, PRODUCTS, PROJECT_NAMES, VIEWER_SAMPLE, viewerUrl, pad, fmtDate, fmtDateTime, pushEntry, heldCoupons, orderStats, validOrders, statusClass, ageOf, addMileage, mileageHistory,
     applications, saveApplication, applyApproval, revokeBusiness, GROUP_TYPES: groupKinds,
-    findDuplicate, registerMember, snsKey, findSnsMember, SIGNUP_KEY, USER_INQ_KEY, userInquiries, INQ_TYPES, CART_KEY, addToCart, Auth, updateProfile, PROFILE_KEY,
+    findDuplicate, registerMember, snsKey, findSnsMember, SIGNUP_KEY, USER_INQ_KEY, userInquiries, INQ_TYPES, CART_KEY, addToCart, CART_STATE_KEY, setCart, Auth, updateProfile, PROFILE_KEY,
     INTERESTS, INTEREST_ETC, interestText, addressText,
     WITHDRAW_KEY, WITHDRAWN_LABEL, withdrawCheck, withdraw, withdrawType, rejoinBlock, withdrawals, isWithdrawnStored, maskEmail, maskUserId
   };

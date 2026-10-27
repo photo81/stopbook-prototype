@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스탑북 관리자 - 초안 접수 리스트</title>
+<link rel="stylesheet" href="admin.css?v=20261026-6">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="logo" href="dashboard.html" title="대시보드">STOPBOOK Admin</a>
+    <ul>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">회원관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="members.html">통합 회원 관리</a></li>
+          <li><a href="group-applications.html">단체 회원 신청 관리</a></li>
+          <li><a href="withdrawn.html">탈퇴 회원 관리</a></li>
+          <li><a href="member-types.html">회원 유형 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">메시지전송관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="message-send.html">메시지 전송</a></li>
+          <li><a href="message-alimtalk.html">알림톡 발송 관리</a></li>
+          <li><a href="message-sms.html">SMS 발송 관리</a></li>
+          <li><a href="message-email.html">이메일 발송 관리</a></li>
+        </ul>
+      </li>      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">주문관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="orders.html">통합 주문 관리</a></li>
+          <li><a href="paid-orders.html">결제 완료 주문</a></li>
+          <li><a href="unpaid-orders.html">미입금 주문</a></li>
+          <li><a href="postpay-orders.html">후결제 주문</a></li>
+          <li><a href="prepaid-orders.html">선결제 주문</a></li>
+          <li><a href="canceled-orders.html">취소 주문</a></li>
+          <li><a href="extra-payments.html">추가 결제</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">관리자계정관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="admin-levels.html">레벨 관리</a></li>
+          <li><a href="admin-accounts.html">계정 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">제작/배송관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="production-orders.html">통합 제작 관리</a></li>
+          <li><a href="ordered-orders.html">주문 완료</a></li>
+          <li><a href="making-orders.html">제작 중</a></li>
+          <li><a href="shipping-orders.html">배송 중</a></li>
+          <li><a href="delivered-orders.html">배송 완료</a></li>
+          <li><a href="outsource-orders.html">외주 제작</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">클레임관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="claim-cancel.html">취소 요청 관리</a></li>
+          <li><a href="claim-exchange.html">교환 반품 관리</a></li>
+          <li><a href="claim-documents.html">서류 발급 관리</a></li>
+          <li><a href="claim-receipts.html">계산서 영수증 발급 관리</a></li>
+        </ul>
+      </li>
+      <li class="has-sub open">
+        <a href="#" class="menu-parent" aria-expanded="true">초안서비스<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="draft-requests.html" class="active" aria-current="page">초안 접수 리스트</a></li>
+          <li><a href="draft-works.html">초안 작업 현황</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">디자이너편집대행<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="agency-requests.html">접수 리스트</a></li>
+          <li><a href="agency-orders.html">주문 완료 리스트</a></li>
+        </ul>
+      </li>      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">게시판관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="board-all.html">게시판 통합 관리</a></li>
+          <li><a href="board-admin-notice.html">관리자 공지</a></li>
+          <li><a href="board-inquiry-settings.html">1:1 문의 설정</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">게시글관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="board-notice.html">공지사항</a></li>
+          <li><a href="board-inquiry.html">1:1 문의</a></li>
+          <li><a href="board-faq.html">FAQ</a></li>
+          <li><a href="board-review.html">이용후기</a></li>
+          <li><a href="board-partner.html">제휴문의</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">혜택관리<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="mileage-types.html">마일리지 유형 관리</a></li>
+        </ul>
+      </li>
+<li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">혜택내역<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="mileage.html">마일리지 내역</a></li>
+        </ul>
+      </li>    </ul>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="breadcrumb">홈 &gt; 편집대행 &gt; 초안서비스 &gt; <b>초안 접수 리스트</b></div>
+      <div><span class="proto-ver" data-proto-version>프로토타입 v3.1 (2026-10-27)</span> 관리자님 | <a href="#">로그아웃</a></div>
+    </header>
+
+    <main class="content">
+      <h1>초안 접수 리스트 <span class="page-desc">사진만 보내면 초안을 만들어 드리는 초안서비스 신청을 확인합니다.</span></h1>
+
+      <!-- 빈 페이지: 화면 구성 예정 (편집대행 > 초안서비스). IA 기획(편집대행 상태값 시트) 확정 후 목록·상세 구성 -->
+      <section class="panel">
+        <div class="empty-page">
+          <b>준비 중인 화면입니다.</b>
+          <p>초안 접수 리스트 화면은 구성 예정입니다.</p>
+          <p class="readonly" style="margin-top:8px">구성 예정: 초안 신청 접수(신청일·주문번호·회원·상품·사진 수·희망일) → 담당 디자이너 지정 → 초안 작업 시작. 고객은 받은 초안을 편집기에서 직접 다듬어 마무리합니다.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="board-store.js?v=20261027-1"></script>
+<script src="member-type-store.js?v=20261027-1"></script>
+<script src="feedback.js?v=20261026-1"></script>
+<script>AdminUtil.initSidebar();</script>
+</body>
+</html>

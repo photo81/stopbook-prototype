@@ -68,6 +68,19 @@
         </ul>
       </li>
       <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">초안서비스<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="draft-requests.html">초안 접수 리스트</a></li>
+          <li><a href="draft-works.html">초안 작업 현황</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">디자이너편집대행<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="agency-requests.html">접수 리스트</a></li>
+          <li><a href="agency-orders.html">주문 완료 리스트</a></li>
+        </ul>
+      </li>      <li class="has-sub">
         <a href="#" class="menu-parent" aria-expanded="false">게시판관리<span class="chev">▼</span></a>
         <ul class="submenu">
           <li><a href="board-all.html">게시판 통합 관리</a></li>
@@ -102,7 +115,7 @@
   <div class="main">
     <header class="topbar">
       <div class="breadcrumb">홈 &gt; 주문관리 &gt; <b>통합 주문 관리</b></div>
-      <div><span class="proto-ver" data-proto-version>프로토타입 v2.75 (2026-10-13)</span> 관리자님 | <a href="#">로그아웃</a></div>
+      <div><span class="proto-ver" data-proto-version>프로토타입 v3.1 (2026-10-27)</span> 관리자님 | <a href="#">로그아웃</a></div>
     </header>
 
     <main class="content">
@@ -188,7 +201,7 @@
                 <th class="w-env" title="결제 기기 (PC / MO)">기기</th>
                 <th class="sortable w-dt" data-key="orderedAt">주문일시</th>
                 <th class="sortable w-name" data-key="name">주문자명</th>
-                <th class="w-email">이메일</th>
+                <th class="w-email">아이디</th>
                 <th class="sortable w-ono" data-key="orderNo">주문번호</th>
                 <th class="w-mkno v-item" hidden>상품제작번호</th>
                 <th class="w-prod">주문상품</th>
@@ -212,17 +225,17 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261026-5"></script>
-<script src="member-type-store.js?v=20261026-6"></script>
+<script src="board-store.js?v=20261027-1"></script>
+<script src="member-type-store.js?v=20261027-1"></script>
 <script src="feedback.js?v=20261026-1"></script>
-<script src="member-data.js?v=20261026-7"></script>
-<script src="order-data.js?v=20261026-2"></script>
+<script src="member-data.js?v=20261027-2"></script>
+<script src="order-data.js?v=20261027-3"></script>
 <script src="inquiry-settings.js?v=20261026-3"></script>
 <script src="inquiry-data.js?v=20261026-3"></script>
 <script src="claim-data.js?v=20261026-2"></script>
 <script src="deposit-modal.js?v=20261026-1"></script>
 <script src="item-detail.js?v=20261026-1"></script>
-<script src="order-list.js?v=20261026-1"></script>
+<script src="order-list.js?v=20261027-1"></script>
 <script>OrderList.init({ mode: 'accepted' });</script>
 </body>
 </html>

@@ -12,7 +12,7 @@
   const TODAY = new Date(2026, 9, 8);   // 샘플 데이터 기준일 (member-data.js base와 동일). TODO: 실서비스에서는 new Date()
   const DAY = 86400000;
   // 결제정보 금액 기준 (paymentOf): 택배비, 무료배송 기준(할인 후), 퀵서비스비, 적립률
-  const SHIP_FEE = 2500, FREE_SHIP_MIN = 15000, QUICK_FEE = 8000, REMOTE_FEE = 3000, POINT_RATE = 0.01;
+  const SHIP_FEE = 2500, FREE_SHIP_MIN = 40000, QUICK_FEE = 8000, REMOTE_FEE = 3000, POINT_RATE = 0.01;
   // 관리자 주문취소 내역 (주문 상세 > 주문정보 > 주문취소). 샘플 주문은 화면을 열 때마다 새로 만들어지므로 localStorage에 보관해 덮어씀
   // { [orderNo]: { items: { [상품 index]: { amount, reason, refund, memo, at, by } } } }
   // TODO: 실서비스에서는 POST /api/admin/orders/{orderNo}/cancel (PG 취소·환불 처리 포함)
@@ -116,13 +116,14 @@
   // 제작번호, 편집내용보기(스탑북 뷰어), 세부 옵션, 표지·내지 디자인, 최초 편집 시작일
   // projectTitle(고객이 정한 작업물 이름)은 화면에서 뺐지만, 아래 옵션 샘플 값이 바뀌지 않도록 데이터에는 남겨 둠
   // 분류별로 해당 없는 옵션은 '' (화면에서 '-')
+  // 사이즈는 모두 cm (가로×세로). 유저 장바구니·마이페이지 주문상세와 같은 표기
   // TODO: 실서비스에서는 주문 상품의 작업 정보(작업 키·옵션·디자인 템플릿) 사용. 뷰어는 샘플 작업물 하나에 연결
   const SPEC = {
-    '포토북': { size: ['8x8', '10x10', 'A4 세로', 'A5 가로'], cover: ['린넨', '무광 하드', '유광 하드', '가죽'],
+    '포토북': { size: ['20.3×20.3cm', '25.4×25.4cm', '21×29.7cm', '21×14.8cm'], cover: ['린넨', '무광 하드', '유광 하드', '가죽'],
       coating: ['무광', '유광', '코팅 안함'], pages: [24, 30, 40, 50], coverDesign: true, innerDesign: true },
-    '캘린더': { size: ['A5', 'A4', 'B4'], coating: ['무광', '유광'], pages: [13], coverDesign: true, innerDesign: true },
-    '액자': { size: ['5x7', '8x10', 'A4'], coating: ['무광', '유광'], coverDesign: true },
-    '팬시·굿즈': { size: ['미니', '기본'], coating: ['무광', '유광', '코팅 안함'], coverDesign: true }
+    '캘린더': { size: ['14.8×21cm', '21×29.7cm', '25.7×36.4cm'], coating: ['무광', '유광'], pages: [13], coverDesign: true, innerDesign: true },
+    '액자': { size: ['12.7×17.8cm', '20.3×25.4cm', '21×29.7cm'], coating: ['무광', '유광'], coverDesign: true },
+    '팬시·굿즈': { size: ['7×10cm', '10×15cm'], coating: ['무광', '유광', '코팅 안함'], coverDesign: true }
   };
   const POST_FINISH_PRODUCTS = ['레더북', '러브데이북'];   // 후가공(금박) 대상 상품
   const FORMS = ['가로형', '세로형', '정사각'];   // 상품형태 샘플
@@ -464,7 +465,7 @@
     const PAYABLE = ['신용카드', '계좌이체', '휴대폰결제', '네이버페이', '토스페이', '카카오페이'];
     const usable = ORDERS.filter(o => o.payStatus === '결제완료' && PAYABLE.includes(o.payMethod) && !o.deposit && o.payment.total <= 500000);
     const byMember = new Map();
-    usable.forEach(o => { const k = o.userId; if (!byMember.has(k)) byMember.set(k, []); byMember.get(k).push(o); });
+    usable.filter(o => !(o.member && o.member.fixedSample)).forEach(o => { const k = o.userId; if (!byMember.has(k)) byMember.set(k, []); byMember.get(k).push(o); });   // 고정 샘플 회원(member-data.js FIXED_MEMBERS)은 빼서 다른 회원의 상품권 샘플이 바뀌지 않게
     const members = [...byMember.keys()].sort();
     const PATTERN = ['부분사용', '사용완료', '결제완료', '부분사용', '사용완료', '결제취소', '부분사용', '결제완료', '사용완료', '부분사용'];
     const used = new Set();
@@ -709,7 +710,7 @@
 
   // ===== 결제정보 (주문 상세 > 결제정보 탭, 상단 결제 금액 요약) =====
   // 총 결제금액 = 주문금액 + 배송비 − 할인금액 + 추가결제금액 − 취소금액
-  //   배송비: 택배 2,500원 (할인 후 15,000원 이상 또는 회원구분 무료배송 혜택이면 0원), 방문수령 0원, 퀵서비스 8,000원
+  //   배송비: 택배 2,500원 (할인 후 40,000원 이상(2026-10-27 15,000 → 40,000) 또는 회원구분 무료배송 혜택이면 0원), 방문수령 0원, 퀵서비스 8,000원
   //   추가결제금액: 주문 후 옵션 변경 등으로 따로 결제한 금액 (약 8% 주문, 1,000~6,000원)
   //   취소금액: 취소된 상품 금액. 전체취소면 배송비·추가결제금액도 함께 취소 → 총 결제금액 0원
   //   적립금액: 총 결제금액의 1% (10원 단위 버림). 입금대기·전체취소는 0원

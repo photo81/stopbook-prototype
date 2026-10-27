@@ -29,7 +29,7 @@
   const DEFAULTS = [
     B(1, 'notice', '기본형', '공지사항', ['공지사항', '이벤트'], 75, 0, { system: true, href: 'board-notice.html' }),
     B(2, 'qna', '1:1 문의형', '1:1 문의', [], 0, 0, { system: true, href: 'board-inquiry.html', live: 'inquiry', link: '상품', updatedAt: '2026-10-12 15:37', updatedBy: '관리자' }),
-    B(3, 'faq', '기본형', 'FAQ', ['회원/로그인', '상품', '편집/저장/보관함', '장바구니/주문/결제', '제작/배송/교환(환불)', '이벤트', '기타'], 32, 0, { system: true, href: 'board-faq.html', live: 'faq' }),   // 구분·질문은 faq-store.js
+    B(3, 'faq', '기본형', 'FAQ', ['회원/로그인', '상품', '편집/저장/보관함', '편집대행', '장바구니/주문/결제', '제작/배송/교환(환불)', '이벤트', '기타'], 38, 0, { system: true, href: 'board-faq.html', live: 'faq' }),   // 구분·질문은 faq-store.js
     B(4, 'product_review', '상품리뷰', '이용후기', [], 128, 3, { system: true, href: 'board-review.html' }),
     // 제휴문의: 쇼핑몰 고객센터 > 제휴문의 접수(비회원 포함) → 전용 처리 화면 board-partner.html (partner-store.js). 게시물 수·신규 = 실제 접수 데이터
     B(5, 'join', '1:1 문의형', '제휴문의', [], 0, 0, { system: true, href: 'board-partner.html', live: 'partner', link: '연동 없음', read: '관리자', write: '전체', createdAt: '2026-10-12 15:36', updatedAt: '2026-10-26 10:00', updatedBy: '관리자' })
@@ -125,7 +125,9 @@
       : b.live === 'faq' && window.FaqStore
         ? { posts: FaqStore.total(), fresh: 0 }
         : { posts: b.posts + (saved[b.code] || []).filter(p => !p.sampleOf).length - (saved[b.code + '#deleted'] || []).length, fresh: b.fresh });
-  const list = () => boards.map(b => Object.assign({}, b, { heads: b.heads.slice() }, countsOf(b)));
+  // FAQ 말머리 = FAQ 구분(faq-store.js)을 그대로 보여 줌 (FAQ 화면에서 구분을 바꾸면 여기도 같음). faq-store.js가 없는 화면은 저장값
+  const headsOf = b => (b.live === 'faq' && window.FaqStore ? FaqStore.cats().map(c => c.name) : b.heads.slice());
+  const list = () => boards.map(b => Object.assign({}, b, { heads: headsOf(b) }, countsOf(b)));
   const find = no => list().find(b => b.no === Number(no)) || null;
   const clean = s => String(s || '').trim().replace(/\s+/g, ' ');
 

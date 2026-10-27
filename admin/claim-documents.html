@@ -68,6 +68,19 @@
         </ul>
       </li>
       <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">초안서비스<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="draft-requests.html">초안 접수 리스트</a></li>
+          <li><a href="draft-works.html">초안 작업 현황</a></li>
+        </ul>
+      </li>
+      <li class="has-sub">
+        <a href="#" class="menu-parent" aria-expanded="false">디자이너편집대행<span class="chev">▼</span></a>
+        <ul class="submenu">
+          <li><a href="agency-requests.html">접수 리스트</a></li>
+          <li><a href="agency-orders.html">주문 완료 리스트</a></li>
+        </ul>
+      </li>      <li class="has-sub">
         <a href="#" class="menu-parent" aria-expanded="false">게시판관리<span class="chev">▼</span></a>
         <ul class="submenu">
           <li><a href="board-all.html">게시판 통합 관리</a></li>
@@ -102,7 +115,7 @@
   <div class="main">
     <header class="topbar">
       <div class="breadcrumb">홈 &gt; 클레임관리 &gt; <b>서류 발급 관리</b></div>
-      <div><span class="proto-ver" data-proto-version>프로토타입 v2.75 (2026-10-13)</span> 관리자님 | <a href="#">로그아웃</a></div>
+      <div><span class="proto-ver" data-proto-version>프로토타입 v3.1 (2026-10-27)</span> 관리자님 | <a href="#">로그아웃</a></div>
     </header>
 
     <main class="content">
@@ -456,14 +469,14 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="board-store.js?v=20261026-5"></script>
-<script src="member-type-store.js?v=20261026-6"></script>
-<script src="member-data.js?v=20261026-7"></script>
-<script src="order-data.js?v=20261026-2"></script>
+<script src="board-store.js?v=20261027-1"></script>
+<script src="member-type-store.js?v=20261027-1"></script>
+<script src="member-data.js?v=20261027-2"></script>
+<script src="order-data.js?v=20261027-3"></script>
 <script src="inquiry-settings.js?v=20261026-3"></script>
 <script src="inquiry-data.js?v=20261026-3"></script>
 <script src="claim-data.js?v=20261026-2"></script>
-<script src="document-data.js?v=20261026-5"></script>
+<script src="document-data.js?v=20261027-1"></script>
 <script src="doc-form-assets.js?v=20261026-5"></script>
 <script src="doc-forms.js?v=20261026-4"></script>
 <script src="list-tools.js?v=20261026-1"></script>
@@ -559,7 +572,7 @@
     units: [{ label: '신청 단위', desc: '발급 신청 1건 = 1행 (주문·사업자·처리 내용 포함)', file: '서류발급신청목록',
       rows: () => [['신청번호', '신청일시', '접수', '서류 수', '서류 종류', '주문번호', '주문일시', '주문자명', '아이디', '이메일', '휴대폰', '회원구분', '사업자명', '사업자번호', '결제수단', '결제상태', '총 결제금액(원)',
         '담당자명', '담당자 연락처', '담당자 이메일', '기관/회사명', '요청 사항', '첨부 파일', '사업자등록증 첨부', '현금영수증 구분', '현금영수증 발급번호 종류', '현금영수증 발급번호', '수령 방법', '수령처', '희망일', '상태', '처리일시', '처리자', '발급 파일', '전달 방법', '전달처', '관리자 메모', '반려 사유', '처리 히스토리'],
-        ...reqRows.map(q => { const o = orderOf(q), b = bizOf(o); return [q.reqNo, q.at, q.manual ? `관리자 등록 (${q.channel})` : q.web ? '고객 신청 (마이페이지)' : '고객 신청', DocData.typesOf(q).length, DocData.typesOf(q).join(', '), q.orderNo || '주문 전', o ? o.orderedAt : '', DocData.applicantOf(q).name, DocData.applicantOf(q).userId, DocData.applicantOf(q).email, '\t' + DocData.applicantOf(q).phone,
+        ...reqRows.map(q => { const o = orderOf(q), b = bizOf(o); return [q.reqNo, q.at, q.manual ? `관리자 등록 (${q.channel})` : q.web ? `고객 신청 (${q.channel || '마이페이지'})` : '고객 신청', DocData.typesOf(q).length, DocData.typesOf(q).join(', '), q.orderNo || '주문 전', o ? o.orderedAt : '', DocData.applicantOf(q).name, DocData.applicantOf(q).userId, DocData.applicantOf(q).email, '\t' + DocData.applicantOf(q).phone,
           o ? `${o.member.category}${o.member.subCategory ? ` (${o.member.subCategory})` : ''}` : '', b ? b.companyName : DocData.applicantOf(q).company, b ? b.bizNo : '', o ? o.payMethod : '', o ? o.payStatus : '', o ? (o.payment.total || o.amount) : '',
           (q.contact || {}).name || '', (q.contact || {}).phone ? '\t' + q.contact.phone : '', (q.contact || {}).email || '', (q.contact || {}).org || '',
           q.requirement || '', q.attachment || '', q.bizCert || '', q.cashReceipt ? q.cashReceipt.purpose : '', q.cashReceipt ? q.cashReceipt.idType : '', q.cashReceipt ? q.cashReceipt.idValue : '', q.receiveBy, q.receiveTo || '', q.wantBy || '', STATUS_TEXT[q.status] || q.status, q.processedAt || '', q.processedBy || '',
@@ -629,8 +642,8 @@
     // 서류 종류: 증빙서류 / 영수증으로 나눠 표시
     const proofT = DocData.proofTypesOf(q), rcptT = DocData.receiptTypesOf(q);
     $('dDoc').innerHTML = [['증빙서류', proofT], ['영수증', rcptT]].filter(([, l]) => l.length).map(([g, l]) => `<div class="doc-line"><span class="doc-group-label">${g}</span>${l.map(docBadge).join(' ')}</div>`).join('')
-      + `<div class="doc-line"><button type="button" class="btn btn-xs" id="btnDocZip" title="신청한 서류를 압축 파일(zip)로 내려받기">다운로드</button> <span class="muted">${DocData.typesOf(q).length > 1 ? `${DocData.typesOf(q).length}종 · ` : ''}${q.manual ? `관리자 등록 (${esc(q.channel)} 접수)` : q.web ? '고객 신청 (마이페이지)' : '고객 신청'}</span></div>`;
-    $('dReqSource').textContent = q.manual ? `관리자 등록 · ${q.channel} 접수` : q.web ? '고객 입력 (마이페이지 신청)' : '고객 입력';
+      + `<div class="doc-line"><button type="button" class="btn btn-xs" id="btnDocZip" title="신청한 서류를 압축 파일(zip)로 내려받기">다운로드</button> <span class="muted">${DocData.typesOf(q).length > 1 ? `${DocData.typesOf(q).length}종 · ` : ''}${q.manual ? `관리자 등록 (${esc(q.channel)} 접수)` : q.web ? `고객 신청 (${q.channel || '마이페이지'})` : '고객 신청'}</span></div>`;
+    $('dReqSource').textContent = q.manual ? `관리자 등록 · ${q.channel} 접수` : q.web ? `고객 입력 (${q.channel || '마이페이지'} 신청)` : '고객 입력';
     $('dWantBy').innerHTML = q.wantBy ? `${esc(q.wantBy)}${q.status === '대기' && q.wantBy < fmtDate(listToday()) ? ' <span class="warn">(지남)</span>' : ''}` : '<span class="muted">지정 안 함</span>';
     $('dReceive').innerHTML = `${esc(q.receiveBy)} <span class="muted">${esc(q.receiveTo || '')}</span>`;
     $('dAttachment').innerHTML = q.attachment ? fileLink(q.attachment) : '<span class="muted">없음</span>';
