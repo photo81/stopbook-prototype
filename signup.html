@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스탑북 회원가입</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="../admin/feedback.css?v=20261026-1"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
+<style>
+  /* 쇼핑몰(고객) 화면 — 관리자 화면(admin.css)과 별도 스타일
+     톤앤매너: 사이트 컬러 팔레트 기준 (따뜻하고 포근한 감성, 글꼴은 모두 고딕 계열 Pretendard)
+       BASE #F5F0E8 (베이지 배경) · SUB #FCEDD2 (크림) · MAIN ACCENT #63302B (레드브라운: 주 버튼·로고·띠)
+       SUB ACCENT 01 #D3775C (테라코타: 강조 표시) · SUB ACCENT 02 #A56255 (로즈 브라운: 보조 글자·표시)
+     모달 UI는 깔끔한 최신 스타일: 글자·테두리는 따뜻한 무채색, 브랜드 색은 주 버튼·체크 등 핵심 동작에만 사용
+       입력칸 = 따뜻한 연회색 바탕(테두리 없음) → 포커스 시 흰 바탕 + 테두리·링 / 모서리 12px / 얇은 구분선
+     TODO: 팔레트 원본 HEX 값을 받으면 교체 (현재는 시안 이미지에서 추출한 값) */
+  /* 디자인 토큰 — support.html·mypage.html·signup.html 세 화면이 같은 이름·같은 값 사용 (바꿀 때 세 파일 모두) */
+  :root {
+    --base: #F5F0E8; --sub: #FCEDD2; --main: #63302B; --accent1: #D3775C; --accent2: #A56255;
+    --bg: #F5F5F3; --surface: #FFFFFF; --band: #191919; --util: #FFFFFF; --util-line: #EBEBE9; --util-ink: #4E4E4C;   /* 바탕은 중립 회색, 상단은 흰 바 (베이지·크림은 팔레트 원본으로만 보관) */
+    /* 글자: 본문 / 보조 / 흐린 안내(흰·회색 바탕에서 4.5:1 이상, WCAG AA) / 장식용(화살표·구분 — 글자에는 쓰지 않음) / 입력 예시 */
+    --ink: #191919; --ink-2: #4E4E4C; --ink-3: #6E6E6B; --ink-4: #ADADAA; --placeholder: #9A9A97;
+    --line: #EDEDEB; --line-2: #DEDEDB;
+    --field: #F3F3F1; --field-hover: #EEEEEC; --tonal: #F1F1EF; --tonal-hover: #E7E7E4; --hover: #FAFAF9;
+    --brand: var(--main); --brand-dark: #4C221E; --brand-soft: #F7F0EF; --accent1-soft: #FBEEE8; --accent1-ink: #AB4B2B; --gold: var(--accent2);   /* accent1-ink: 연한 바탕 위 테라코타 글자 */
+    --ring: rgba(46,46,46,.14); --ring-danger: rgba(194,59,41,.14);   /* 입력칸 포커스 번짐 */
+    --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px rgba(46,46,46,.6);   /* 키보드 포커스 (버튼·탭·칩·체크 공통) */
+    --danger: #C23B29; --danger-dark: #A3301F; --danger-soft: #FDF1EF; --ok: #277550; --ok-soft: #EEF7F1;
+    --radius: 20px; --radius-md: 12px; --radius-sm: 8px;   /* 모달·카드 / 버튼·입력칸·박스 / 안내 박스·작은 표시 */
+    --shadow-card: none; --shadow-raised: 0 1px 3px rgba(0,0,0,.08);
+    --shadow-pop: 0 8px 24px rgba(0,0,0,.18); --shadow-modal: 0 30px 80px rgba(0,0,0,.22), 0 2px 8px rgba(0,0,0,.06);
+    --ease: .15s ease;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 14px/1.6 "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -.01em; }
+  a { color: inherit; }
+  button, input, select { font: inherit; color: inherit; letter-spacing: inherit; }
+  [hidden] { display: none !important; }
+
+  /* 쇼핑몰 공통 상단: 프로토타입 띠 · 상단 메뉴 */
+  .proto-band { background: var(--band); color: var(--sub); text-align: center; font-size: 12px; font-weight: 700; padding: 5px 16px; letter-spacing: .02em; }
+  .util { background: var(--util); border-bottom: 1px solid var(--util-line); }
+  /* 상단 한 줄: 로고(왼쪽) + 이용 메뉴(오른쪽) */
+  .util-in { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; max-width: 1136px; min-height: 52px; margin: 0 auto; padding: 0 16px; }
+  .brand { display: block; line-height: 0; }
+  .brand img { width: 112px; height: auto; }   /* 배경 투명 PNG, 원본 376×54 */
+  .util ul { display: flex; align-items: center; gap: 22px; list-style: none; margin: 0; padding: 0; font-size: 13px; color: var(--util-ink); }
+  .util button, .util a { background: none; border: 0; padding: 0; cursor: pointer; color: inherit; text-decoration: none; }
+  .util button:hover, .util a:hover { color: var(--accent1-ink); }
+  .util #openAuth { color: var(--main); font-weight: 700; }
+  .util .me { color: var(--main); font-weight: 700; }
+  .below { max-width: 1136px; margin: 0 auto; padding: 40px 16px 64px; font-size: 12px; color: var(--util-ink); }
+
+  /* ===== 로그인/회원가입 모달 ===== */
+  .auth { border: 0; padding: 0; border-radius: var(--radius); width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 48px); color: var(--ink); background: var(--surface); box-shadow: var(--shadow-modal); overflow: hidden; }
+  .auth[open] { display: flex; flex-direction: column; animation: pop .22s cubic-bezier(.2,.9,.3,1); }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+  .auth::backdrop { background: rgba(0,0,0,.42); backdrop-filter: blur(3px); }
+  .auth-head { flex: none; display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; height: 56px; padding: 0 10px; }
+  .auth-head button { background: none; border: 0; cursor: pointer; color: var(--ink-2); width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; transition: background .15s; }
+  .auth-head #authClose { grid-column: 3; justify-self: end; }   /* 이전 버튼이 숨어도 제목·닫기 위치 고정 */
+  .auth-head-title { grid-column: 2; }
+  .auth-head button:hover { background: var(--tonal); }
+  .auth-head-title { text-align: center; font-size: 14px; font-weight: 600; }
+  .auth-logo:focus { outline: none; }
+  body:has(dialog[open]) { overflow: hidden; }   /* 모달이 열려 있는 동안 뒤 화면 스크롤 막기 */
+  .auth-body { flex: 1; overflow: auto; padding: 4px 32px 32px; scrollbar-width: thin; }
+  .view-title { font-size: 18px; font-weight: 700; margin: 0 0 4px; }
+  .view-sub { color: var(--ink-2); font-size: 14px; margin: 0 0 22px; }
+
+  /* 모달 첫 화면 (snaps 로그인/회원가입 레이어 구성 참고) */
+  .auth-start { text-align: center; padding: 8px 0 4px; }
+  /* 로고 이미지 (배경 투명 PNG, 원본 376×54) */
+  .auth-logo { margin: 4px 0 32px; line-height: 0; }
+  .auth-logo img { display: inline-block; width: 132px; height: auto; }
+  .auth-main { display: grid; gap: 8px; }
+  .auth-main .btn-line { border-color: var(--line-2); color: var(--ink); }
+  .auth-main .btn-line:hover { border-color: var(--ink-3); background: #fff; }
+  .auth-start .divider { border: 0; border-top: 1px solid var(--line); margin: 28px 0 24px; }
+
+  /* 단계 표시: 얇은 진행 막대 + 작은 단계명 */
+  .steps { display: flex; gap: 4px; list-style: none; padding: 0; margin: 0 0 24px; }
+  .steps li { flex: 1; font-size: 12px; color: var(--ink-3); }
+  .steps li::before { content: ""; display: block; height: 3px; border-radius: 3px; background: var(--line); margin-bottom: 8px; transition: background .2s; }
+  .steps li.done::before, .steps li.on::before { background: var(--brand); }
+  .steps li.on { color: var(--ink); font-weight: 600; }
+
+  .block + .block { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
+  .block h3 { font-size: 15px; font-weight: 700; margin: 0 0 4px; }
+  .block .sub { color: var(--ink-3); font-size: 13px; margin: 0 0 14px; }
+
+  /* 버튼 */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 18px; border-radius: var(--radius-md); border: 1px solid transparent; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background .15s, border-color .15s, color .15s, box-shadow .15s; }
+  .btn-block { width: 100%; }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:hover { background: var(--brand-dark); }
+  .btn-primary:disabled { background: var(--tonal); color: #A8A8A8; cursor: not-allowed; }
+  .btn-line { background: var(--surface); border-color: var(--line-2); color: var(--ink); }
+  .btn-line:hover { border-color: var(--ink-3); }
+  /* 입력칸 옆 보조 버튼(인증번호 받기·중복 확인 등): 입력칸과 같은 높이의 톤 버튼 */
+  .btn-sm { height: 44px; padding: 0 14px; font-size: 13px; white-space: nowrap; background: var(--tonal); border-color: transparent; color: var(--ink); }
+  .btn-sm:hover { background: var(--tonal-hover); border-color: transparent; }
+  .btn-sm:disabled { background: var(--field); color: var(--ok); cursor: default; }
+  .btn-text { background: none; border: 0; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0; font-size: 14px; }
+  .btn-text:hover { color: var(--ink); }
+  .btn:focus-visible, .btn-text:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+  .check input:focus-visible + .box { box-shadow: 0 0 0 3px var(--ring); }
+
+  /* SNS 원형 아이콘: 각 서비스 로고 + 브랜드 색 (카카오 노랑 · 네이버 초록 · 구글 흰 바탕 4색 G) */
+  .sns-row { display: flex; justify-content: center; gap: 36px; }
+  .sns-item { background: none; border: 0; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
+  .sns-circle { width: 50px; height: 50px; border-radius: 50%; display: grid; place-items: center; transition: transform .15s, box-shadow .15s; }
+  .sns-item:hover .sns-circle { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,.12); }
+  .sns-item:focus-visible { outline: none; }
+  .sns-item:focus-visible .sns-circle { box-shadow: 0 0 0 3px var(--ring); }
+  .sns-circle svg { display: block; }
+  .sns-circle.kakao { background: #FEE500; }
+  .sns-circle.naver { background: #03C75A; }
+  .sns-circle.google { background: #fff; border: 1px solid var(--line-2); }
+
+  /* SNS 로그인 화면 (가상). 실서비스에서는 각 SNS의 로그인 창(OAuth)이 열림 */
+  .prov { text-align: center; }
+  .prov .sns-circle { margin: 4px auto 16px; width: 56px; height: 56px; }
+  .prov h3 { font-size: 17px; font-weight: 700; margin: 0 0 4px; }
+  .prov .view-sub { color: var(--ink-3); margin-bottom: 24px; }
+  .prov form { text-align: left; }
+  .prov .field { margin-bottom: 8px; }
+  .prov-req { font-size: 12.5px; color: var(--ink-2); background: var(--field); border-radius: var(--radius-sm); padding: 12px 14px; margin: 14px 0 16px; line-height: 1.6; }
+  .prov-req b { color: var(--ink); font-weight: 600; }
+  .btn-prov { width: 100%; height: 48px; font-weight: 600; }
+  .btn-prov.kakao { background: #FEE500; color: rgba(0,0,0,.85); }
+  .btn-prov.naver { background: #03C75A; color: #fff; }
+  .btn-prov.google { background: #1A73E8; color: #fff; }
+  .mock-tag { display: inline-block; font-size: 11px; font-weight: 600; color: var(--ink-3); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; margin-bottom: 16px; }
+
+  /* 스탑북 회원 로그인 */
+  #viewLogin { padding-top: 20px; }   /* 상단 제목과 입력칸 사이 여백 */
+  #viewLogin .field { margin-bottom: 8px; }
+  .pw-field { position: relative; }
+  .pw-field input { padding-right: 64px; }
+  .pw-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: 0; cursor: pointer; font-size: 12px; color: var(--ink-3); padding: 6px 8px; border-radius: 6px; }
+  .pw-toggle:hover { color: var(--ink); background: var(--tonal); }
+  .login-save { font-size: 13px; color: var(--ink-2); align-items: center; margin: 12px 0 16px; width: fit-content; }
+  .login-save .box { width: 18px; height: 18px; border-radius: 5px; margin-top: 0; }
+  .login-err { font-size: 12.5px; color: var(--danger); background: var(--danger-soft); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 12px; line-height: 1.55; }
+  .login-err small { display: block; color: var(--ink-2); font-size: 12px; margin-top: 2px; }
+  .login-links { display: flex; justify-content: center; align-items: center; gap: 14px; margin: 18px 0 0; font-size: 13px; }
+  .login-links button { background: none; border: 0; padding: 0; cursor: pointer; color: var(--ink-2); }
+  .login-links button:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .login-links span { width: 1px; height: 11px; background: var(--line-2); }
+  #viewLogin .divider { border: 0; border-top: 1px solid var(--line); margin: 24px 0 22px; }
+  /* 모달 첫 화면 하단 텍스트 링크 (snaps 레이어 하단 '이메일 로그인 | 이메일로 가입' 참고) */
+  .auth-links { display: flex; justify-content: center; align-items: center; gap: 14px; margin: 32px 0 0; font-size: 13px; color: var(--line-2); }
+  .auth-links button { background: none; border: 0; padding: 0; cursor: pointer; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+  .auth-links button:hover { color: var(--ink); }
+
+  /* 내 로그인 정보 찾기 · 비밀번호 찾기 */
+  #viewFind { padding-top: 12px; }
+  .find-desc { font-size: 13px; color: var(--ink-3); margin: 0 0 20px; line-height: 1.6; }
+  .find-submit { margin-top: 10px; }
+  .find-head { text-align: center; margin: 4px 0 18px; }
+  .find-head .ico { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 12px; background: var(--brand-soft); color: var(--brand); font-size: 22px; font-weight: 800; }
+  .find-head .ico.none { background: var(--tonal); color: var(--ink-3); }
+  .find-head strong { display: block; font-size: 16px; margin-bottom: 4px; }
+  .find-head p { margin: 0; font-size: 13px; color: var(--ink-2); line-height: 1.6; }
+  .temp-box { margin: 12px 0 0; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px dashed var(--line-2); font-size: 12.5px; color: var(--ink-2); text-align: center; }
+  .temp-box b { display: block; font-size: 17px; letter-spacing: .06em; color: var(--ink); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .cs-box { margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--field); font-size: 12.5px; color: var(--ink-2); text-align: center; line-height: 1.7; }
+  .cs-box b { color: var(--ink); }
+  /* 로그인 방법 배지 (작은 원형 아이콘) */
+  .summary .method { display: inline-flex; align-items: center; gap: 7px; }
+  .sns-circle.mini { width: 22px; height: 22px; flex: none; }
+  .sns-circle.mini svg { width: 12px; height: 12px; }
+  .sns-circle.mini.kakao svg { width: 13px; height: 13px; }
+  .sns-circle.mini.naver svg { width: 9px; height: 9px; }
+  .sns-circle.mini.stopbook { background: var(--brand); color: #fff; font-size: 12px; font-weight: 800; line-height: 1; }
+  .sns-circle.mini.on-btn { background: transparent; border: 0; width: 18px; height: 18px; }   /* SNS 버튼 안 로고 (버튼 색이 서비스 색) */
+  .sns-circle.mini.on-btn svg { width: 16px; height: 16px; }
+  .sns-circle.mini.on-btn.naver svg { width: 12px; height: 12px; }
+  .result-actions { display: flex; gap: 8px; margin-top: 20px; }
+  .result-actions .btn-prov.google { background: #fff; color: #3C4043; border-color: var(--line-2); }   /* 4색 G가 보이도록 흰 버튼 */
+  .result-actions .btn { flex: 1; }
+  .result-actions .btn-line { background: var(--tonal); border-color: transparent; }
+  .result-actions .btn-line:hover { background: var(--tonal-hover); }
+  .btn-later { display: block; margin: 14px auto 0; background: none; border: 0; cursor: pointer; font-size: 13px; color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px; }
+  .btn-later:hover { color: var(--ink); }
+  .util .logout { color: var(--ink-3); margin-left: 8px; font-size: 12px; }
+
+
+  /* 약관 */
+  .check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+  .check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .check .box { flex: none; width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--line-2); background: #fff; display: grid; place-items: center; margin-top: 1px; transition: background .15s, border-color .15s, box-shadow .15s; }
+  .check .box::after { content: ""; width: 9px; height: 5px; border: 2px solid transparent; border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
+  .check input:checked + .box { background: var(--brand); border-color: var(--brand); }
+  .check input:checked + .box::after { border-color: #fff; }
+  .check input:disabled + .box { opacity: .5; }
+  .all-agree { padding: 14px 16px; background: var(--field); border-radius: var(--radius-md); font-weight: 700; font-size: 15px; align-items: center; }
+  .all-agree small { display: block; font-weight: 400; color: var(--ink-3); font-size: 12.5px; margin-top: 2px; line-height: 1.5; }
+  .terms { list-style: none; margin: 12px 0 0; padding: 0 4px; }
+  .terms > li { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 7px 0; font-size: 13.5px; }
+  .terms .tag { font-size: 13px; font-weight: 600; margin-right: 4px; }
+  .terms .tag.req { color: var(--accent1); }
+  .terms .tag.opt { color: var(--ink-3); }
+  .terms .view { flex: none; font-size: 13px; color: var(--ink-3); background: none; border: 0; cursor: pointer; padding: 1px 0; }
+  .terms .view::after { content: " ›"; }
+  .terms .view:hover { color: var(--ink); }
+  .terms > li.channels { display: flex; justify-content: flex-start; gap: 22px; padding: 0 0 4px 30px; flex-wrap: wrap; }
+  .channels .check { font-size: 13px; color: var(--ink-2); align-items: center; }
+  .channels .box { width: 18px; height: 18px; border-radius: 5px; margin-top: 0; }
+  .note { font-size: 12px; color: var(--ink-3); margin: 4px 0 0; line-height: 1.5; }
+  .terms-note { padding: 0 4px 0 30px; }
+
+  /* 입력 폼 */
+  .field { margin-bottom: 18px; }
+  .field > label, .field > .label { display: block; font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 8px; }
+  .field .req { color: var(--accent1); margin-left: 2px; }
+  .field .opt { color: var(--ink-3); font-weight: 400; font-size: 12px; margin-left: 4px; }
+  /* 회원 정보 입력: 항목명(왼쪽) · 입력칸(오른쪽) 한 줄 배치. 안내·오류 문구, 인증번호 칸, 중복 안내는 입력칸 아래 같은 열에 */
+  .form-inline .field { display: grid; grid-template-columns: 92px minmax(0, 1fr); column-gap: 12px; align-items: start; margin-bottom: 14px; }
+  .form-inline .field > label, .form-inline .field > .label { grid-column: 1; margin: 0; min-height: 44px; display: flex; align-items: center; flex-wrap: wrap; line-height: 1.3; }
+  .form-inline .field > :not(label):not(.label) { grid-column: 2; }
+  .form-inline .dev-code { justify-self: start; }
+  .form-inline .field .opt { display: block; width: 100%; margin: 2px 0 0; }
+  .form-inline .section-gap { margin: 4px 0 18px; }
+  .row { display: flex; gap: 8px; }
+  .row > .input-wrap, .row > input { flex: 1; min-width: 0; }
+  input[type=text], input[type=email], input[type=password], input[type=tel] {
+    width: 100%; height: 44px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--radius-md); background: var(--field); outline: none; font-size: 14px; transition: border-color .15s, background .15s, box-shadow .15s;
+  }
+  input::placeholder { color: var(--placeholder); }
+  input:hover { background: var(--field-hover); }
+  input:focus { background: #fff; border-color: var(--brand); box-shadow: 0 0 0 3px var(--ring); }
+  input:read-only { color: var(--ink-2); }
+  input.invalid { background: #fff; border-color: var(--danger); }
+  input.invalid:focus { box-shadow: 0 0 0 3px var(--ring-danger); }
+  .input-wrap { position: relative; }
+  .input-wrap .timer { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--danger); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .msg { font-size: 12.5px; margin: 6px 2px 0; }
+  .msg:empty { display: none; }
+  .msg.err { color: var(--danger); }
+  .msg.ok { color: var(--ok); }
+  .msg.info { color: var(--ink-3); }
+  .dev-code { display: inline-block; font-size: 11.5px; font-weight: 600; color: var(--ink-3); background: var(--field); border-radius: 6px; padding: 3px 8px; margin-top: 8px; }
+  /* 성별: 세그먼트 컨트롤 */
+  .radio-row { display: flex; gap: 4px; padding: 4px; background: var(--field); border-radius: var(--radius-md); }
+  .radio-row label { flex: 1; }
+  .radio-row input { position: absolute; opacity: 0; }
+  .radio-row span { display: flex; align-items: center; justify-content: center; height: 36px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--ink-2); transition: background .15s, box-shadow .15s; }
+  .radio-row input:checked + span { background: #fff; color: var(--ink); font-weight: 600; box-shadow: var(--shadow-raised); }
+  .radio-row input:focus-visible + span { box-shadow: 0 0 0 3px var(--ring); }
+  .section-gap { border: 0; border-top: 1px solid var(--line); margin: 8px 0 22px; }
+  .section-label { font-size: 12px; color: var(--ink-3); font-weight: 600; margin: 0 0 14px; letter-spacing: .02em; }
+
+  /* 이미 가입된 번호 안내: 한 줄 문구 + 작은 버튼 두 개 (좁은 화면에서는 버튼이 아래로 내려감) */
+  .exists { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; background: var(--danger-soft); border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 8px; }
+  .exists strong { font-size: 13px; font-weight: 600; color: var(--danger); }
+  .exists .acts { display: flex; gap: 6px; }
+  .exists .btn { height: 36px; padding: 0 12px; font-size: 12px; font-weight: 600; line-height: 1; border: 1px solid var(--line-2); border-radius: 8px; }   /* 두 버튼 높이 동일 (테두리 포함 36px, 누르기 쉬운 크기) */
+  .exists .btn-primary { border-color: var(--brand); }
+
+  .form-error { background: var(--danger-soft); color: var(--danger); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; margin-bottom: 14px; }
+  .nav-row { display: flex; gap: 8px; margin-top: 24px; }
+  .nav-row .btn-line { flex: 0 0 96px; background: var(--tonal); border-color: transparent; }
+  .nav-row .btn-line:hover { background: var(--tonal-hover); }
+  .nav-row .btn-primary { flex: 1; }
+
+  /* 가입 완료 */
+  .done-head { text-align: center; padding: 8px 0 0; }
+  .done-ico { width: 60px; height: 60px; border-radius: 50%; background: var(--brand-soft); display: grid; place-items: center; margin: 0 auto 16px; }
+  .summary { display: grid; grid-template-columns: 84px 1fr; gap: 0; font-size: 13px; margin: 0; background: var(--field); border-radius: var(--radius-md); padding: 6px 16px; }
+  .summary dt, .summary dd { padding: 9px 0; border-top: 1px solid var(--line); }
+  .summary dt:first-of-type, .summary dd:first-of-type { border-top: 0; }
+  .summary dt { color: var(--ink-3); }
+  .summary dd { margin: 0; font-weight: 600; word-break: break-all; text-align: right; }
+  .gift { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--line); font-size: 13px; }
+  .gift + .gift { margin-top: 8px; }
+  .gift b { color: var(--ink); font-weight: 700; }
+  .gift .g-ico { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--brand-soft); display: grid; place-items: center; font-weight: 800; font-size: 14px; color: var(--brand); }
+  .consent-result { font-size: 12.5px; color: var(--ink-2); background: var(--field); border-radius: var(--radius-md); padding: 14px 16px; margin-top: 12px; line-height: 1.8; }
+
+  /* 약관 레이어 (회원가입 모달 위에 한 겹 더) */
+  .terms-dlg { border: 0; border-radius: var(--radius); padding: 0; width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 64px); box-shadow: 0 30px 80px rgba(0,0,0,.25); color: var(--ink); }
+  .terms-dlg::backdrop { background: rgba(0,0,0,.3); }
+  .dlg-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 14px 24px; }
+  .dlg-head h3 { margin: 0; font-size: 17px; font-weight: 700; }
+  .dlg-close { background: none; border: 0; font-size: 22px; line-height: 1; cursor: pointer; color: var(--ink-2); width: 36px; height: 36px; border-radius: 50%; }
+  .dlg-close:hover { background: var(--tonal); }
+  .dlg-body { padding: 4px 24px 20px; overflow: auto; max-height: calc(100vh - 220px); font-size: 13.5px; color: var(--ink-2); line-height: 1.7; }
+  .dlg-body h4 { color: var(--ink); font-size: 14px; margin: 18px 0 4px; }
+  .dlg-body h4:first-child { margin-top: 0; }
+  .dlg-body p { margin: 0 0 6px; }
+  .dlg-body table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0 12px; }
+  .dlg-body th, .dlg-body td { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px 8px; text-align: left; vertical-align: top; }
+  .dlg-body th { color: var(--ink); font-weight: 600; width: 84px; }
+  .dlg-sample { font-size: 12px; color: var(--ink-3); margin-bottom: 12px; }
+  .dlg-foot { padding: 12px 24px 24px; }
+
+  .toast { z-index: 10; position: fixed; left: 50%; bottom: 32px; transform: translate(-50%, 20px); background: rgba(28,28,28,.95); color: #fff; font-size: 13.5px; padding: 12px 18px; border-radius: var(--radius-md); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100vw - 32px); text-align: center; box-shadow: var(--shadow-pop); }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* 모바일: 모달을 전체 화면으로 */
+  @media (max-width: 560px) {
+    .auth { width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; border-radius: 0; }
+    .auth-body { padding: 4px 20px 28px; }
+    .sns-row { gap: 30px; }
+  }
+  @media (max-width: 480px) {
+    .util-in { flex-wrap: wrap; padding: 10px 16px; }
+    .brand img { width: 96px; }
+    .util ul { gap: 14px; font-size: 12.5px; }
+    /* 아주 좁은 화면: 항목명을 입력칸 위로 */
+    .form-inline .field { grid-template-columns: minmax(0, 1fr); }
+    .form-inline .field > label, .form-inline .field > .label { min-height: 0; margin-bottom: 6px; }
+    .form-inline .field > :not(label):not(.label) { grid-column: 1; }
+    .form-inline .field .opt { display: inline; width: auto; margin-left: 4px; }
+  }
+
+  /* ===== 공통 다듬기: 글자 흐름 · 상호작용 상태 · 접근성 (support·mypage·signup 같은 내용) ===== */
+  body { word-break: keep-all; overflow-wrap: break-word; }   /* 한글은 단어 단위 줄바꿈, 긴 영문·주소는 칸 안에서 줄바꿈 */
+  h1, h2, h3 { letter-spacing: -.02em; }
+  ::selection { background: rgba(46,46,46,.16); color: var(--ink); }
+  /* 키보드 포커스: 브랜드 색 링 하나로 통일 (마우스 클릭에는 표시 안 됨) */
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .btn:focus-visible, .btn-text:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .btn-text { border-radius: 4px; }
+  .check input:focus-visible + .box, .chip-check input:focus-visible + span, .radio-row input:focus-visible + span { box-shadow: var(--focus-ring); }
+  /* 버튼: 누름 · 비활성 (:where로 우선순위를 낮춰 화면별 버튼 색은 그대로) */
+  .btn:where(:active:not(:disabled)) { transform: translateY(1px); }
+  .btn-primary:active:not(:disabled) { background: var(--brand-dark); }
+  .btn-line:where(:hover:not(:disabled)) { background: var(--hover); }
+  .btn-line:disabled { background: var(--field); border-color: var(--line); color: var(--ink-4); cursor: not-allowed; }
+  .btn-sm:where(:active:not(:disabled)) { background: var(--line-2); }
+  input:disabled, select:disabled, textarea:disabled { color: var(--ink-3); cursor: not-allowed; }
+  /* 스크롤 목록: 얇은 따뜻한 회색 스크롤바 */
+  .auth-body, .dlg-body { scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+  /* 움직임 줄이기 설정: 전환·등장 효과 끔 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  }
+
+  /* 회원가입 화면 전용 포커스·상태 */
+  .auth-head button:focus-visible, .dlg-close:focus-visible, .pw-toggle:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .btn-later, .login-links button, .auth-links button, .terms .view { border-radius: 4px; }
+  .btn-later:focus-visible, .login-links button:focus-visible, .auth-links button:focus-visible, .terms .view:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .sns-item:focus-visible .sns-circle { box-shadow: var(--focus-ring); }
+  .pw-toggle { transition: background var(--ease), color var(--ease); }
+  .sns-item:hover { color: var(--ink); }
+  @media (max-width: 480px) {
+    .pw-toggle { min-height: 36px; }   /* 누르기 쉬운 높이 */
+  }
+</style>
+<link rel="stylesheet" href="shop.css?v=20261027-1"><!-- 쇼핑몰 공통: 색·상단·하단·버튼 톤 (popsa 콘셉트) — 이 화면 스타일을 덮어씀 -->
+</head>
+<body>
+<div class="proto-band">PROTOTYPE - 회원가입/로그인<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.18</span></div>
+<div class="util two-row">
+<!-- 1줄: 이용 메뉴 (최상단 오른쪽) / 2줄: 로고 + 대메뉴 — 모든 쇼핑몰 화면 동일 (index.html과 같은 구조) -->
+<div class="util-in util-top">
+  <nav class="util-menu" aria-label="이용 메뉴">
+    <ul>
+      <li id="authMenu"><button type="button" id="openAuth" aria-haspopup="dialog">로그인/회원가입</button></li>
+      <li><button type="button" id="goMypage">마이페이지</button></li>
+      <li><a href="cart.html">장바구니 (<span id="utilCart">0</span>)</a></li>
+      <li><a href="support.html">고객센터</a></li>
+    </ul>
+  </nav>
+</div>
+<div class="util-in">
+  <a class="brand" href="index.html" aria-label="스탑북 메인으로"><img src="images/logo-stopbook.png" alt="STOPBOOK" width="128" height="18"></a>
+  <nav class="gnb" aria-label="상품 메뉴">
+    <ul>
+      <li><a href="#" data-todo="포토북">포토북</a></li>
+      <li><a href="#" data-todo="사진인화">사진인화</a></li>
+      <li><a href="#" data-todo="액자">액자</a></li>
+      <li><a href="#" data-todo="캘린더">캘린더</a></li>
+      <li><a href="#" data-todo="포토굿즈">포토굿즈</a></li>
+      <li><a href="#" data-todo="디자인샵">디자인샵</a></li>
+    </ul>
+    <ul class="gnb-side" aria-label="서비스 메뉴">
+      <li><a href="index.html#agency">편집대행</a></li>
+      <li><a href="#" data-todo="이벤트">이벤트</a></li>
+    </ul>
+  </nav>
+</div>
+</div>
+<main>
+  <p class="below">프로토타입 안내: 우측 상단 <b>로그인/회원가입</b>을 누르면 모달이 열립니다. 샘플 회원은 아이디(예: user001) 또는 이메일(예: user1@example.com)과 비밀번호 <b>0000</b>으로 로그인할 수 있습니다. 휴대폰 인증은 화면에 테스트 인증번호를 표시하며, SNS 로그인 화면은 가상 화면입니다. 회원·비밀번호·접속 기록은 이 브라우저(localStorage)에 저장되어 관리자 화면과 함께 쓰입니다.</p>
+</main>
+
+<!-- ===== 로그인/회원가입 모달 ===== -->
+<dialog class="auth" id="authDlg" aria-labelledby="authTitle">
+  <div class="auth-head">
+    <button type="button" id="authBack" aria-label="이전" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <span class="auth-head-title" id="authHeadTitle"></span>
+    <button type="button" id="authClose" aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="auth-body" id="authBody">
+
+  <ol class="steps" id="steps" aria-label="가입 단계" hidden>
+    <li data-step="info">정보 입력</li>
+    <li data-step="terms">약관 동의</li>
+    <li data-step="done">가입 완료</li>
+  </ol>
+
+  <!-- 첫 화면: SNS 아이콘 + 스탑북 회원 로그인/가입 -->
+  <section class="auth-start" id="viewStart">
+    <h2 class="auth-logo" id="authTitle" tabindex="-1"><img src="images/logo-stopbook.png" alt="STOPBOOK" width="376" height="54"></h2>
+    <div class="auth-main">
+      <button type="button" class="btn btn-primary btn-block" data-login>스탑북 회원 로그인</button>
+      <button type="button" class="btn btn-line btn-block" data-method="stopbook">스탑북 회원 가입</button>
+    </div>
+    <hr class="divider">
+    <div class="sns-row">
+      <button type="button" class="sns-item" data-sns="kakao"><span class="sns-circle kakao"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path fill="#191919" d="M12 3.2C6.6 3.2 2.2 6.6 2.2 10.8c0 2.7 1.8 5.1 4.6 6.4l-1 3.6c-.1.3.3.6.6.4l4.2-2.8c.5.1 1 .1 1.5.1 5.4 0 9.8-3.4 9.8-7.7S17.4 3.2 12 3.2z"/></svg></span>카카오</button>
+      <button type="button" class="sns-item" data-sns="naver"><span class="sns-circle naver"><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path fill="#fff" d="M13.56 10.7 6.17 0H0v20h6.44V9.3L13.83 20H20V0h-6.44z"/></svg></span>네이버</button>
+      <button type="button" class="sns-item" data-sns="google"><span class="sns-circle google"><svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>구글</button>
+    </div>
+    <!-- 비밀번호 찾기는 스탑북 회원만 해당하므로 로그인 화면 하단에만 둠 -->
+    <div class="auth-links">
+      <button type="button" data-find="id">내 로그인 정보 찾기</button>
+    </div>
+  </section>
+
+  <!-- 내 로그인 정보 찾기(PRD_MEM_004) · 비밀번호 찾기(PRD_MEM_005): 이름 + 이메일(비밀번호 찾기는 아이디도 가능) + 휴대폰 번호(인증)가 모두 일치하는 계정
+       비밀번호 찾기는 IA(유저화면목록 ver0.03)대로 임시 비밀번호 없이 본인 확인 뒤 같은 화면에서 새 비밀번호를 바로 설정 -->
+  <section id="viewFind" hidden>
+    <p class="view-sub find-desc" id="findDesc"></p>
+    <form id="findForm" class="form-inline" novalidate>
+      <div class="field">
+        <label for="kName">이름</label>
+        <input type="text" id="kName" maxlength="50" autocomplete="name" placeholder="가입한 이름">
+        <p class="msg" id="mKName" aria-live="polite"></p>
+      </div>
+      <div class="field">
+        <label for="kEmail" id="kEmailLabel">이메일</label>
+        <input type="email" id="kEmail" maxlength="100" autocomplete="email" placeholder="가입한 이메일">
+        <p class="msg" id="mKEmail" aria-live="polite"></p>
+      </div>
+      <div class="field">
+        <label for="kPhone">휴대폰 번호</label>
+        <div class="row">
+          <input type="tel" id="kPhone" maxlength="13" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000">
+          <button type="button" class="btn btn-line btn-sm" id="kSend">인증번호 받기</button>
+        </div>
+        <div class="row" id="kCodeRow" style="margin-top:8px" hidden>
+          <div class="input-wrap"><input type="text" id="kCode" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="인증번호 6자리"><span class="timer" id="kTimer"></span></div>
+          <button type="button" class="btn btn-line btn-sm" id="kCheck">확인</button>
+        </div>
+        <span class="dev-code" id="kDev" hidden></span>
+        <p class="msg" id="mKPhone" aria-live="polite"></p>
+      </div>
+      <!-- 비밀번호 찾기에서만: 새 비밀번호 (규칙은 회원가입·비밀번호 변경과 같음) -->
+      <div id="kPwFields" hidden>
+        <div class="field">
+          <label for="kPw">새 비밀번호</label>
+          <input type="password" id="kPw" maxlength="20" autocomplete="new-password" placeholder="8~20자, 영문·숫자·특수문자 포함">
+          <p class="msg" id="mKPw" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="kPw2">새 비밀번호 확인</label>
+          <input type="password" id="kPw2" maxlength="20" autocomplete="new-password" placeholder="새 비밀번호를 한 번 더 입력해 주세요">
+          <p class="msg" id="mKPw2" aria-live="polite"></p>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block find-submit" id="kSubmit" disabled></button>
+    </form>
+    <div id="findResult" hidden></div>
+  </section>
+
+  <!-- 스탑북 회원 로그인: 이메일(신규 회원) 또는 아이디(기존 회원) + 비밀번호 -->
+  <section id="viewLogin" hidden>
+    <form id="loginForm" novalidate>
+      <div class="field"><input type="text" id="lId" autocomplete="username" placeholder="이메일 또는 아이디" aria-label="이메일 또는 아이디"></div>
+      <div class="field pw-field">
+        <input type="password" id="lPw" autocomplete="current-password" placeholder="비밀번호" aria-label="비밀번호">
+        <button type="button" class="pw-toggle" id="lPwToggle" aria-label="비밀번호 보기" aria-pressed="false">보기</button>
+      </div>
+      <label class="check login-save"><input type="checkbox" id="lSave"><span class="box" aria-hidden="true"></span><span>이메일(아이디) 저장</span></label>
+      <div class="login-err" id="mLogin" role="alert" hidden></div>
+      <button type="submit" class="btn btn-primary btn-block">로그인</button>
+    </form>
+    <div class="login-links">
+      <button type="button" data-find="id">내 로그인 정보 찾기</button>
+      <span aria-hidden="true"></span>
+      <button type="button" data-find="pw">비밀번호 찾기</button>
+      <span aria-hidden="true"></span>
+      <button type="button" data-method="stopbook">회원가입</button>
+    </div>
+    <hr class="divider">
+    <div class="sns-row" id="loginSns"></div>
+  </section>
+
+  <!-- 비밀번호 변경: 관리자가 발급한 임시 비밀번호(필수) · 90일 이상 미변경(요구사항 PRD_MEM_006, 다음에 변경 가능) -->
+  <section id="viewPw" hidden>
+    <h3 class="view-title" id="pwTitle"></h3>
+    <p class="view-sub" id="pwSub"></p>
+    <form id="pwForm" novalidate>
+      <div class="field">
+        <label for="pNew">새 비밀번호</label>
+        <input type="password" id="pNew" maxlength="20" autocomplete="new-password" placeholder="8~20자, 영문·숫자·특수문자 포함">
+        <p class="msg" id="mPNew" aria-live="polite"></p>
+      </div>
+      <div class="field">
+        <label for="pNew2">새 비밀번호 확인</label>
+        <input type="password" id="pNew2" maxlength="20" autocomplete="new-password" placeholder="새 비밀번호를 한 번 더 입력해 주세요">
+        <p class="msg" id="mPNew2" aria-live="polite"></p>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">비밀번호 변경</button>
+      <button type="button" class="btn-later" id="pwLater">다음에 변경하기</button>
+    </form>
+  </section>
+
+  <!-- SNS 로그인 화면 (가상) -->
+  <section class="prov" id="viewSns" hidden>
+    <span class="mock-tag">가상 로그인 화면 · 프로토타입</span>
+    <div id="provLogo"></div>
+    <h3 id="provTitle"></h3>
+    <p class="view-sub" id="provSub"></p>
+    <form id="provForm" novalidate>
+      <div class="field">
+        <input type="text" id="provId" autocomplete="username" aria-label="아이디">
+      </div>
+      <div class="field">
+        <input type="password" id="provPw" autocomplete="current-password" placeholder="비밀번호" aria-label="비밀번호">
+      </div>
+      <p class="msg" id="mProv" aria-live="polite"></p>
+      <div class="prov-req" id="provReq"></div>
+      <button type="submit" class="btn btn-prov" id="provBtn"></button>
+    </form>
+  </section>
+
+  <!-- 2. 약관 동의 -->
+  <section id="viewTerms" hidden>
+    <label class="check all-agree">
+      <input type="checkbox" id="agreeAll"><span class="box" aria-hidden="true"></span>
+      <span>전체 동의<small>선택 항목(마케팅 활용·광고성 정보 수신)을 포함한 모든 약관 동의</small></span>
+    </label>
+    <ul class="terms" id="termsList"></ul>
+    <div class="nav-row">
+      <button type="button" class="btn btn-line" data-back>이전</button>
+      <button type="button" class="btn btn-primary" id="toJoin" disabled>가입하기</button>
+    </div>
+  </section>
+
+  <!-- 3. 정보 입력 -->
+  <section id="viewInfo" hidden>
+    <form id="infoForm" class="form-inline" novalidate>
+      <div class="field">
+        <label for="fName">이름<span class="req">*</span></label>
+        <input type="text" id="fName" maxlength="50" autocomplete="name" placeholder="이름을 입력해 주세요">
+        <p class="msg" id="mName" aria-live="polite"></p>
+      </div>
+
+      <div class="field">
+        <label for="fBirth">생년월일<span class="req" id="birthReq">*</span><span class="opt" id="birthOpt" hidden>(선택)</span></label>
+        <input type="text" id="fBirth" maxlength="10" inputmode="numeric" autocomplete="bday" placeholder="예) 19900101">
+        <p class="msg" id="mBirth" aria-live="polite"></p>
+      </div>
+
+      <div class="field">
+        <label for="fPhone">휴대폰 번호<span class="req">*</span></label>
+        <div class="row">
+          <input type="tel" id="fPhone" maxlength="13" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000">
+          <button type="button" class="btn btn-line btn-sm" id="sendCode">인증번호 받기</button>
+        </div>
+        <div class="row" id="codeRow" style="margin-top:8px" hidden>
+          <div class="input-wrap"><input type="text" id="fCode" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="인증번호 6자리"><span class="timer" id="timer"></span></div>
+          <button type="button" class="btn btn-line btn-sm" id="checkCode">확인</button>
+        </div>
+        <span class="dev-code" id="devCode" hidden></span>
+        <p class="msg" id="mPhone" aria-live="polite"></p>
+        <div class="exists" id="exists" hidden></div>
+      </div>
+
+      <div class="field">
+        <label for="fEmail">이메일<span class="req">*</span></label>
+        <div class="row">
+          <input type="email" id="fEmail" maxlength="100" autocomplete="email" placeholder="example@email.com">
+          <button type="button" class="btn btn-line btn-sm" id="checkEmail">중복 확인</button>
+        </div>
+        <p class="msg" id="mEmail" aria-live="polite"></p>
+        <div class="exists" id="existsEmail" hidden></div>
+      </div>
+
+      <div id="pwFields">
+        <div class="field">
+          <label for="fPw">비밀번호<span class="req">*</span></label>
+          <input type="password" id="fPw" maxlength="20" autocomplete="new-password" placeholder="8~20자, 영문·숫자·특수문자 포함">
+          <p class="msg" id="mPw" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="fPw2">비밀번호 확인<span class="req">*</span></label>
+          <input type="password" id="fPw2" maxlength="20" autocomplete="new-password" placeholder="비밀번호를 한 번 더 입력해 주세요">
+          <p class="msg" id="mPw2" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <hr class="section-gap">
+      <p class="section-label">선택 입력</p>
+      <div class="field">
+        <label for="fNick">닉네임<span class="opt">(선택)</span></label>
+        <input type="text" id="fNick" maxlength="12" placeholder="2~12자">
+        <p class="msg" id="mNick" aria-live="polite"></p>
+      </div>
+      <div class="field">
+        <span class="label" id="genderLabel">성별<span class="opt">(선택)</span></span>
+        <div class="radio-row" role="radiogroup" aria-labelledby="genderLabel">
+          <label><input type="radio" name="fGender" value="여"><span>여성</span></label>
+          <label><input type="radio" name="fGender" value="남"><span>남성</span></label>
+          <label><input type="radio" name="fGender" value="" checked><span>선택 안 함</span></label>
+        </div>
+      </div>
+
+      <div class="form-error" id="formError" role="alert" hidden></div>
+      <div class="nav-row">
+        <button type="button" class="btn btn-line" data-back>이전</button>
+        <button type="submit" class="btn btn-primary">다음</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- 4. 가입 완료 -->
+  <section id="viewDone" hidden>
+    <div class="block">
+      <div class="done-head">
+        <div class="done-ico" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#63302B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3 class="view-title" id="doneTitle"></h3>
+        <p class="view-sub" style="margin:4px 0 22px">가입이 완료되었습니다. 아래 정보로 로그인할 수 있어요.</p>
+      </div>
+      <dl class="summary" id="doneSummary"></dl>
+    </div>
+    <div class="block" id="giftCard">
+      <h3>가입 혜택이 지급되었어요</h3>
+      <p class="sub">마이페이지 &gt; 혜택에서 확인할 수 있습니다.</p>
+      <div id="gifts"></div>
+    </div>
+    <div class="block">
+      <h3>광고성 정보 수신 동의 결과</h3>
+      <div class="consent-result" id="consentResult"></div>
+      <div class="nav-row">
+        <button type="button" class="btn btn-primary btn-block" id="doneClose">스탑북 시작하기</button>
+      </div>
+    </div>
+  </section>
+  </div>
+</dialog>
+
+<dialog class="terms-dlg" id="termsDlg" aria-labelledby="dlgTitle">
+  <div class="dlg-head"><h3 id="dlgTitle"></h3><button type="button" class="dlg-close" aria-label="닫기" data-close>&times;</button></div>
+  <div class="dlg-body" id="dlgBody"></div>
+  <div class="dlg-foot"><button type="button" class="btn btn-primary btn-block" id="dlgAgree">동의하기</button></div>
+</dialog>
+
+<!-- 하단 정보 (index·signup·mypage·support 같은 내용 — 모양은 shop.css, 회사 정보: admin/doc-forms.js SUPPLIER와 같은 값) -->
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <img src="images/logo-stopbook.png" alt="STOPBOOK" width="128" height="18">
+        <p>사진으로 남기는 기록, 포토북·캘린더·사진인화·액자·포토굿즈 제작 서비스</p>
+      </div>
+      <nav aria-labelledby="fProd"><h2 id="fProd">상품</h2><ul>
+        <li><button type="button" data-todo="포토북">포토북</button></li><li><button type="button" data-todo="캘린더">캘린더</button></li><li><button type="button" data-todo="사진인화">사진인화</button></li><li><button type="button" data-todo="액자">액자</button></li><li><button type="button" data-todo="포토굿즈">포토굿즈</button></li>
+      </ul></nav>
+      <nav aria-labelledby="fSvc"><h2 id="fSvc">서비스</h2><ul>
+        <li><a href="index.html#agency">편집대행</a></li><li><button type="button" data-todo="디자인">디자인</button></li><li><button type="button" data-todo="이벤트">이벤트</button></li><li><button type="button" data-todo="대량 구매 할인">대량 구매 할인</button></li><li><a href="mypage.html">마이페이지</a></li>
+      </ul></nav>
+      <nav aria-labelledby="fCs"><h2 id="fCs">고객센터</h2><ul>
+        <li><a href="support.html#faq">FAQ</a></li><li><a href="support.html#inquiry">1:1 문의</a></li><li><a href="support.html#partner">제휴문의</a></li><li><button type="button" data-todo="공지사항">공지사항</button></li>
+      </ul></nav>
+      <div class="cs"><h2>고객행복센터</h2><b class="ft-tel">080-860-1119</b><span class="ft-hours">평일 10:00~17:00 (점심 12:00~13:00)</span><br><span>주말·공휴일 휴무</span></div>
+    </div>
+    <div class="foot-legal">
+      <button type="button" data-todo="이용약관">이용약관</button>
+      <button type="button" data-todo="개인정보처리방침">개인정보처리방침</button>
+      <button type="button" data-todo="회사 소개">회사 소개</button>
+    </div>
+    <p class="foot-info"><span>상호 한국학술정보㈜</span><span>대표 채종준</span><span>사업자등록번호 111-81-26181</span><span>개인정보보호책임자 조동범</span><span>경기도 파주시 회동길 230 (문발동)</span><span>이메일 <span class="ft-mail">stopbook@kstudy.com</span></span></p>
+    <p class="foot-copy">© 2026 STOPBOOK. All rights reserved.</p>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- 회원 유형 설정·회원 데이터·마일리지 유형·메시지 발송 기록을 관리자 화면(admin)과 공유
+     localStorage를 함께 쓰므로 두 폴더를 같은 출처(같은 서버 또는 둘 다 file://)로 열어야 관리자 화면에 가입 회원이 보임
+     TODO: 실서비스에서는 회원 API로 대체 -->
+<script src="../admin/member-type-store.js?v=20261027-2"></script>
+<script src="../admin/mileage-types.js?v=20261026-1"></script>
+<script src="../admin/message-store.js?v=20261026-2"></script>
+<script src="../admin/member-data.js?v=20261027-3"></script>
+<!-- 피드백 입력: 관리자 화면과 같은 구글 시트로 전송 (사이트 = 사용자) -->
+<script src="../admin/feedback.js?v=20261026-1"></script>
+<script>
+(function () {
+  'use strict';
+  // 요구사항 정의서 PRD_MEM_001(일반 회원가입) · PRD_MEM_002(SNS 간편로그인 최초 연동) 기준
+  //   필수: 이름 · 휴대폰 번호(본인 인증 + 중복 확인) · 생년월일(SNS는 선택) · 이메일(중복 확인) · 비밀번호(이메일 가입만)
+  //   휴대폰 번호 또는 이메일이 이미 가입된 회원과 같으면 가입 불가 (기존 다계정 보유자도 추가 가입 불가) → 로그인·계정 찾기 안내
+  //   선택 동의: 마케팅 목적 개인정보 수집·이용 + 광고성 정보 수신(SMS·이메일)
+  //   애플 로그인은 진행하지 않음 (요구사항 메모)
+  // TODO: 실서비스에서는 휴대폰 인증 = 본인인증/문자 발송 API, 간편 가입 = 각 SNS OAuth 콜백, 가입 = POST /api/members
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const MD = window.MemberData;
+  const digits = s => String(s || '').replace(/\D/g, '');
+
+  // 가입유형 이름은 관리자 > 회원 유형 관리 > 가입유형의 현재 이름 사용 (코드 기준)
+  const TYPE_FALLBACK = { stopbook: '스탑북회원', kakao: '카카오회원', naver: '네이버회원', google: '구글회원' };
+  const typeName = code => {
+    try {
+      const g = MemberTypeStore.load().find(x => x.key === 'memberType');
+      const it = g && g.items.find(x => x.code === code);
+      if (it) return it.name;
+    } catch (e) { /* 기본 이름 */ }
+    return TYPE_FALLBACK[code];
+  };
+  const METHOD_LABEL = { stopbook: '스탑북 회원 가입', kakao: '카카오로 가입', naver: '네이버로 가입', google: '구글로 가입' };
+  const SNS_LABEL = { kakao: '카카오', naver: '네이버', google: '구글' };
+
+  // 간편 가입: SNS가 넘겨주는 가상 계정 정보 (카카오는 이름을 받지 못하는 경우를 가정)
+  // TODO: 실서비스에서는 OAuth 응답(이름·이메일)으로 채움
+  function snsProfile(method) {
+    const n = Math.floor(100 + Math.random() * 900);
+    return {
+      kakao: { name: '', email: `stopbook.kakao${n}@kakao.com` },
+      naver: { name: '홍길동', email: `gildong${n}@naver.com` },
+      google: { name: 'Gildong Hong', email: `gildong.hong${n}@gmail.com` }
+    }[method];
+  }
+
+  const state = { view: 'start', method: 'stopbook', sns: null, phoneVerified: '', emailChecked: '', code: '', expireAt: 0, tries: 0, timerId: 0 };
+  const isSns = () => state.method !== 'stopbook';
+
+  // ===== 모달 화면 전환 =====
+  //   start(SNS 아이콘·스탑북 회원 로그인/가입) → [SNS] sns(해당 SNS 로그인 화면) → terms(약관 동의) → info(정보 입력) → done(가입 완료)
+  //   start → login(스탑북 회원 로그인) → [임시 비밀번호·90일 경과] pw(비밀번호 변경)
+  //   start·login → find(내 로그인 정보 찾기 / 비밀번호 찾기)
+  const VIEWS = { start: 'viewStart', login: 'viewLogin', pw: 'viewPw', find: 'viewFind', sns: 'viewSns', terms: 'viewTerms', info: 'viewInfo', done: 'viewDone' };
+  const HEAD_TITLE = { login: '스탑북 회원 로그인', pw: '비밀번호 변경' };
+  const STEP_ORDER = ['info', 'terms', 'done'];
+  function go(view) {
+    state.view = view;
+    Object.entries(VIEWS).forEach(([k, id]) => { $(id).hidden = k !== view; });
+    const si = STEP_ORDER.indexOf(view);
+    $('steps').hidden = si < 0;
+    document.querySelectorAll('#steps li').forEach((li, i) => {
+      li.classList.toggle('on', i === si);
+      li.classList.toggle('done', i < si);
+      if (i === si) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+    });
+    $('authBack').hidden = !['login', 'find', 'sns', 'terms', 'info'].includes(view);
+    if (view === 'info' || view === 'terms') armBackGuard();
+    // 상단 가운데 제목: 가입 단계에서는 가입 방법(스탑북 회원 가입 / 카카오로 가입 …), 로그인·비밀번호 변경·찾기는 화면 이름
+    const findTitle = state.findMode === 'pw' ? '비밀번호 찾기' : '내 로그인 정보 찾기';
+    $('authHeadTitle').textContent = si >= 0 ? METHOD_LABEL[state.method] : view === 'find' ? findTitle : (HEAD_TITLE[view] || '');
+    $('authBody').scrollTop = 0;
+  }
+  function back() {
+    // 가입 단계: 정보 입력 → 약관 동의 → 가입 완료
+    if (state.view === 'terms') go('info');
+    else if (state.view === 'info') go(isSns() ? 'sns' : state.from === 'login' ? 'login' : 'start');
+    else if (state.view === 'sns') go(state.from === 'login' ? 'login' : 'start');
+    else if (state.view === 'find') { stopFindTimer(); go(state.findFrom === 'login' ? 'login' : 'start'); }
+    else go('start');
+  }
+  $('authBack').addEventListener('click', back);
+  document.querySelectorAll('[data-back]').forEach(b => b.addEventListener('click', back));
+
+  const authDlg = $('authDlg');
+  function openAuth() {
+    stopTimer();
+    state.from = 'start';
+    go('start');
+    authDlg.showModal();
+    $('authTitle').focus();   // 처음 포커스는 제목에 (닫기 버튼에 포커스 테두리가 생기지 않게)
+  }
+  // 가입 입력 보호: 정보 입력·약관 동의 중에 Esc·닫기(×)·모바일 뒤로가기로 모달이 닫히면 입력과 휴대폰 인증이 모두 사라지므로 한 번 확인
+  //   뒤로가기: 가입 단계에 들어가면 기록(history)을 하나 쌓아 두고, 뒤로가기를 누르면 모달 안에서 한 단계 뒤로(약관 → 정보 입력) 또는 확인 후 닫기
+  const inSignup = () => authDlg.open && ['info', 'terms'].includes(state.view);
+  const signupDirty = () => !!state.phoneVerified || ['fName', 'fPhone', 'fEmail', 'fBirth', 'fPw', 'fNick'].some(id => $(id).value.trim());
+  const LEAVE_MSG = '회원가입을 그만두시겠습니까?\n입력한 정보와 휴대폰 인증이 모두 사라집니다.';
+  const okToLeave = () => !inSignup() || !signupDirty() || confirm(LEAVE_MSG);
+  let backGuard = false;
+  const armBackGuard = () => { if (backGuard) return; try { history.pushState({ signupGuard: 1 }, ''); backGuard = true; } catch (e) { /* file:// 등 기록 불가 */ } };
+  window.addEventListener('popstate', () => {
+    if (!backGuard) return;
+    backGuard = false;
+    if (!inSignup()) return;
+    if (state.view === 'terms') { go('info'); armBackGuard(); return; }
+    if (!okToLeave()) { armBackGuard(); return; }
+    authDlg.close();
+  });
+  authDlg.addEventListener('cancel', e => { if (!okToLeave()) e.preventDefault(); });   // Esc
+  $('authClose').addEventListener('click', () => { if (okToLeave()) authDlg.close(); });
+  authDlg.addEventListener('close', () => {
+    if (backGuard) { backGuard = false; try { history.back(); } catch (e) { /* 무시 */ } }   // 쌓아 둔 기록 정리
+    stopTimer(); stopFindTimer();
+    try { sessionStorage.removeItem('stopbook.afterLogin'); } catch (e) { /* 무시 */ }   // 로그인하지 않고 닫으면 마이페이지 이동 취소 (로그인 완료 시에는 completeLogin이 먼저 읽음)
+  });
+  // 가입 완료 닫기: 마이페이지 등에서 회원가입하러 온 경우 그 화면으로 돌아감 (submit에서 state.next에 보관)
+  $('doneClose').addEventListener('click', () => {
+    const next = state.next;
+    state.next = '';
+    if (next) { backGuard = false; authDlg.close(); location.href = next; return; }
+    authDlg.close();
+  });
+
+  // ===== 로그인 상태 (상단 유틸 메뉴: 로그인/회원가입 ↔ OOO님 · 로그아웃) =====
+  // 새로고침해도 유지되도록 sessionStorage에 회원 번호 보관 (브라우저 탭을 닫으면 로그아웃)
+  // TODO: 실서비스에서는 서버 세션·토큰
+  const SESSION_KEY = 'stopbook.session';
+  const loginEnv = () => (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'MO' : 'PC');
+  function signedIn(m) {
+    $('authMenu').innerHTML = `<span class="me">${esc(m.name)}님</span> <button type="button" id="logoutBtn" class="logout">로그아웃</button>`;
+    $('utilCart').textContent = (m.cart || []).length;   // 상단 [장바구니 (n)] (cart.html)
+    try { sessionStorage.setItem(SESSION_KEY, String(m.no)); } catch (e) { /* 저장 불가 시 이 화면에서만 로그인 */ }
+  }
+  function logout() {
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* 무시 */ }
+    $('authMenu').innerHTML = '<button type="button" id="openAuth" aria-haspopup="dialog">로그인/회원가입</button>';
+    $('utilCart').textContent = 0;
+    toast('로그아웃되었습니다.');
+  }
+  // 로그인 완료: 상단 표시 · 모달 닫기 · 최근 접속 기록 (관리자 회원 목록의 최근접속일에 반영)
+  function completeLogin(m, msg) {
+    signedIn(m);
+    authDlg.close();
+    toast(msg || `${m.name}님, 반갑습니다.`);
+    // 마이페이지에서 로그인하러 온 경우: 로그인 후 그 화면으로 돌아감
+    let next = '';
+    try { next = sessionStorage.getItem(AFTER_LOGIN_KEY) || ''; sessionStorage.removeItem(AFTER_LOGIN_KEY); } catch (e) { /* 무시 */ }
+    if (/^[\w-]+\.html$/.test(next)) setTimeout(() => { location.href = next; }, 600);
+  }
+  // 마이페이지: 로그인하지 않았으면 마이페이지에서 로그인 모달을 띄움
+  const AFTER_LOGIN_KEY = 'stopbook.afterLogin';
+  $('goMypage').addEventListener('click', () => { location.href = 'mypage.html'; });
+  document.addEventListener('click', e => {
+    if (e.target.closest('#openAuth')) openAuth();
+    else if (e.target.closest('#logoutBtn')) logout();
+    const lb = e.target.closest('[data-login]');
+    if (lb) openLogin(lb.dataset.login || '');
+    const fb = e.target.closest('[data-find]');
+    if (fb) openFind(fb.dataset.find, fb.dataset.email || '');
+    const sb = e.target.closest('[data-sns-go]');   // 찾기 결과의 '카카오로 로그인' 등 → 해당 SNS 로그인 화면
+    if (sb) document.querySelector(`#viewStart [data-sns="${sb.dataset.snsGo}"]`).click();
+  });
+
+  // 토스트는 열린 모달 안에 붙여야 모달 위에 보임 (dialog는 최상위 레이어)
+  let toastTimer;
+  function toast(msg) {
+    const t = $('toast');
+    ([...document.querySelectorAll('dialog[open]')].pop() || document.body).appendChild(t);
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+  // 이번 범위 밖 화면 (로그인·계정 찾기·쇼핑몰 메인)
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-todo]');
+    if (!b) return;
+    e.preventDefault();
+    toast(`프로토타입: ${b.dataset.todo} 화면은 준비 중입니다.`);
+  });
+
+  // ===== 가입 시작 =====
+  function startSignup(method, profile) {
+    state.method = method;
+    state.sns = profile || null;
+    resetTerms();
+    resetForm();
+    go('info');   // 가입 단계: 정보 입력 → 약관 동의 → 가입 완료
+  }
+  // 스탑북 회원 가입 (이메일·비밀번호)
+  document.querySelectorAll('[data-method]').forEach(b => b.addEventListener('click', () => {
+    state.from = state.view === 'login' ? 'login' : 'start';   // 약관 화면에서 '이전'을 누르면 돌아갈 곳
+    startSignup(b.dataset.method);
+  }));
+
+  // ===== SNS 로그인 화면 (가상) =====
+  // SNS 아이콘을 누르면 해당 SNS의 로그인 화면이 먼저 나옴 → 로그인하면
+  //   이미 그 SNS로 가입한 회원(같은 이메일·같은 가입유형): 바로 로그인 / 처음이면: 약관 동의 → 정보 입력으로 가입 진행
+  // TODO: 실서비스에서는 각 SNS OAuth 로그인 창을 열고, 콜백으로 받은 SNS 식별값으로 가입 여부를 확인
+  const PROV = {
+    kakao: { title: '카카오계정으로 로그인', sub: '스탑북에서 카카오계정으로 로그인합니다.', idPh: '카카오메일 아이디, 이메일, 전화번호', btn: '로그인', domain: 'kakao.com' },
+    naver: { title: '네이버 아이디로 로그인', sub: '네이버 아이디로 스탑북에 로그인합니다.', idPh: '아이디 또는 전화번호', btn: '로그인', domain: 'naver.com' },
+    google: { title: 'Google 계정으로 로그인', sub: 'Stopbook(으)로 이동', idPh: '이메일 또는 휴대전화', btn: '로그인', domain: 'gmail.com' }
+  };
+  $('loginSns').innerHTML = document.querySelector('#viewStart .sns-row').innerHTML;   // 로그인 화면에도 같은 SNS 아이콘
+  document.querySelectorAll('[data-sns]').forEach(b => b.addEventListener('click', () => {
+    const code = b.dataset.sns, p = PROV[code];
+    state.method = code;
+    state.from = state.view === 'login' ? 'login' : 'start';   // SNS 화면에서 '이전'을 누르면 돌아갈 곳
+    $('provLogo').innerHTML = b.querySelector('.sns-circle').outerHTML;
+    $('provTitle').textContent = p.title;
+    $('provSub').textContent = p.sub;
+    $('provId').placeholder = p.idPh;
+    $('provId').value = ''; $('provPw').value = '';
+    setMsg('mProv', '');
+    $('provReq').innerHTML = `<b>스탑북</b>이 ${esc(SNS_LABEL[code])} 계정의 <b>이름, 이메일</b> 정보 제공을 요청합니다. 로그인하면 정보 제공에 동의한 것으로 처리됩니다.`;
+    $('provBtn').className = `btn btn-prov ${code}`;
+    $('provBtn').textContent = p.btn;
+    go('sns');
+    $('provId').focus();
+  }));
+  $('provForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const id = $('provId').value.trim(), pw = $('provPw').value;
+    if (!id || !pw) { setMsg('mProv', '아이디와 비밀번호를 입력해 주세요.'); return; }
+    const code = state.method, mock = snsProfile(code);
+    // SNS가 넘겨주는 이메일: 이메일로 로그인했으면 그 주소, 아니면 SNS 기본 메일 주소
+    const email = id.includes('@') ? id : /^\d+$/.test(digits(id)) && digits(id).length >= 10 ? mock.email : `${id}@${PROV[code].domain}`;
+    // 가입 여부: SNS 계정 식별값으로 찾음 (가입 때 이메일을 바꾼 회원 포함). 식별값이 없는 예전 회원은 같은 이메일·같은 가입유형
+    const known = MD.findSnsMember(code, email, typeName(code));
+    if (known) {
+      MD.Auth.recordLogin(known.no, loginEnv());
+      completeLogin(known, `${known.name}님, ${SNS_LABEL[code]} 계정으로 로그인되었습니다.`);
+      return;
+    }
+    // 같은 이메일이 다른 방법(이메일 로그인·다른 SNS)으로 가입되어 있으면 새로 가입시키지 않고 그 방법으로 로그인 안내
+    //   (SNS 로그인으로 이메일 주인임이 확인됐으므로 가입 방법을 알려도 됨)
+    const other = MD.findDuplicate({ email });
+    if (other) {
+      const om = other.member, oc = snsCodeOf(om);
+      $('mProv').className = 'msg err';
+      $('mProv').innerHTML = oc
+        ? `이 이메일은 <b>${esc(SNS_LABEL[oc])}</b> 계정으로 가입되어 있습니다.<br><button type="button" class="btn btn-line btn-sm" data-sns-go="${oc}">${esc(SNS_LABEL[oc])}로 로그인</button>`
+        : `이 이메일은 <b>스탑북 회원(이메일 로그인)</b>으로 가입되어 있습니다.<br><button type="button" class="btn btn-line btn-sm" data-login="${esc(email)}">이메일로 로그인</button> <button type="button" class="btn btn-line btn-sm" data-find="pw" data-email="${esc(email)}">비밀번호 찾기</button>`;
+      return;
+    }
+    startSignup(code, { name: mock.name, email });
+    toast(`${SNS_LABEL[code]} 로그인 완료 · 처음 오셨네요! 스탑북 가입을 진행합니다.`);
+  });
+
+  // ===== 스탑북 회원 로그인 =====
+  // 요구사항 PRD_MEM_001: 신규 회원은 이메일, 기존 회원은 아이디 또는 이메일 + 비밀번호로 로그인
+  // 회원 정보·비밀번호는 관리자와 같은 저장소(MemberData.Auth) 사용
+  //   관리자 회원 상세에서 패스워드 변경 → 새 비밀번호로 로그인 / 초기화 → 임시 비밀번호로 로그인 후 변경 필수
+  //   5회 연속 실패 시 10분 제한(관리자가 해제 가능) · 로그인하면 최근접속일·접속 기기 갱신
+  const SAVED_ID_KEY = 'stopbook.savedLoginId';
+  const A = MD.Auth;
+  function openLogin(prefill) {
+    let saved = '';
+    try { saved = localStorage.getItem(SAVED_ID_KEY) || ''; } catch (e) { /* 저장 불가 */ }
+    $('lId').value = prefill || saved;
+    $('lSave').checked = !!saved;
+    $('lPw').value = '';
+    $('lPw').type = 'password'; $('lPwToggle').textContent = '보기'; $('lPwToggle').setAttribute('aria-pressed', 'false');
+    $('mLogin').hidden = true;
+    ['lId', 'lPw'].forEach(id => markInvalid(id, false));
+    if (!authDlg.open) { authDlg.showModal(); }
+    state.from = 'start';
+    go('login');
+    ($('lId').value ? $('lPw') : $('lId')).focus();
+  }
+  $('lPwToggle').addEventListener('click', () => {
+    const show = $('lPw').type === 'password';
+    $('lPw').type = show ? 'text' : 'password';
+    $('lPwToggle').textContent = show ? '숨기기' : '보기';
+    $('lPwToggle').setAttribute('aria-pressed', String(show));
+  });
+  const loginError = html => { $('mLogin').innerHTML = html; $('mLogin').hidden = false; };
+  $('loginForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const id = $('lId').value.trim(), pw = $('lPw').value;
+    markInvalid('lId', !id); markInvalid('lPw', !!id && !pw);
+    if (!id) { loginError('이메일 또는 아이디를 입력해 주세요.'); $('lId').focus(); return; }
+    if (!pw) { loginError('비밀번호를 입력해 주세요.'); $('lPw').focus(); return; }
+    const res = A.login(id, pw, loginEnv());
+    if (res.error === 'locked') {
+      markInvalid('lPw', true);
+      loginError(`비밀번호를 ${A.LOCK_FAILS}회 잘못 입력해 <b>${esc(res.until.slice(11))}</b>까지 로그인이 제한됩니다.<small>비밀번호가 기억나지 않으면 비밀번호 찾기에서 새 비밀번호를 설정해 주세요.</small>`);
+      return;
+    }
+    if (res.error) {
+      // 없는 계정·간편 로그인 계정·비밀번호 틀림을 구분하지 않음 (가입 여부 노출 방지)
+      //   틀린 횟수는 있는 계정에만 생기므로 표시하지 않음 (횟수가 보이면 가입 여부가 드러남). 대신 제한 규칙을 함께 안내
+      markInvalid('lPw', true);
+      loginError(`이메일(아이디) 또는 비밀번호가 맞지 않습니다.<small>비밀번호를 ${A.LOCK_FAILS}회 연속 잘못 입력하면 ${A.LOCK_MINUTES}분간 로그인이 제한됩니다. 카카오·네이버·구글로 가입하셨다면 아래 간편 로그인을 이용해 주세요.</small>`);
+      $('lPw').select();
+      return;
+    }
+    try { if ($('lSave').checked) localStorage.setItem(SAVED_ID_KEY, id); else localStorage.removeItem(SAVED_ID_KEY); } catch (err) { /* 저장 불가 */ }
+    if (res.change) { openPwChange(res.member, res.change, res.changedAt); return; }
+    completeLogin(res.member);
+  });
+  ['lId', 'lPw'].forEach(id => $(id).addEventListener('input', () => { markInvalid(id, false); }));
+
+  // ===== 비밀번호 변경 (임시 비밀번호 로그인 · 90일 이상 미변경) =====
+  // 비밀번호 규칙은 회원가입·관리자 패스워드 변경과 같음 + 현재 비밀번호와 같으면 안 됨
+  const pwRuleError = (pw, idText) => {
+    const local = String(idText || '').split('@')[0].toLowerCase();
+    if (!pw) return '비밀번호를 입력해 주세요.';
+    if (/\s/.test(pw)) return '비밀번호에 공백을 넣을 수 없습니다.';
+    if (!/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,20}$/.test(pw)) return '8~20자, 영문·숫자·특수문자를 모두 포함해 주세요.';
+    if (local.length >= 4 && pw.toLowerCase().includes(local)) return '비밀번호에 아이디(이메일 앞부분)를 포함할 수 없습니다.';
+    return '';
+  };
+  function openPwChange(m, kind, changedAt) {
+    state.pwMember = m;
+    state.pwKind = kind;
+    const temp = kind === 'temp';
+    $('pwTitle').textContent = temp ? '새 비밀번호를 설정해 주세요' : '비밀번호를 변경해 주세요';
+    $('pwSub').textContent = temp
+      ? '임시 비밀번호로 로그인하셨습니다. 안전을 위해 새 비밀번호로 변경한 뒤 이용해 주세요.'
+      : `비밀번호를 변경한 지 ${A.PW_EXPIRE_DAYS}일이 지났습니다${changedAt ? ` (최근 변경 ${String(changedAt).slice(0, 10)})` : ''}. 개인정보 보호를 위해 비밀번호를 변경해 주세요.`;
+    $('pwLater').hidden = temp;   // 임시 비밀번호는 반드시 변경
+    $('pwLater').textContent = `다음에 변경하기 (${A.PW_SNOOZE_DAYS}일 뒤 다시 안내)`;
+    ['pNew', 'pNew2'].forEach(id => { $(id).value = ''; markInvalid(id, false); });
+    setMsg('mPNew', ''); setMsg('mPNew2', '');
+    go('pw');
+    $('pNew').focus();
+  }
+  $('pwForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const m = state.pwMember, pw = $('pNew').value, pw2 = $('pNew2').value;
+    let err = pwRuleError(pw, m.userId.includes('@') ? m.userId : m.email);
+    if (!err && m.userId && !m.userId.includes('@') && pw.toLowerCase().includes(m.userId.toLowerCase())) err = '비밀번호에 아이디를 포함할 수 없습니다.';
+    if (!err && A.isSamePassword(m.no, pw)) err = state.pwKind === 'temp' ? '임시 비밀번호와 다른 비밀번호를 입력해 주세요.' : '현재 비밀번호와 다른 비밀번호를 입력해 주세요.';
+    setMsg('mPNew', err); markInvalid('pNew', err);
+    const err2 = err ? '' : (!pw2 ? '새 비밀번호를 한 번 더 입력해 주세요.' : pw2 !== pw ? '비밀번호가 일치하지 않습니다.' : '');
+    setMsg('mPNew2', err2); markInvalid('pNew2', err2);
+    if (err || err2) { (err ? $('pNew') : $('pNew2')).focus(); return; }
+    A.setPassword(m.no, pw, { by: '회원', content: '패스워드 변경 (회원)' });
+    completeLogin(m, '비밀번호가 변경되었습니다. 로그인되었습니다.');
+  });
+  $('pwLater').addEventListener('click', () => {
+    const m = state.pwMember;
+    A.snoozePassword(m.no);
+    completeLogin(m);
+  });
+
+  // ===== 내 로그인 정보 찾기 · 비밀번호 찾기 =====
+  // 요구사항 PRD_MEM_004: 휴대폰 번호와 이메일이 모두 맞는 계정의 로그인 정보를 찾음 (기존 아이디 찾기 대체)
+  //   정보가 하나라도 맞지 않아 찾지 못하면 고객센터로 안내 (어느 항목이 틀렸는지는 알려주지 않음)
+  // 비밀번호 찾기 (IA 유저화면목록 ver0.03 · 요구사항 PRD_MEM_005): 이름·이메일(또는 아이디)·휴대폰 인증이 모두 맞으면 임시 비밀번호 없이
+  //   같은 화면에서 새 비밀번호를 바로 설정 (로그인 전 단계라 휴대폰 인증 필수). 새 비밀번호는 관리자와 같은 저장소에 저장 → 관리자 회원 상세·변경 히스토리에도 표시
+  //   재설정 안내 문자 기록은 관리자 메시지 발송 내역(SMS)에 남김. 임시 비밀번호는 관리자 회원 상세의 패스워드 초기화에서만 발급
+  // TODO: 실서비스에서는 인증·조회·재설정을 서버에서 처리 (인증 토큰으로 재설정 요청 검증, SMS/알림톡 중 안내 수단 확정 필요)
+  const CS_TEXT = '고객센터 <b>080-860-1119</b> · 평일 10:00~17:00';
+  const fk = { code: '', expireAt: 0, tries: 0, timerId: 0, verified: '' };
+  function stopFindTimer() { clearInterval(fk.timerId); fk.timerId = 0; if ($('kTimer')) $('kTimer').textContent = ''; }
+  function openFind(mode, email) {
+    if (state.view !== 'find') state.findFrom = state.view === 'login' ? 'login' : 'start';   // 결과 화면의 '다시 입력'은 처음 들어온 곳 유지
+    state.findMode = mode;
+    stopFindTimer();
+    Object.assign(fk, { code: '', tries: 0, verified: '', member: null });
+    const pw = mode === 'pw';
+    // 비밀번호 찾기는 이메일 대신 아이디(기존 회원)로도 찾을 수 있음
+    $('kEmailLabel').textContent = pw ? '이메일·아이디' : '이메일';   // 라벨 칸 너비에 맞춰 짧게 ('이메일 또는 아이디'는 두 줄로 꺾임)
+    $('kEmail').type = pw ? 'text' : 'email';
+    $('kEmail').placeholder = pw ? '가입한 이메일 또는 아이디' : '가입한 이메일';
+    $('kEmail').value = email || ($('lId') && state.view === 'login' && (pw || $('lId').value.includes('@')) ? $('lId').value.trim() : '');
+    $('kName').value = ''; $('kPhone').value = ''; $('kCode').value = ''; $('kPw').value = ''; $('kPw2').value = '';
+    ['kName', 'kEmail', 'kPhone', 'kCode', 'kPw', 'kPw2'].forEach(id => markInvalid(id, false));
+    ['mKName', 'mKEmail', 'mKPhone', 'mKPw', 'mKPw2'].forEach(id => setMsg(id, ''));
+    $('kCodeRow').hidden = true; $('kDev').hidden = true;
+    $('kSend').textContent = '인증번호 받기'; $('kSend').disabled = false;
+    $('kPwFields').hidden = true;   // 비밀번호 찾기: 휴대폰 인증 후 가입 여부가 확인되면 새 비밀번호 칸을 보여 줌
+    $('kSubmit').disabled = true;
+    $('kSubmit').textContent = pw ? '비밀번호 재설정하기' : '로그인 정보 찾기';
+    $('findDesc').textContent = pw
+      ? '가입한 이름, 이메일(또는 아이디), 휴대폰 번호를 입력하고 휴대폰 인증을 해 주세요. 본인 확인이 끝나면 새 비밀번호를 바로 설정할 수 있습니다.'
+      : '가입한 이름, 이메일, 휴대폰 번호를 입력하고 휴대폰 인증을 해 주세요. 정보가 모두 일치하는 계정의 로그인 방법을 알려 드립니다.';
+    $('findForm').hidden = false; $('findDesc').hidden = false; $('findResult').hidden = true;
+    if (!authDlg.open) authDlg.showModal();
+    go('find');
+    $('kName').focus();
+  }
+  function findTick() {
+    const left = Math.max(0, Math.round((fk.expireAt - Date.now()) / 1000));
+    $('kTimer').textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    if (!left) { stopFindTimer(); fk.code = ''; setMsg('mKPhone', '인증 시간이 지났습니다. 인증번호를 다시 받아 주세요.'); }
+  }
+  $('kPhone').addEventListener('input', e => {
+    e.target.value = fmtPhone(e.target.value);
+    markInvalid('kPhone', false);
+    if (fk.verified && digits(e.target.value) !== fk.verified) resetFindConfirm('휴대폰 번호가 바뀌어 다시 인증해야 합니다.');   // 인증 후 번호를 바꾸면 다시 인증
+  });
+  // 인증·본인 확인 뒤 입력값을 고치면 처음부터 다시 (확인한 계정과 입력이 어긋나지 않게)
+  function resetFindConfirm(msg) {
+    if (!fk.verified && !fk.member) return;
+    Object.assign(fk, { verified: '', member: null });
+    $('kPwFields').hidden = true; $('kSubmit').disabled = true;
+    $('kSend').textContent = '인증번호 받기'; $('kSend').disabled = false;
+    setMsg('mKPhone', msg, 'info');
+  }
+  $('kEmail').addEventListener('input', () => { markInvalid('kEmail', false); setMsg('mKEmail', ''); resetFindConfirm('입력 정보가 바뀌어 휴대폰 인증을 다시 해 주세요.'); });
+  ['kPw', 'kPw2'].forEach(id => $(id).addEventListener('input', () => { markInvalid(id, false); setMsg(id === 'kPw' ? 'mKPw' : 'mKPw2', ''); }));
+  $('kName').addEventListener('input', () => { markInvalid('kName', false); setMsg('mKName', ''); resetFindConfirm('입력 정보가 바뀌어 휴대폰 인증을 다시 해 주세요.'); });
+  $('kCode').addEventListener('input', e => { e.target.value = digits(e.target.value).slice(0, 6); });
+  // 이름·이메일(아이디) 입력 검사 (인증번호 받기 전·찾기 전 공통). 반환: 통과 여부
+  function checkFindInputs() {
+    const pwMode = state.findMode === 'pw';
+    const key = $('kEmail').value.trim(), name = $('kName').value.trim();
+    if (!name) { setMsg('mKName', '이름을 입력해 주세요.'); markInvalid('kName', true); $('kName').focus(); return false; }
+    if (pwMode ? !key : !validEmail(key)) { setMsg('mKEmail', pwMode ? '이메일 또는 아이디를 입력해 주세요.' : '이메일 주소를 정확히 입력해 주세요.'); markInvalid('kEmail', true); $('kEmail').focus(); return false; }
+    return true;
+  }
+  // 입력한 이름 + 이메일(비밀번호 찾기는 아이디도) + 인증한 휴대폰 번호가 모두 맞는 계정 (이름은 띄어쓰기·영문 대소문자 무시)
+  function findMember() {
+    const pwMode = state.findMode === 'pw';
+    const key = $('kEmail').value.trim().toLowerCase(), name = $('kName').value.replace(/\s+/g, '').toLowerCase();
+    return MD.members.find(x => !x.withdrawn && String(x.name).replace(/\s+/g, '').toLowerCase() === name && digits(x.phone) === fk.verified
+      && (String(x.email).toLowerCase() === key || (pwMode && String(x.userId).toLowerCase() === key))) || null;
+  }
+  const showFindResult = () => { $('findForm').hidden = true; $('findDesc').hidden = true; $('findResult').hidden = false; $('authBody').scrollTop = 0; };
+  // 비밀번호 찾기: 휴대폰 인증이 끝나면 비밀번호를 입력하기 전에 가입 여부부터 확인
+  //   못 찾음 → 바로 '찾지 못함' 안내 / SNS 계정 → 비밀번호 없음 안내 / 스탑북 회원 → 새 비밀번호 칸을 열어 줌
+  function confirmAccount() {
+    const m = findMember(), sns = m && snsCodeOf(m);
+    if (!m) { showFindResult(); renderFindNone(); return; }
+    if (sns) { showFindResult(); renderLoginInfo(m, sns); return; }
+    fk.member = m;
+    $('kPwFields').hidden = false; $('kSubmit').disabled = false;
+    setMsg('mKPhone', '본인 확인이 완료되었습니다. 아래에 새 비밀번호를 입력해 주세요.', 'ok');
+    $('kPw').focus();
+  }
+  $('kSend').addEventListener('click', () => {
+    if (state.findMode === 'pw' && !checkFindInputs()) return;   // 인증 뒤 바로 가입 여부를 확인하므로 이름·이메일을 먼저 받음
+    if (!validPhone($('kPhone').value)) { setMsg('mKPhone', '휴대폰 번호를 정확히 입력해 주세요.'); markInvalid('kPhone', true); return; }
+    Object.assign(fk, { code: String(Math.floor(100000 + Math.random() * 900000)), tries: 0, verified: '', expireAt: Date.now() + 180000 });
+    $('kCodeRow').hidden = false; $('kCode').value = ''; $('kCode').focus();
+    $('kDev').hidden = false; $('kDev').textContent = `테스트 인증번호: ${fk.code}`;
+    $('kSend').textContent = '다시 받기';
+    setMsg('mKPhone', '인증번호를 보냈습니다. 3분 안에 입력해 주세요.', 'info');
+    stopFindTimer(); findTick(); fk.timerId = setInterval(findTick, 1000);
+  });
+  const verifyFindCode = () => {
+    if (!fk.code) { setMsg('mKPhone', '인증번호를 먼저 받아 주세요.'); return; }
+    if ($('kCode').value !== fk.code) {
+      fk.tries += 1;
+      if (fk.tries >= 5) { stopFindTimer(); fk.code = ''; setMsg('mKPhone', '인증번호를 5회 틀렸습니다. 인증번호를 다시 받아 주세요.'); return; }
+      setMsg('mKPhone', `인증번호가 맞지 않습니다. (${fk.tries}/5)`); return;
+    }
+    stopFindTimer(); fk.code = '';
+    fk.verified = digits($('kPhone').value);
+    $('kCodeRow').hidden = true; $('kDev').hidden = true;
+    $('kSend').textContent = '인증 완료'; $('kSend').disabled = true;
+    setMsg('mKPhone', '휴대폰 번호 인증이 완료되었습니다.', 'ok');
+    if (state.findMode === 'pw') { confirmAccount(); return; }
+    $('kSubmit').disabled = false;
+  };
+  $('kCheck').addEventListener('click', verifyFindCode);
+  $('kCode').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); verifyFindCode(); } });
+
+  const maskPhone = p => String(p).replace(/^(\d{3})-?\d{3,4}-?(\d{4})$/, '$1-****-$2');
+  const snsCodeOf = m => (Object.keys(TYPE_FALLBACK).find(c => c !== 'stopbook' && typeName(c) === m.memberType) || '');
+
+  $('findForm').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!checkFindInputs()) return;
+    if (!fk.verified) { setMsg('mKPhone', '휴대폰 번호 인증을 완료해 주세요.'); markInvalid('kPhone', true); return; }
+    // 비밀번호 찾기: 인증 직후 확인한 계정(fk.member)에 새 비밀번호 설정
+    if (state.findMode === 'pw') {
+      const m = fk.member;
+      if (!m) { confirmAccount(); return; }
+      const pw = $('kPw').value;
+      let err = pwRuleError(pw, m.userId.includes('@') ? m.userId : m.email);
+      if (!err && m.userId && !m.userId.includes('@') && pw.toLowerCase().includes(m.userId.toLowerCase())) err = '비밀번호에 아이디를 포함할 수 없습니다.';
+      if (!err && A.isSamePassword(m.no, pw)) err = '이전 비밀번호와 다른 비밀번호를 입력해 주세요.';
+      setMsg('mKPw', err); markInvalid('kPw', err);
+      const err2 = err ? '' : (!$('kPw2').value ? '새 비밀번호를 한 번 더 입력해 주세요.' : $('kPw2').value !== pw ? '비밀번호가 일치하지 않습니다.' : '');
+      setMsg('mKPw2', err2); markInvalid('kPw2', err2);
+      if (err || err2) { (err ? $('kPw') : $('kPw2')).focus(); return; }
+      showFindResult();
+      renderPwReset(m, pw);
+      return;
+    }
+    // 로그인 정보 찾기
+    const m = findMember();
+    showFindResult();
+    if (!m) renderFindNone(); else renderLoginInfo(m, snsCodeOf(m));
+  });
+  // 찾지 못함: 어느 정보가 틀렸는지 알려주지 않고 고객센터 안내
+  function renderFindNone() {
+    $('findResult').innerHTML = `
+      <div class="find-head"><div class="ico none" aria-hidden="true">?</div>
+        <strong>일치하는 계정을 찾지 못했습니다</strong>
+        <p>입력한 이름, 이메일, 휴대폰 번호가 모두 일치하는 계정이 없습니다.<br>정보가 기억나지 않으면 고객센터로 문의해 주세요.</p></div>
+      <div class="cs-box">${CS_TEXT}</div>
+      <div class="result-actions"><button type="button" class="btn btn-line" data-find="${state.findMode}">다시 입력</button><a class="btn btn-primary" href="support.html#inquiry">1:1 문의하기</a></div>`;
+  }
+  // 로그인 방법 배지: SNS = 해당 서비스 원형 로고(첫 화면 아이콘과 같은 모양) / 스탑북 = S
+  const snsIcon = code => {
+    const c = document.querySelector(`#viewStart [data-sns="${code}"] .sns-circle`);
+    return c ? c.outerHTML.replace('class="sns-circle', 'class="sns-circle mini').replace('<span', '<span aria-hidden="true"') : '';
+  };
+  const methodBadge = sns => (sns ? snsIcon(sns) : '<span class="sns-circle mini stopbook" aria-hidden="true">S</span>');
+  // 로그인 정보: 본인 인증을 마쳤으므로 로그인 방법을 그대로 보여 줌
+  function renderLoginInfo(m, sns) {
+    const method = `<span class="method">${methodBadge(sns)}${esc(sns ? `${SNS_LABEL[sns]} 간편 로그인` : '스탑북 회원 (이메일·아이디)')}</span>`;
+    const rows = sns
+      ? [['로그인 방법', method, true], ['이메일', m.email], ['가입일', m.joinDate]]
+      : [['로그인 방법', method, true], ['이메일', m.email]].concat(m.userId && m.userId.toLowerCase() !== m.email.toLowerCase() ? [['아이디', m.userId]] : []).concat([['가입일', m.joinDate]]);
+    const head = state.findMode === 'pw' && sns
+      ? `<strong>${esc(SNS_LABEL[sns])} 간편 로그인 계정입니다</strong><p>간편 로그인 계정은 비밀번호가 없습니다.<br>${esc(SNS_LABEL[sns])}로 로그인해 주세요.</p>`
+      : `<strong>고객님의 로그인 정보입니다</strong><p>${sns ? `${esc(SNS_LABEL[sns])} 계정으로 로그인해 주세요.` : '이메일 또는 아이디와 비밀번호로 로그인해 주세요.'}</p>`;
+    $('findResult').innerHTML = `
+      <div class="find-head"><div class="ico" aria-hidden="true">✓</div>${head}</div>
+      <dl class="summary">${rows.map(([k, v, html]) => `<dt>${esc(k)}</dt><dd>${html ? v : esc(v)}</dd>`).join('')}</dl>
+      <div class="result-actions">${sns
+        ? `<button type="button" class="btn btn-prov ${sns}" data-sns-go="${sns}">${snsIcon(sns).replace('sns-circle mini', 'sns-circle mini on-btn')}${esc(SNS_LABEL[sns])}로 로그인</button>`
+        : `<button type="button" class="btn btn-line" data-find="pw" data-email="${esc(m.email)}">비밀번호 찾기</button><button type="button" class="btn btn-primary" data-login="${esc(m.email)}">로그인하기</button>`}</div>`;
+  }
+  // 비밀번호 재설정 → 저장(관리자와 공유, 변경 히스토리) · 재설정 안내 문자 기록 (본인이 아닌 사람이 바꿨을 때 알아챌 수 있게)
+  function renderPwReset(m, pw) {
+    A.setPassword(m.no, pw, { by: '회원', content: '비밀번호 재설정 (비밀번호 찾기 · 휴대폰 인증)' });
+    if (window.MessageStore) MessageStore.addLog({ channel: 'sms', templateId: '', templateName: '비밀번호 재설정 안내', ad: false, count: 1, success: 1, fail: 0, reserveAt: '', by: '시스템', recipients: [{ memberNo: m.no, to: m.phone, ok: true }],
+      sample: `[스탑북] ${m.name}님의 비밀번호가 재설정되었습니다. 본인이 아니라면 고객센터(080-860-1119)로 알려 주세요.` });
+    $('findResult').innerHTML = `
+      <div class="find-head"><div class="ico" aria-hidden="true">✓</div>
+        <strong>비밀번호가 재설정되었습니다</strong>
+        <p>새 비밀번호로 로그인해 주세요.<br>${esc(maskPhone(m.phone))}(으)로 재설정 안내 문자를 보냈습니다.</p></div>
+      <div class="result-actions"><button type="button" class="btn btn-primary" data-login="${esc(m.email)}">로그인하기</button></div>`;
+  }
+
+  // ===== 2. 약관 동의 =====
+  // 약관 문구는 샘플. TODO: 실서비스에서는 법무 검토를 거친 약관(버전 관리)을 조회하고, 동의 시 약관 버전을 함께 저장
+  const SAMPLE = '<p class="dlg-sample">샘플 문구입니다. 실제 약관은 법무 검토 후 확정해 주세요.</p>';
+  const privacyItems = () => isSns()
+    ? `${SNS_LABEL[state.method]} 계정 식별값, 이름, 이메일, 휴대폰 번호 (생년월일은 입력한 경우)`
+    : '이메일(로그인 아이디), 비밀번호, 이름, 생년월일, 휴대폰 번호';
+  const TERMS = [
+    { key: 'tos', label: '서비스 이용약관 동의', required: true, body: () => `${SAMPLE}
+      <h4>제1조 (목적)</h4><p>이 약관은 스탑북(이하 "회사")이 제공하는 포토북·캘린더·액자 등 주문 제작 서비스의 이용 조건과 절차, 회사와 회원의 권리·의무를 정합니다.</p>
+      <h4>제2조 (회원가입)</h4><p>회원가입은 이용자가 약관에 동의하고 회사가 정한 정보를 입력한 뒤 휴대폰 번호 인증을 마치면 완료됩니다. 휴대폰 번호 또는 이메일이 이미 가입된 회원과 같으면 가입할 수 없습니다.</p>
+      <h4>제3조 (주문 제작 상품)</h4><p>회원이 편집한 작업물로 제작하는 상품은 제작이 시작된 뒤에는 단순 변심에 의한 취소·반품이 제한됩니다.</p>
+      <h4>제4조 (회원 탈퇴)</h4><p>회원은 언제든지 마이페이지에서 탈퇴할 수 있습니다. 탈퇴 후 일정 기간 같은 정보로 다시 가입하는 것이 제한될 수 있습니다.</p>` },
+    { key: 'privacy', label: '개인정보 수집·이용 동의', required: true, body: () => `${SAMPLE}
+      <table><tr><th>수집 항목</th><td>${esc(privacyItems())}</td></tr>
+      <tr><th>이용 목적</th><td>회원 식별·가입 의사 확인, 중복 가입 방지, 주문·제작·배송, 고객 상담, 서비스 공지</td></tr>
+      <tr><th>보유 기간</th><td>회원 탈퇴 시까지. 단, 관계 법령에 따라 보관이 필요한 정보는 해당 기간 동안 보관</td></tr></table>
+      <p>동의를 거부할 수 있으나, 거부하면 회원가입을 할 수 없습니다.</p>` },
+    { key: 'age14', label: '만 14세 이상입니다', required: true },
+    { key: 'marketingUse', label: '마케팅 목적 개인정보 수집·이용 동의', required: false, body: () => `${SAMPLE}
+      <table><tr><th>수집 항목</th><td>이름, 휴대폰 번호, 이메일, 생년월일, 성별, 구매 내역</td></tr>
+      <tr><th>이용 목적</th><td>신상품·이벤트 안내, 맞춤 혜택(쿠폰·마일리지) 제공, 생일 축하 혜택</td></tr>
+      <tr><th>보유 기간</th><td>회원 탈퇴 또는 동의 철회 시까지</td></tr></table>
+      <p>동의하지 않아도 회원가입과 서비스 이용에는 제한이 없습니다.</p>` },
+    { key: 'ad', label: '광고성 정보 수신 동의', required: false, body: () => `${SAMPLE}
+      <p>스탑북의 신상품·할인·이벤트 등 광고성 정보를 아래에서 선택한 방법으로 받습니다.</p>
+      <table><tr><th>수신 방법</th><td>SMS(문자), 이메일</td></tr>
+      <tr><th>보유 기간</th><td>회원 탈퇴 또는 수신 거부 시까지</td></tr></table>
+      <p>광고성 정보는 마케팅 목적 개인정보 수집·이용에 동의한 경우에만 보내며, 수신 동의 여부는 마이페이지에서 언제든지 바꿀 수 있습니다. 동의하지 않아도 주문·배송 등 거래 안내는 받을 수 있습니다.</p>`,
+      channels: [['adSms', 'SMS'], ['adEmail', '이메일']] }
+  ];
+  const ALL_KEYS = TERMS.flatMap(t => t.channels ? t.channels.map(c => c[0]) : [t.key]);
+
+  $('termsList').innerHTML = TERMS.map(t => `
+    <li>
+      <label class="check"><input type="checkbox" id="t_${t.key}" data-term="${t.key}"><span class="box" aria-hidden="true"></span>
+        <span><span class="tag ${t.required ? 'req' : 'opt'}">[${t.required ? '필수' : '선택'}]</span>${esc(t.label)}</span></label>
+      ${t.body ? `<button type="button" class="view" data-view="${t.key}" aria-label="${esc(t.label)} 내용 보기">보기</button>` : ''}
+    </li>
+    ${t.channels ? `<li class="channels" role="group" aria-label="광고성 정보 수신 방법">${t.channels.map(([k, l]) => `
+      <label class="check"><input type="checkbox" id="t_${k}" data-channel="${k}"><span class="box" aria-hidden="true"></span><span>${l}</span></label>`).join('')}</li>
+      <li class="note terms-note">광고성 정보 수신은 마케팅 목적 개인정보 수집·이용 동의와 함께 선택됩니다.</li>` : ''}`).join('');
+
+  const chk = key => $('t_' + key);
+  const channelBoxes = () => [...document.querySelectorAll('[data-channel]')];
+
+  function syncTerms() {
+    const chs = channelBoxes(), on = chs.filter(c => c.checked).length;
+    chk('ad').checked = on > 0;
+    chk('ad').indeterminate = on > 0 && on < chs.length;
+    const all = ALL_KEYS.every(k => chk(k).checked) && chk('age14').checked && chk('tos').checked && chk('privacy').checked && chk('marketingUse').checked;
+    $('agreeAll').checked = all;
+    $('agreeAll').indeterminate = !all && document.querySelectorAll('#termsList input:checked').length > 0;
+    $('toJoin').disabled = !TERMS.filter(t => t.required).every(t => chk(t.key).checked);
+  }
+
+  $('termsList').addEventListener('change', e => {
+    const el = e.target;
+    if (el.dataset.term === 'ad') {
+      channelBoxes().forEach(c => { c.checked = el.checked; });
+      if (el.checked) chk('marketingUse').checked = true;
+    } else if (el.dataset.channel) {
+      if (el.checked) chk('marketingUse').checked = true;
+    } else if (el.dataset.term === 'marketingUse' && !el.checked) {
+      channelBoxes().forEach(c => { c.checked = false; });   // 마케팅 활용 동의 없이 광고 수신만 받지 않음
+    }
+    syncTerms();
+  });
+  $('agreeAll').addEventListener('change', e => {
+    document.querySelectorAll('#termsList input[type=checkbox]').forEach(c => { c.checked = e.target.checked; });
+    syncTerms();
+  });
+  function resetTerms() {
+    document.querySelectorAll('#viewTerms input[type=checkbox]').forEach(c => { c.checked = false; c.indeterminate = false; });
+    syncTerms();
+  }
+
+  // 약관 레이어 (보기 → 동의하기 누르면 해당 항목 동의)
+  let dlgKey = '';
+  const dlg = $('termsDlg');
+  $('termsList').addEventListener('click', e => {
+    const b = e.target.closest('[data-view]');
+    if (!b) return;
+    const t = TERMS.find(x => x.key === b.dataset.view);
+    dlgKey = t.key;
+    $('dlgTitle').textContent = t.label;
+    $('dlgBody').innerHTML = t.body();
+    $('dlgBody').scrollTop = 0;
+    dlg.showModal();
+  });
+  dlg.addEventListener('click', e => { if (e.target === dlg || e.target.closest('[data-close]')) dlg.close(); });
+  $('dlgAgree').addEventListener('click', () => {
+    const el = chk(dlgKey);
+    if (!el.checked) { el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
+    dlg.close();
+  });
+
+  $('toJoin').addEventListener('click', () => { if (!$('toJoin').disabled) submit(); });   // 약관 동의 후 가입 처리
+
+  // ===== 3. 정보 입력 =====
+  const setMsg = (id, text, kind) => { const m = $(id); m.textContent = text || ''; m.className = 'msg' + (text ? ' ' + (kind || 'err') : ''); };
+  const markInvalid = (inputId, bad) => { $(inputId).classList.toggle('invalid', !!bad); if (bad) $(inputId).setAttribute('aria-invalid', 'true'); else $(inputId).removeAttribute('aria-invalid'); };
+
+  function resetForm() {
+    $('infoForm').reset();
+    stopTimer();
+    Object.assign(state, { phoneVerified: '', emailChecked: '', code: '', tries: 0 });
+    ['mName', 'mPhone', 'mBirth', 'mEmail', 'mPw', 'mPw2', 'mNick'].forEach(id => setMsg(id, ''));
+    document.querySelectorAll('#infoForm input').forEach(i => { i.classList.remove('invalid'); i.removeAttribute('aria-invalid'); i.readOnly = false; });
+    $('codeRow').hidden = true; $('devCode').hidden = true; $('exists').hidden = true; $('existsEmail').hidden = true; $('formError').hidden = true;
+    $('sendCode').textContent = '인증번호 받기'; $('sendCode').disabled = false;
+    const sns = isSns();
+    $('pwFields').hidden = sns;
+    $('birthReq').hidden = sns; $('birthOpt').hidden = !sns;
+    if (sns && state.sns) {
+      $('fName').value = state.sns.name;
+      $('fEmail').value = state.sns.email;
+      if (state.sns.email) setMsg('mEmail', `${SNS_LABEL[state.method]} 계정의 이메일을 불러왔습니다. 중복 확인을 해 주세요.`, 'info');
+    }
+  }
+
+  // --- 이름 ---
+  const checkName = () => {
+    const v = $('fName').value.trim();
+    // 한글 2~20자 또는 영문 2~50자. 영문 이름은 띄어쓰기·하이픈·아포스트로피·마침표 허용 (예: Mary-Jane O'Neil Jr.)
+    const ko = /[가-힣]/.test(v);
+    const err = !v ? '이름을 입력해 주세요.'
+      : !/^[가-힣a-zA-Z]+([ '’\-.]+[가-힣a-zA-Z]+)*\.?$/.test(v) || v.length < 2 || v.length > (ko ? 20 : 50) ? '이름은 한글 2~20자 또는 영문 2~50자로 입력해 주세요.' : '';
+    setMsg('mName', err); markInvalid('fName', err);
+    return !err;
+  };
+  $('fName').addEventListener('blur', checkName);
+
+  // --- 휴대폰 인증 ---
+  const fmtPhone = v => { const d = digits(v).slice(0, 11); return d.length < 4 ? d : d.length < 8 ? `${d.slice(0, 3)}-${d.slice(3)}` : `${d.slice(0, 3)}-${d.slice(3, d.length - 4)}-${d.slice(-4)}`; };
+  const validPhone = v => /^01[016789]\d{7,8}$/.test(digits(v));
+  $('fPhone').addEventListener('input', e => {
+    e.target.value = fmtPhone(e.target.value);
+    if (state.phoneVerified && digits(e.target.value) !== state.phoneVerified) {   // 인증 후 번호를 바꾸면 다시 인증
+      state.phoneVerified = '';
+      $('exists').hidden = true;
+      setMsg('mPhone', '휴대폰 번호가 바뀌어 다시 인증해야 합니다.', 'info');
+    }
+  });
+
+  function stopTimer() { clearInterval(state.timerId); state.timerId = 0; $('timer').textContent = ''; }
+  function tick() {
+    const left = Math.max(0, Math.round((state.expireAt - Date.now()) / 1000));
+    $('timer').textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    if (!left) { stopTimer(); state.code = ''; setMsg('mPhone', '인증 시간이 지났습니다. 인증번호를 다시 받아 주세요.'); }
+  }
+
+  $('sendCode').addEventListener('click', () => {
+    if (!validPhone($('fPhone').value)) { setMsg('mPhone', '휴대폰 번호를 정확히 입력해 주세요.'); markInvalid('fPhone', true); return; }
+    markInvalid('fPhone', false);
+    $('exists').hidden = true;
+    state.phoneVerified = '';
+    state.code = String(Math.floor(100000 + Math.random() * 900000));
+    state.tries = 0;
+    state.expireAt = Date.now() + 180000;   // 3분
+    $('codeRow').hidden = false;
+    $('fCode').value = '';
+    $('fCode').focus();
+    $('devCode').hidden = false;
+    $('devCode').textContent = `테스트 인증번호: ${state.code}`;
+    $('sendCode').textContent = '다시 받기';
+    setMsg('mPhone', '인증번호를 보냈습니다. 3분 안에 입력해 주세요.', 'info');
+    stopTimer(); tick(); state.timerId = setInterval(tick, 1000);
+  });
+
+  $('checkCode').addEventListener('click', verifyCode);
+  $('fCode').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); verifyCode(); } });
+  $('fCode').addEventListener('input', e => { e.target.value = digits(e.target.value).slice(0, 6); });
+  function verifyCode() {
+    if (!state.code) { setMsg('mPhone', '인증번호를 먼저 받아 주세요.'); return; }
+    if ($('fCode').value !== state.code) {
+      state.tries += 1;
+      if (state.tries >= 5) { stopTimer(); state.code = ''; setMsg('mPhone', '인증번호를 5회 틀렸습니다. 인증번호를 다시 받아 주세요.'); return; }
+      setMsg('mPhone', `인증번호가 맞지 않습니다. (${state.tries}/5)`); return;
+    }
+    stopTimer();
+    state.code = '';
+    $('codeRow').hidden = true; $('devCode').hidden = true;
+    // 인증을 마친 뒤에 가입 여부를 확인 (본인 확인 전에는 가입 여부를 알려주지 않음)
+    const dup = MD.findDuplicate({ phone: $('fPhone').value });
+    if (dup) { showExists('휴대폰 번호'); setMsg('mPhone', ''); return; }
+    // 탈퇴 후 재가입 제한 기간 (회원 유형 관리 > 탈퇴회원 설정)
+    const block = MD.rejoinBlock && MD.rejoinBlock({ phone: $('fPhone').value });
+    if (block) { setMsg('mPhone', `탈퇴한 휴대폰 번호입니다. 재가입 제한 기간이 끝나는 ${block.until}부터 다시 가입할 수 있습니다.`); return; }
+    state.phoneVerified = digits($('fPhone').value);
+    $('sendCode').textContent = '인증 완료'; $('sendCode').disabled = true;
+    setMsg('mPhone', '휴대폰 번호 인증이 완료되었습니다.', 'ok');
+  }
+  // 인증 완료 후 번호를 고치면 다시 인증할 수 있게
+  $('fPhone').addEventListener('input', () => { if (!state.phoneVerified) { $('sendCode').disabled = false; if ($('sendCode').textContent === '인증 완료') $('sendCode').textContent = '인증번호 받기'; } });
+
+  // 이미 가입된 계정 안내: 개인정보 유출을 막기 위해 기존 계정 정보(이름·로그인 아이디·가입일 등)는 보여주지 않고 가입 여부만 알림
+  //   계정 확인은 로그인·로그인 정보 찾기(본인 인증)에서 (스탑북은 이메일·SNS 로그인이라 '아이디/비밀번호 찾기' 대신 '로그인 정보 찾기') 하도록 안내
+  //   휴대폰 번호(id=exists)·이메일(id=existsEmail) 중복에 같은 안내를 씀
+  function showExists(by, boxId = 'exists') {
+    $(boxId).innerHTML = `<strong>이미 가입된 ${esc(by)}입니다.</strong>
+      <span class="acts"><button type="button" class="btn btn-primary" data-login="${boxId === 'existsEmail' ? esc($('fEmail').value.trim()) : ''}">로그인</button><button type="button" class="btn btn-line" data-find="id">로그인 정보 찾기</button></span>`;
+    $(boxId).hidden = false;
+  }
+
+  // --- 생년월일 (YYYYMMDD 입력 → YYYY-MM-DD) ---
+  $('fBirth').addEventListener('input', e => {
+    const d = digits(e.target.value).slice(0, 8);
+    e.target.value = d.length > 6 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}` : d.length > 4 ? `${d.slice(0, 4)}-${d.slice(4)}` : d;
+  });
+  function checkBirth() {
+    const v = $('fBirth').value;
+    let err = '';
+    if (!v) err = isSns() ? '' : '생년월일을 입력해 주세요.';
+    else {
+      const [y, mo, d] = v.split('-').map(Number);
+      const dt = new Date(y, mo - 1, d);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d || y < 1900) err = '생년월일 8자리를 정확히 입력해 주세요. 예) 19900101';
+      else if (dt > new Date()) err = '오늘 이후 날짜는 입력할 수 없습니다.';
+      else if (MD.ageOf(v) < 14) err = '만 14세 미만은 가입할 수 없습니다.';
+    }
+    setMsg('mBirth', err); markInvalid('fBirth', err);
+    return !err;
+  }
+  $('fBirth').addEventListener('blur', checkBirth);
+
+  // --- 이메일 중복 확인 ---
+  const validEmail = v => /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(v);
+  $('fEmail').addEventListener('input', () => {
+    if (!$('existsEmail').hidden) { $('existsEmail').hidden = true; markInvalid('fEmail', false); }   // 이메일을 고치면 중복 안내 닫기
+    if (state.emailChecked && $('fEmail').value.trim().toLowerCase() !== state.emailChecked) { state.emailChecked = ''; setMsg('mEmail', '이메일이 바뀌어 다시 중복 확인이 필요합니다.', 'info'); }
+  });
+  $('checkEmail').addEventListener('click', checkEmailDup);
+  // Enter: 폼 전체를 제출하지 않고 그 칸의 동작만 (휴대폰 = 인증번호 받기, 이메일 = 중복 확인)
+  $('fEmail').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); checkEmailDup(); } });
+  $('fPhone').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (!$('sendCode').disabled) $('sendCode').click(); } });
+  function checkEmailDup() {
+    const v = $('fEmail').value.trim();
+    $('existsEmail').hidden = true;
+    if (!validEmail(v)) { setMsg('mEmail', '이메일 주소를 정확히 입력해 주세요.'); markInvalid('fEmail', true); return false; }
+    // 본인 확인(휴대폰 인증) 전에는 가입 여부를 알려주지 않음 (남의 이메일로 가입 여부·탈퇴 여부를 알아내지 못하게)
+    if (!state.phoneVerified) { setMsg('mEmail', '휴대폰 번호 인증을 먼저 완료해 주세요. 본인 확인 후 이메일 중복 여부를 확인합니다.'); $('fPhone').focus(); return false; }
+    const dup = MD.findDuplicate({ email: v });
+    if (dup) { state.emailChecked = ''; setMsg('mEmail', ''); showExists('이메일', 'existsEmail'); markInvalid('fEmail', true); return false; }
+    // 재가입 제한: 이메일 주인이 본인이라는 보장이 없으므로 탈퇴일·제한 기간은 알리지 않음
+    const block = MD.rejoinBlock && MD.rejoinBlock({ email: v });
+    if (block) { state.emailChecked = ''; setMsg('mEmail', '지금은 이 이메일로 가입할 수 없습니다. 다른 이메일을 입력하거나 고객센터로 문의해 주세요.'); markInvalid('fEmail', true); return false; }
+    state.emailChecked = v.toLowerCase();
+    markInvalid('fEmail', false);
+    setMsg('mEmail', '사용할 수 있는 이메일입니다.', 'ok');
+    return true;
+  }
+
+  // --- 비밀번호 (관리자 회원 상세의 비밀번호 규칙과 같음: 8~20자, 영문·숫자·특수문자 포함, 공백 불가, 아이디(이메일 앞부분) 포함 불가) ---
+  function checkPw() {
+    if (isSns()) return true;
+    const pw = $('fPw').value, local = $('fEmail').value.trim().split('@')[0].toLowerCase();
+    let err = '';
+    if (!pw) err = '비밀번호를 입력해 주세요.';
+    else if (/\s/.test(pw)) err = '비밀번호에 공백을 넣을 수 없습니다.';
+    else if (!/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,20}$/.test(pw)) err = '8~20자, 영문·숫자·특수문자를 모두 포함해 주세요.';
+    else if (local.length >= 4 && pw.toLowerCase().includes(local)) err = '비밀번호에 이메일 아이디를 포함할 수 없습니다.';
+    setMsg('mPw', err || '사용할 수 있는 비밀번호입니다.', err ? 'err' : 'ok'); markInvalid('fPw', err);
+    return !err;
+  }
+  function checkPw2() {
+    if (isSns()) return true;
+    const pw2 = $('fPw2').value;
+    const err = !pw2 ? '비밀번호를 한 번 더 입력해 주세요.' : pw2 !== $('fPw').value ? '비밀번호가 일치하지 않습니다.' : '';
+    setMsg('mPw2', err || '비밀번호가 일치합니다.', err ? 'err' : 'ok'); markInvalid('fPw2', err);
+    return !err;
+  }
+  $('fPw').addEventListener('blur', checkPw);
+  $('fPw2').addEventListener('blur', checkPw2);
+
+  // --- 닉네임 (선택) ---
+  function checkNick() {
+    const v = $('fNick').value.trim();
+    const err = v && !/^[가-힣a-zA-Z0-9]{2,12}$/.test(v) ? '닉네임은 한글·영문·숫자 2~12자로 입력해 주세요.' : '';
+    setMsg('mNick', err); markInvalid('fNick', err);
+    return !err;
+  }
+  $('fNick').addEventListener('blur', checkNick);
+
+  // ===== 가입 =====
+  $('infoForm').addEventListener('submit', e => {
+    e.preventDefault();
+    $('formError').hidden = true;
+    const results = [checkName(), checkBirth(), checkPw(), checkPw2(), checkNick()];
+    if (!state.phoneVerified) { if (!$('exists').hidden) results.push(false); else { setMsg('mPhone', '휴대폰 번호 인증을 완료해 주세요.'); markInvalid('fPhone', true); results.push(false); } }
+    if (!state.emailChecked || state.emailChecked !== $('fEmail').value.trim().toLowerCase()) {
+      if (!$('existsEmail').hidden) markInvalid('fEmail', true);   // 이미 가입된 이메일 안내가 떠 있으면 그대로 둠
+      else if (validEmail($('fEmail').value.trim())) { setMsg('mEmail', '이메일 중복 확인을 해 주세요.'); markInvalid('fEmail', true); }
+      else { setMsg('mEmail', '이메일 주소를 정확히 입력해 주세요.'); markInvalid('fEmail', true); }
+      results.push(false);
+    }
+    if (results.includes(false)) {
+      const first = document.querySelector('#infoForm .invalid') || $('fPhone');
+      first.focus();
+      return;
+    }
+    go('terms');   // 정보 입력 완료 → 약관 동의
+  });
+
+  function submit() {
+    const now = new Date(), at = MD.fmtDateTime(now);
+    const email = $('fEmail').value.trim();
+    const agreed = k => chk(k).checked;
+    const marketingUse = agreed('marketingUse');
+    const ad = k => (marketingUse && agreed(k) ? 'Y' : 'N');
+    const consents = { at, items: TERMS.flatMap(t => (t.channels
+      ? t.channels.map(([k, l]) => ({ key: k, label: `${t.label} (${l})`, required: false, agreed: ad(k) === 'Y' }))
+      : [{ key: t.key, label: t.label, required: t.required, agreed: agreed(t.key) }])) };
+
+    // 가입 혜택: 마일리지 유형 관리에서 '회원가입 완료' 조건으로 적용 중인 정액 유형 + 신규가입 쿠폰
+    const mileage = (window.MileageTypes ? MileageTypes.list() : [])
+      .filter(t => t.condition === '회원가입 완료' && MileageTypes.statusOf(t) === '적용 중' && ['신규 가입 회원', '전체 회원'].includes(t.target) && t.method === 'fixed')
+      .map(t => ({ at, type: '적립', item: '', reason: t.name, by: '시스템', delta: t.amount, source: 'system' }));
+    const coupon = MD.COUPONS.includes('신규가입 10% 할인')
+      ? [{ at, type: '발급', item: '신규가입 10% 할인', reason: '회원가입 자동 발급', by: '시스템', delta: 1 }] : [];
+
+    const adText = [['adSms', 'SMS'], ['adEmail', '이메일']].filter(([k]) => ad(k) === 'Y').map(([, l]) => l);
+    const history = [{ at, content: `약관 동의: 서비스 이용약관·개인정보 수집·이용·만 14세 이상(필수)${marketingUse ? ', 마케팅 목적 개인정보 수집·이용' : ''}${adText.length ? `, 광고성 정보 수신(${adText.join('·')})` : ''}`, by: '회원' }]
+      .concat(mileage.map(e => ({ at, content: `마일리지 지급: ${e.delta.toLocaleString()}P (사유: ${e.reason})`, by: '시스템' })))
+      .concat(coupon.map(e => ({ at, content: `쿠폰 발급: ${e.item}`, by: '시스템' })));
+
+    const res = MD.registerMember({
+      memberType: typeName(state.method),
+      // 간편 가입: SNS 계정 식별값 (가입 화면에서 이메일을 바꿔도 다음 SNS 로그인 때 같은 회원으로 찾음)
+      snsKey: isSns() && state.sns ? MD.snsKey(state.method, state.sns.email) : '',
+      userId: email,   // 신규 가입은 이메일로 로그인
+      name: $('fName').value.trim(),
+      email,
+      phone: fmtPhone($('fPhone').value),
+      birth: $('fBirth').value,
+      nickname: $('fNick').value.trim(),
+      gender: (document.querySelector('input[name=fGender]:checked') || {}).value || '',
+      marketingUse: marketingUse ? 'Y' : 'N',
+      marketingSms: ad('adSms'), marketingEmail: ad('adEmail'),
+      consents,
+      joinEnv: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'MO' : 'PC',
+      ledger: { mileage, coupon },
+      history
+    });
+    if (res.error) { go('info'); $('formError').textContent = res.error; $('formError').hidden = false; return; }   // 저장 실패·중복 → 정보 입력 화면에 안내
+    // 스탑북 회원: 비밀번호를 로그인 저장소에 보관 (관리자 회원 상세 패스워드와 같은 정보)
+    if (!isSns()) A.setPassword(res.member.no, $('fPw').value, { log: false });
+
+    // 가입 환영 메일 발송 기록 (관리자 > 메시지 > 이메일 발송 내역)
+    // TODO: 실서비스에서는 가입 처리 후 서버가 메일 발송
+    if (window.MessageStore) {
+      const t = MessageStore.templates('email').find(x => x.id === 'email_welcome');
+      if (t) MessageStore.addLog({ channel: 'email', templateId: t.id, templateName: t.name, ad: false, count: 1, success: 1, fail: 0, reserveAt: '', by: '시스템', recipients: [{ memberNo: res.member.no, to: res.member.email, ok: true }],
+        sample: `[${MessageStore.fill(t.subject, res.member)}] ${MessageStore.fill(t.body, res.member)}` });
+    }
+    renderDone(res.member, mileage, coupon, adText, marketingUse, at);
+    signedIn(res.member);   // 가입 후 바로 로그인 상태
+    // 마이페이지에서 회원가입하러 온 경우: 완료 버튼을 누르면 마이페이지로 돌아감
+    state.next = '';
+    try { const nx = sessionStorage.getItem(AFTER_LOGIN_KEY) || ''; sessionStorage.removeItem(AFTER_LOGIN_KEY); if (/^[\w-]+\.html$/.test(nx)) state.next = nx; } catch (e) { /* 무시 */ }
+    $('doneClose').textContent = state.next === 'mypage.html' ? '마이페이지로 돌아가기' : '스탑북 시작하기';
+    go('done');
+  }
+
+  function renderDone(m, mileage, coupon, adText, marketingUse, at) {
+    $('doneTitle').textContent = `${m.name}님, 가입을 환영합니다`;
+    const login = isSns() ? `${SNS_LABEL[state.method]} 간편 로그인` : `${m.email} (이메일 로그인)`;
+    // 가입유형: 로그인 정보 찾기와 같은 배지 (SNS = 서비스 로고 / 스탑북 = S)
+    const type = `<span class="method">${methodBadge(isSns() ? state.method : '')}${esc(m.memberType)}</span>`;
+    $('doneSummary').innerHTML = [['로그인', esc(login)], ['가입유형', type], ['휴대폰', esc(m.phone)], ['가입일', esc(m.joinDate)]]
+      .map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('');
+    const gifts = mileage.map(e => `<div class="gift"><span class="g-ico">P</span><span><b>${e.delta.toLocaleString()}P</b> ${esc(e.reason)} 마일리지</span></div>`)
+      .concat(coupon.map(e => `<div class="gift"><span class="g-ico">%</span><span><b>${esc(e.item)}</b> 쿠폰 1장</span></div>`));
+    $('gifts').innerHTML = gifts.join('');
+    $('giftCard').hidden = !gifts.length;
+    // 광고성 정보 수신 동의 처리 결과 안내 (정보통신망법: 동의 일시·내용을 수신자에게 알림)
+    const ch = [['SMS', m.marketingSms], ['이메일', m.marketingEmail]];
+    $('consentResult').innerHTML = `처리 일시: ${esc(at)}<br>전송자: 스탑북<br>
+      마케팅 목적 개인정보 수집·이용: ${marketingUse ? '동의' : '미동의'}<br>
+      ${ch.map(([l, v]) => `${l} ${v === 'Y' ? '수신 동의' : '수신 거부'}`).join(' · ')}<br>
+      수신 동의는 마이페이지 &gt; 회원정보 수정에서 언제든지 바꿀 수 있습니다.`;
+  }
+
+  syncTerms();
+  // 새로고침 시 로그인 상태 복원
+  try {
+    const no = Number(sessionStorage.getItem(SESSION_KEY));
+    const m = no && MD.members.find(x => x.no === no && !x.withdrawn);   // 탈퇴한 회원의 로그인 상태는 복원하지 않음
+    if (m) signedIn(m); else if (no) sessionStorage.removeItem(SESSION_KEY);
+  } catch (e) { /* 무시 */ }
+  // 주소 끝이 #join이면 회원가입 모달을 바로 엶 (다른 화면에서 링크로 열 때)
+  //   읽은 뒤 주소의 #… 를 지움 → 로그인·가입 후 새로고침해도 모달이 다시 뜨지 않음
+  const hash = location.hash;
+  if (['#join', '#signup', '#login', '#find-id', '#find-pw'].includes(hash)) {
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* file:// 등 */ }
+  }
+  if (hash === '#join') openAuth();
+  else if (hash === '#signup') { openAuth(); startSignup('stopbook'); }   // 마이페이지 모달의 [스탑북 회원 가입]: 정보 입력 단계로 바로
+  else if (hash === '#login') openLogin('');   // 마이페이지 등에서 로그인이 필요할 때
+  else if (hash === '#find-id' || hash === '#find-pw') openFind(hash.slice(6), '');   // 마이페이지 로그인 모달의 찾기 링크
+})();
+</script>
+</body>
+</html>
