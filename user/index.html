@@ -337,7 +337,7 @@
 </svg>
 
 <header class="site-top" id="siteTop">
-<div class="proto-band">PROTOTYPE - 메인<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.6</span></div>
+<div class="proto-band">PROTOTYPE - 메인<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.9</span></div>
 <div class="util two-row">
 <!-- 1줄: 이용 메뉴 (최상단 오른쪽, 대메뉴보다 낮은 줄) -->
 <div class="util-in util-top">
@@ -591,7 +591,7 @@
       <p>사진은 고르기만 하세요.<br>책은 스탑북이 만듭니다.</p>
       <div class="acts">
         <button type="button" class="btn btn-white btn-lg" data-todo="상품 목록">지금 만들기</button>
-        <a class="btn btn-ghost-w btn-lg" href="signup.html#join" data-go-login>회원가입</a>
+        <a class="btn btn-ghost-w btn-lg" id="closingJoin" href="signup.html#join" data-go-login>회원가입</a>   <!-- 로그인 전에만 (renderUtil) -->
       </div>
     </div>
   </section>
@@ -631,10 +631,10 @@
 <!-- 공유 데이터: 로그인 회원(MemberData — member-type-store·mileage-types·message-store 다음) · 고객센터 연락처(PartnerStore.CS)
      TODO: 실서비스에서는 상단 머리 주석의 메인 API로 대체 -->
 <script src="../admin/board-store.js?v=20261027-1"></script>
-<script src="../admin/member-type-store.js?v=20261026-7"></script>
+<script src="../admin/member-type-store.js?v=20261027-2"></script>
 <script src="../admin/mileage-types.js?v=20261026-1"></script>
 <script src="../admin/message-store.js?v=20261026-2"></script>
-<script src="../admin/member-data.js?v=20261027-2"></script>
+<script src="../admin/member-data.js?v=20261027-3"></script>
 <script src="../admin/partner-store.js?v=20261027-1"></script>
 <script src="../admin/feedback.js?v=20261026-1"></script>
 <script>
@@ -744,6 +744,7 @@
       ? `<span class="me">${esc(me.name)}님</span> <button type="button" id="logoutBtn" class="logout">로그아웃</button>`
       : '<a class="login" href="signup.html#login" data-go-login>로그인/회원가입</a>';
     const u = $('utilCart'); if (u) u.textContent = me ? (me.cart || []).length : 0;   // 상단 [장바구니 (n)] (cart.html)
+    $('closingJoin').hidden = !!me;   // 마무리 띠 [회원가입]: 로그인 전에만
   }
   document.addEventListener('click', e => {
     // 로그인·가입하러 signup.html로 가면 로그인 후 메인으로 돌아옴 (signup.html completeLogin이 'xxx.html'만 받음)

@@ -675,7 +675,7 @@
 </head>
 <body>
 <header class="site-top" id="siteTop">
-<div class="proto-band">PROTOTYPE - 마이페이지<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.6</span></div>
+<div class="proto-band">PROTOTYPE - 마이페이지<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.9</span></div>
 <div class="util two-row">
 <!-- 1줄: 이용 메뉴 (최상단 오른쪽) / 2줄: 로고 + 대메뉴 — 모든 쇼핑몰 화면 동일 (index.html과 같은 구조) -->
 <div class="util-in util-top">
@@ -1144,10 +1144,10 @@
 
 <!-- 회원 데이터·로그인 정보는 관리자 화면(admin)과 같은 저장소(localStorage) 사용 → 수정 내용이 관리자 회원 상세·변경 히스토리에 반영
      TODO: 실서비스에서는 회원 API로 대체 -->
-<script src="../admin/member-type-store.js?v=20261026-7"></script>
+<script src="../admin/member-type-store.js?v=20261027-2"></script>
 <script src="../admin/mileage-types.js?v=20261026-1"></script>
 <script src="../admin/message-store.js?v=20261026-2"></script>
-<script src="../admin/member-data.js?v=20261027-2"></script>
+<script src="../admin/member-data.js?v=20261027-3"></script>
 <!-- 주문/배송: 관리자 주문·클레임·서류 발급 데이터를 그대로 사용 (같은 localStorage → 고객 신청이 관리자 화면에 바로 보이고, 관리자 처리 결과가 여기 반영)
      claim-data.js·document-data.js는 member-type-store.js의 AdminUtil(처리 대기 샘플·새 신청 알림)을 씀. 관리자 화면 전용 요소가 없으면 그냥 넘어감
      서류 양식(doc-forms.js · doc-form-assets.js 직인·로고)은 크기가 커서 증빙서류를 처음 내려받을 때 불러옴 (loadForms)

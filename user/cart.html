@@ -180,6 +180,9 @@
   a.ci-thumb.page .pv { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: rgba(28,28,28,.55); color: #fff; font-size: 12px; font-weight: 700; opacity: 0; transition: opacity var(--ease); }
   a.ci-thumb.page:hover .pv, a.ci-thumb.page:focus-visible .pv { opacity: 1; }
   a.ci-thumb.page:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  /* 미리보기 가능 표시: 썸네일 오른쪽 아래 작은 반투명 돋보기 (마우스를 올리면 미리보기 덮개가 대신 보임) */
+  a.ci-thumb.page .zoom { position: absolute; right: 4px; bottom: 4px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(28,28,28,.45); color: #fff; transition: opacity var(--ease); }
+  a.ci-thumb.page:hover .zoom, a.ci-thumb.page:focus-visible .zoom { opacity: 0; }
   .ci-thumb { display: grid; place-items: center; width: 96px; height: 96px; border-radius: var(--radius-md); background: var(--bg); color: var(--ink-2); font-size: 16px; font-weight: 800; letter-spacing: -.02em; }
   .ci-body { min-width: 0; }
   .ci-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
@@ -429,7 +432,7 @@
 </head>
 <body>
 <header class="site-top" id="siteTop">
-<div class="proto-band">PROTOTYPE - 장바구니<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.6</span></div>
+<div class="proto-band">PROTOTYPE - 장바구니<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.9</span></div>
 <div class="util two-row">
 <!-- 1줄: 이용 메뉴 (최상단 오른쪽) / 2줄: 로고 + 대메뉴 — 모든 쇼핑몰 화면 동일 (index.html과 같은 구조) -->
 <div class="util-in util-top">
@@ -616,10 +619,10 @@
 <!-- 회원·장바구니 데이터는 관리자 화면(admin)과 같은 저장소(localStorage) 사용 → 수량·옵션 변경·삭제가 관리자 회원 상세 > 장바구니에 그대로 보임
      견적서: admin/doc-forms.js(관리자 증빙서류·마이페이지 주문 상세와 같은 양식)
      TODO: 실서비스에서는 GET/PUT/DELETE /api/members/me/cart, POST /api/members/me/cart/{id}/share, GET /api/products/recommend -->
-<script src="../admin/member-type-store.js?v=20261026-7"></script>
+<script src="../admin/member-type-store.js?v=20261027-2"></script>
 <script src="../admin/mileage-types.js?v=20261026-1"></script>
 <script src="../admin/message-store.js?v=20261026-2"></script>
-<script src="../admin/member-data.js?v=20261027-2"></script>
+<script src="../admin/member-data.js?v=20261027-3"></script>
 <script src="../admin/order-data.js?v=20261027-3"></script><!-- document-data.js가 OrderData를 씀 -->
 <script src="../admin/document-data.js?v=20261027-1"></script><!-- 증빙서류: 바로 발급 기록·발급 신청 (관리자 클레임관리 > 서류 발급 관리와 같은 저장소) -->
 <script src="../admin/doc-form-assets.js?v=20261026-5"></script>
@@ -656,7 +659,7 @@
   function pageThumb(c, size) {
     const [bg] = toneOf(c.title);
     const inner = `<img src="images/photos/${pagePhotoOf(c)}.jpg" alt="" loading="lazy">`;
-    if (size === 'row') return `<a class="ci-thumb page" href="${esc(c.previewUrl)}" target="_blank" rel="noopener" style="background:${bg}" title="편집본 미리보기 (새 창)" aria-label="${esc(c.title)} 편집본 미리보기 (새 창)">${inner}<span class="pv" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>미리보기</span></a>`;
+    if (size === 'row') return `<a class="ci-thumb page" href="${esc(c.previewUrl)}" target="_blank" rel="noopener" style="background:${bg}" title="편집본 미리보기 (새 창)" aria-label="${esc(c.title)} 편집본 미리보기 (새 창)">${inner}<span class="zoom" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg></span><span class="pv" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>미리보기</span></a>`;
     return `<span class="ci-thumb page" aria-hidden="true" style="background:${bg}">${inner}</span>`;
   }
   // 기성 상품 썸네일: 상품 이미지가 있으면 사진, 없으면 상품명 두 글자 색 칸 (2026-10-27)
