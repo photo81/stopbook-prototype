@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="../admin/feedback.css?v=20261026-1"><!-- 피드백 입력 버튼 (관리자 화면과 동일) -->
 <!-- 장바구니 (IA 유저화면목록 ver0.03 — 주문(ORD) > 장바구니 page · 장바구니(편집상품) section · 옵션변경 modal · 편집본 공유 modal · 견적서 출력 → 2026-10-27 증빙서류 출력 modal(지출증빙: 사업자등록증·통장사본·견적서·거래명세서 바로 발급 + 발급 신청))
      · 데이터: 회원 장바구니(admin/member-data.js m.cart — 샘플 + 재주문 담기 + 이 화면 저장본 stopbook.cart.v1). 관리자 회원 상세 > 장바구니와 같은 목록
-     · IA 항목 중 미구현: 선물하기(준비 중), 편집수정(편집기 없음 — 준비 중), 주문하기(주문서 화면 없음 — 준비 중), 기성상품 section(기성상품 데이터 없음 — 프로젝트가 없는 항목이 생기면 '기성 상품' 묶음으로 표시)
+     · IA 항목 중 미구현: 선물하기(준비 중), 편집수정(편집기 없음 — 준비 중), 주문하기(주문서 화면 없음 — 준비 중), 디자인샵 상품 section(디자인샵 상품 데이터 없음 — 프로젝트가 없는 항목이 생기면 '디자인샵 상품' 묶음으로 표시)
      · 배송비 정책: 택배 2,500원 · 할인 후 40,000원 이상 무료 · 회원 구분 무료배송 혜택 (order-data.js·관리자 회원 상세 장바구니 집계와 같은 값. TODO: 쇼핑몰 설정값) -->
 <style>
   /* 쇼핑몰(고객) 화면 — 마이페이지·고객센터와 같은 토큰·입력 요소. 색·모서리·상단·하단·버튼 톤은 shop.css (이 <style> 다음에 불러옴) */
@@ -137,6 +137,7 @@
   /* 재주문·복사본 표시: 아이콘 + 짧은 이름, 테두리 칩 */
   .st.mark { gap: 4px; padding: 0 9px 0 7px; background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-2); cursor: default; }
   .st.mark svg { flex: none; }
+  .st.add { background: #fff; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line-2); font-weight: 500; }   /* 추가 구입 (상품명 오른쪽) */
 
   /* 목록 머리: 전체 선택 · 선택 삭제 · 전체 삭제 · 견적서 */
   .cart-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding-bottom: 18px; border-bottom: 2px solid var(--ink); }
@@ -166,7 +167,11 @@
     .ci > .ci-keep { flex-direction: column; gap: 6px; }
     .ci > .ci-qty { justify-self: center; }
     .ci > .ci-price { justify-self: end; }
+    .cart-main .ci-cols { display: grid; grid-template-columns: 20px 88px minmax(0, 1fr) 80px 108px 104px; grid-template-areas: ". prod prod keep qty price"; gap: 0 14px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--ink-3); }
   }
+  /* 컬럼명: 주문상품 · 보관만료일 · 수량 · 가격 (2026-10-27) */
+  .ci-cols { display: none; }
+  .ci-cols .c-prod { grid-area: prod; } .ci-cols .c-keep { grid-area: keep; text-align: center; } .ci-cols .c-qty { grid-area: qty; text-align: center; } .ci-cols .c-price { grid-area: price; text-align: right; }
   .ci:last-child { border-bottom: 0; padding-bottom: 8px; }
   .ci.off { opacity: .55; }
   /* 편집 상품 썸네일 = 편집본 첫 페이지: 상품 색 여백(페이지 바탕) 안에 사진. 목록에서는 누르면 미리보기(새 창) */
@@ -175,7 +180,7 @@
   .ci-thumb.page img { position: absolute; top: var(--pg); left: var(--pg); width: calc(100% - var(--pg) * 2); height: calc(100% - var(--pg) * 2); max-width: none; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,.12); }
   .dlg-item .ci-thumb.page { --pg: 7px; }
   a.ci-thumb.page { cursor: zoom-in; }
-  .ci-thumb.prod { position: relative; padding: 0; overflow: hidden; background: #F4F1EC; }   /* 기성 상품 이미지 */
+  .ci-thumb.prod { position: relative; padding: 0; overflow: hidden; background: #F4F1EC; }   /* 디자인샵 상품 이미지 */
   .ci-thumb.prod img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; }
   a.ci-thumb.page .pv { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: rgba(28,28,28,.55); color: #fff; font-size: 12px; font-weight: 700; opacity: 0; transition: opacity var(--ease); }
   a.ci-thumb.page:hover .pv, a.ci-thumb.page:focus-visible .pv { opacity: 1; }
@@ -264,6 +269,15 @@
   .dlg-body { flex: 1; min-height: 0; overflow: auto; padding: 4px 32px 20px; font-size: 14.5px; scrollbar-width: thin; }
   .dlg-foot { flex: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 32px 28px; border-top: 1px solid var(--line); }
   .dlg-foot .form-error { flex-basis: 100%; margin: 0 0 4px; }
+  /* 상품 상세(옵션 변경) 하단 변경 적용 시 금액 (2026-10-27) */
+  .opt-sum { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin-bottom: 6px; }
+  .opt-sum:empty { display: none; }
+  .opt-sum > span { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+  .opt-sum > b { margin-left: auto; font-size: 20px; font-weight: 800; letter-spacing: -.02em; }
+  .opt-sum > small { flex-basis: 100%; text-align: right; font-size: 12.5px; color: var(--ink-3); }
+  .opt-sum em { font-style: normal; font-weight: 700; }
+  .opt-sum em.up { color: var(--danger); }
+  .opt-sum em.down { color: var(--ink); }
   .dlg-foot .btn { height: 52px; }
   .dlg-foot .btn-line { flex: 0 0 120px; }
   .dlg-foot .btn-primary { flex: 1; }
@@ -379,11 +393,26 @@
   body .ci-head b { font-size: 15px; }
   body .ci-opt { font-size: 13px; }
   body .ci-memo { font-size: 12.5px; }
+  /* 프로젝트명(메모) 목록에서 수정 (2026-10-27) */
+  .ci-memo { display: flex; align-items: center; gap: 4px; min-height: 24px; }
+  .memo-edit { display: inline-grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-3); cursor: pointer; }
+  .memo-edit:hover, .memo-edit:focus-visible { background: var(--bg); color: var(--ink); }
+  .memo-edit.add { width: auto; height: 22px; padding: 0 2px; border-radius: 4px; font: inherit; font-size: 12.5px; text-decoration: underline; text-underline-offset: 2px; }
+  .memo-form { display: flex; align-items: center; gap: 4px; width: 100%; max-width: 360px; }
+  .memo-form input { flex: 1; min-width: 0; height: 28px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 6px; font: inherit; font-size: 13px; color: var(--ink); background: #fff; }
+  .memo-form input:focus { outline: none; border-color: var(--ink); }
+  body .memo-form .btn.btn-xs { height: 28px; }
   body .ci-keep .dd { font-size: 11.5px; height: 22px; }
   body .ci-keep .date { font-size: 12.5px; }
   body .ci-acts .btn.btn-xs { height: 24px; padding: 0 9px; font-size: 11px; font-weight: 500; color: var(--ink-2); }   /* 행 버튼·수량은 작고 옅게 — 눈에 덜 띄도록 (2026-10-27) */
   body .ci-acts .btn.btn-xs.del { color: var(--ink-3); }
   body .ci-acts .btn.btn-xs.del:hover { color: var(--danger); }
+  /* 삭제: 행 오른쪽 위 작은 × (2026-10-27 [삭제] 버튼 대체) */
+  .ci { position: relative; }
+  .ci-del { position: absolute; top: 8px; right: -6px; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-3); cursor: pointer; transition: background var(--ease), color var(--ease); }
+  .ci-del:hover { background: var(--danger-soft); color: var(--danger); }
+  .ci-del:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  body .ci > .ci-body { padding-right: 24px; }
   body .ci-qty { height: 30px; }
   body .ci-qty button { width: 28px; height: 30px; }
   body .ci-qty input { width: 32px; height: 30px; }
@@ -432,7 +461,7 @@
 </head>
 <body>
 <header class="site-top" id="siteTop">
-<div class="proto-band">PROTOTYPE - 장바구니<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.9</span></div>
+<div class="proto-band">PROTOTYPE - 장바구니<span class="proto-ver" title="유저 화면 프로토타입 버전">v2.0.17</span></div>
 <div class="util two-row">
 <!-- 1줄: 이용 메뉴 (최상단 오른쪽) / 2줄: 로고 + 대메뉴 — 모든 쇼핑몰 화면 동일 (index.html과 같은 구조) -->
 <div class="util-in util-top">
@@ -494,6 +523,8 @@
             <button type="button" class="btn btn-xs" id="docBtn" aria-haspopup="dialog">증빙서류 출력</button>
           </div>
         </div>
+        <!-- 컬럼명 (넓은 배치에서만 — 좁을 때는 행이 여러 줄이라 숨김) -->
+        <div class="ci-cols" aria-hidden="true"><span class="c-prod">주문상품</span><span class="c-keep">보관만료일</span><span class="c-qty">수량</span><span class="c-price">가격</span></div>
         <div id="cartGroups"></div>
       </section>
 
@@ -577,10 +608,11 @@
 
 <!-- 옵션변경 (IA modal: 프로젝트명 · 사이즈/제본/용지/기타 단일선택 · 추가구입상품 · 수량) -->
 <dialog class="dlg" id="optDlg" aria-labelledby="optTitle">
-  <div class="dlg-head"><h2 id="optTitle" tabindex="-1">옵션 변경</h2><button type="button" data-dlg-close aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="dlg-head"><h2 id="optTitle" tabindex="-1">상품 상세</h2><button type="button" data-dlg-close aria-label="닫기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <form id="optForm" novalidate>
     <div class="dlg-body" id="optBody"></div>
     <div class="dlg-foot">
+      <div class="opt-sum" id="optSum" aria-live="polite"></div>   <!-- 변경 적용 시 금액 (2026-10-27) -->
       <div class="form-error" id="optErr" role="alert" hidden></div>
       <button type="button" class="btn btn-line" data-dlg-close>닫기</button>
       <button type="submit" class="btn btn-primary">변경 적용</button>
@@ -643,7 +675,7 @@
   // 썸네일 색 (편집본·상품 이미지 연동 전): 상품명마다 정해진 차분한 색 — 같은 상품은 늘 같은 색. [바탕, 글자]
   // TODO: 실서비스에서는 편집본 첫 페이지·상품 대표 이미지
   const THUMB_TONES = [['#E8DED3', '#6B5643'], ['#DCE5DD', '#46604C'], ['#DDE3EC', '#45566E'], ['#EBDDE0', '#704A53'], ['#E9E4D2', '#655B36'], ['#DFDDEA', '#544F72'], ['#D9E6E6', '#3F6464'], ['#EEDFD4', '#7A4F33'], ['#F1E3C4', '#7A5A1E'], ['#E6DCE8', '#644B6B']];
-  //   상품 목록(편집 상품 PRODUCTS + 기성 상품 READY) 순서대로 색을 차례로 배정 → 목록에서 이웃한 상품은 늘 다른 색. 목록에 없는 상품명은 이름으로 계산
+  //   상품 목록(편집 상품 PRODUCTS + 디자인샵 상품 READY) 순서대로 색을 차례로 배정 → 목록에서 이웃한 상품은 늘 다른 색. 목록에 없는 상품명은 이름으로 계산
   let toneIndex = null;
   const toneOf = name => {
     if (!toneIndex) { toneIndex = new Map(); (MD.PRODUCTS || []).map(p => p[0]).concat(READY.map(p => p[0])).forEach((t, i) => { if (!toneIndex.has(t)) toneIndex.set(t, i); }); }
@@ -654,7 +686,9 @@
   // 편집 상품 썸네일 = 고객이 편집한 첫 페이지 (편집본 이미지 연동 전 — 샘플 사진을 프로젝트별로 고정 배정, 상품 색 여백 안에 사진 + 프로젝트명)
   // TODO: 실서비스에서는 편집본(mskey) 첫 페이지 렌더 이미지 URL
   const PAGE_PHOTOS = ['lake-boat', 'beach', 'child', 'friends', 'hero-family-beach', 'mountain', 'portrait', 'road', 'valley', 'wedding', 'camping', 'cat'];
-  const pagePhotoOf = c => PAGE_PHOTOS[[...`${c.title}|${String(c.project || '').replace(/ \(복사\)$/, '')}|${c.fromOrderNo || ''}`].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 9973, 11) % PAGE_PHOTOS.length];
+  //   프로젝트명을 바꿔도 같은 편집본이므로 사진 유지: 이름을 바꾸기 전에 c.pagePhoto에 고정 (keepPhoto)
+  const pagePhotoOf = c => c.pagePhoto || PAGE_PHOTOS[[...`${c.title}|${String(c.project || '').replace(/ \(복사\)$/, '')}|${c.fromOrderNo || ''}`].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 9973, 11) % PAGE_PHOTOS.length];
+  const keepPhoto = c => { if (!isReady(c) && !c.pagePhoto) c.pagePhoto = pagePhotoOf(c); };
   // size: 'row'(목록, 누르면 미리보기) | 'mini'(모달)
   function pageThumb(c, size) {
     const [bg] = toneOf(c.title);
@@ -662,7 +696,7 @@
     if (size === 'row') return `<a class="ci-thumb page" href="${esc(c.previewUrl)}" target="_blank" rel="noopener" style="background:${bg}" title="편집본 미리보기 (새 창)" aria-label="${esc(c.title)} 편집본 미리보기 (새 창)">${inner}<span class="zoom" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg></span><span class="pv" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>미리보기</span></a>`;
     return `<span class="ci-thumb page" aria-hidden="true" style="background:${bg}">${inner}</span>`;
   }
-  // 기성 상품 썸네일: 상품 이미지가 있으면 사진, 없으면 상품명 두 글자 색 칸 (2026-10-27)
+  // 디자인샵 상품 썸네일: 상품 이미지가 있으면 사진, 없으면 상품명 두 글자 색 칸 (2026-10-27)
   const readyThumb = (title, text) => { const p = READY.find(x => x[0] === title); return p && p[3] ? `<span class="ci-thumb prod" aria-hidden="true"><img src="images/product/thumb/${p[3]}.jpg" alt="" loading="lazy"></span>` : `<span class="ci-thumb" aria-hidden="true"${thumbStyle(title)}>${text}</span>`; };
   const thumbHtml = (c, size) => (isReady(c) ? readyThumb(c.title, size === 'row' ? esc(c.title.slice(0, 2)) : thumbOf(c.productCategory)) : pageThumb(c, size));
 
@@ -714,17 +748,18 @@
     '캘린더': { groups: [['연도', ['2027년'], [0]], ['시작 월', ['1월 시작', '3월 시작'], [0, 0]]], extras: [['선물 포장', 2000]] },
     '액자': { groups: [['사이즈', ['12.7×17.8cm', '20.3×25.4cm', '21×29.7cm'], [0, 5000, 8000], true], ['프레임', ['화이트', '내추럴', '블랙'], [0, 0, 0]]], extras: [['벽걸이 고리', 1000]] },
     '팬시·굿즈': { groups: [['코팅', ['기본', '무광 코팅', '유광 코팅'], [0, 500, 500]]], extras: [['선물 포장', 2000]] },
-    '기성 상품': { groups: [], extras: [['선물 포장', 2000]] }   // 편집 없이 바로 담는 상품 (함께 구매하면 좋은 상품)
+    '디자인샵': { groups: [], extras: [['선물 포장', 2000]] },   // 편집 없이 바로 담는 디자인샵 상품 (함께 구매하면 좋은 상품)
+    '기성 상품': { groups: [], extras: [['선물 포장', 2000]] }   // 2026-10-27 이전에 담긴 항목 (분류 이름이 디자인샵으로 바뀜)
   };
-  // 함께 구매하면 좋은 기성 상품 (IA 컨텐츠(광고): 상품 썸네일·상품명·정가. 상품 관리 연동 전 예시)
+  // 함께 구매하면 좋은 디자인샵 상품 (IA 컨텐츠(광고): 상품 썸네일·상품명·정가. 상품 관리 연동 전 예시)
   // TODO: 실서비스에서는 GET /api/products/recommend (장바구니 상품 기준 크로스셀링)
   // [이름, 가격, 설명, 상품 이미지(images/product/thumb/*.jpg — 원본 PNG를 480px로 줄인 것, 없으면 색 칸)]
   const READY = [['포장 박스', 3500, '선물용 하드 박스', 'box'], ['디자인 엽서 세트', 4500, '10장 · 봉투 포함', 'card'], ['책갈피 세트', 3000, '5개 · 종이 소재', 'bookmark'], ['다이어리', 12000, '2027 먼슬리 · A5', 'diary'], ['포토 보관함', 9800, '사진 100장 보관'], ['사진 클립 세트', 2800, '우드 클립 10개 · 끈']];
-  const isReady = c => !(c.project || c.previewUrl);   // 기성 상품: 편집본(프로젝트·미리보기) 없음
+  const isReady = c => !(c.project || c.previewUrl);   // 디자인샵 상품: 편집본(프로젝트·미리보기) 없음
   // option 문구('하드커버 · 24페이지 · +보관 케이스') → { sel: { 그룹: 라벨 }, extras: [], rest: [] }
   // ===== 상품 정보 줄: 형태 | 사이즈(cm) | 커버 | 코팅 | 페이지 (2026-10-27) =====
   //   option 문구(샘플 '하드커버 · 24페이지', 재주문 'A5 가로 · 정사각 · 린넨 · 무광 · 24p(+16p)' 등)를 항목별로 나누고, 없는 형태·사이즈는 상품 기본값으로 채움
-  //   사이즈는 모두 cm (인치·A판·B판 표기를 cm로 바꿈, '가로'면 가로가 긴 쪽). 나머지(프레임 색·캘린더 시작 월·기성 상품 설명)는 뒤에, 추가 구입은 괄호
+  //   사이즈는 모두 cm (인치·A판·B판 표기를 cm로 바꿈, '가로'면 가로가 긴 쪽). 나머지(프레임 색·캘린더 시작 월·디자인샵 상품 설명)는 뒤에, 추가 구입은 괄호
   // TODO: 실서비스에서는 상품 옵션 정의의 항목·표시 순서와 상품별 규격(cm)
   const SIZE_CM = { 'A4': [21, 29.7], 'A5': [14.8, 21], 'B4': [25.7, 36.4], '5x7': [12.7, 17.8], '8x8': [20.3, 20.3], '10x10': [25.4, 25.4], '8x10': [20.3, 25.4], '미니': [7, 10], '기본': [10, 15] };
   const cmText = (w, h) => `${w}×${h}cm`;
@@ -815,6 +850,7 @@
     renderReco();
     $('utilCart').textContent = list.length;
   }
+  // 행 버튼 이름 (2026-10-27): [옵션 변경] → [상품 상세](옵션 변경 모달, 디자인샵 상품의 [상품 보기]는 합침), [편집 수정] → [편집]
   function itemRow(c) {
     const left = keepLeft(c), status = c.status || '정상';
     const expired = left < 0, soldOut = status === '품절';
@@ -822,26 +858,29 @@
     // 재주문·복사본: 메모 줄 대신 상품명 옆 아이콘 표시 (자세한 내용은 마우스를 올리면). 예전 복사본의 ' (복사)' 이름 꼬리도 표시로 바꿈
     const copied = c.copied || / \(복사\)$/.test(c.project || '');
     const project = String(c.project || '').replace(/ \(복사\)$/, '');
-    const memo = c.fromOrderNo ? '' : (project ? `프로젝트 <em>${esc(project)}</em>` : '');
+    // 프로젝트명(메모): 목록에서 바로 수정 (연필 → 입력칸, 2026-10-27). 디자인샵 상품·재주문 항목은 메모 줄 없음
+    const memo = c.fromOrderNo || isReady(c) ? '' : project
+      ? `프로젝트 <em>${esc(project)}</em><button type="button" class="memo-edit" data-memo title="프로젝트명 수정" aria-label="프로젝트명(메모) 수정"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>`
+      : '<button type="button" class="memo-edit add" data-memo>+ 프로젝트명(메모) 입력</button>';
     const marks = (c.fromOrderNo ? `<span class="st mark" title="주문 ${esc(c.fromOrderNo)}의 편집본을 다시 담았습니다"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>재주문</span>` : '')
       + (copied ? '<span class="st mark" title="장바구니에서 복사한 편집본입니다"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>복사본</span>' : '');
-    const extras = (c.extras || []).length ? ` <span class="muted">(+${esc(c.extras.join(', '))})</span>` : '';
+    // 상품 정보 줄은 2026-10-27 목록에서 삭제. 추가 구입은 상품명 오른쪽에 칩으로 (2026-10-27)
+    const extras = (c.extras || []).length ? `<span class="st add" title="추가 구입: ${esc(c.extras.join(', '))}">+ ${esc(c.extras.join(' · '))}</span>` : '';
     return `<li class="ci${soldOut || expired ? ' off' : ''}" data-id="${esc(c.id)}">
       <label class="check ci-check"><input type="checkbox" data-sel ${selected.has(c.id) && orderable(c) ? 'checked' : ''}${orderable(c) ? '' : ' disabled'}><span class="box" aria-hidden="true"></span><span class="sr-only">${esc(c.title)} 선택</span></label>
       ${thumbHtml(c, 'row')}
       <div class="ci-body">
-        <div class="ci-head"><b>${esc(c.title)}</b><span class="st">${esc(c.productCategory)}</span>${marks}${c.event ? `<span class="st ev" title="${esc(c.event.name)} · ${esc(c.event.until)}까지">이벤트 ${c.event.rate}%</span>` : ''}${status === '품절예정' ? '<span class="st warn">품절 예정</span>' : ''}${soldOut ? '<span class="st off">품절</span>' : ''}${expired ? '<span class="st warn">보관 만료</span>' : ''}</div>
-        <div class="ci-opt">${esc(specText(c))}${extras}</div>
+        <div class="ci-head"><b>${esc(c.title)}</b>${extras}${marks}${c.event ? `<span class="st ev" title="${esc(c.event.name)} · ${esc(c.event.until)}까지">이벤트 ${c.event.rate}%</span>` : ''}${status === '품절예정' ? '<span class="st warn">품절 예정</span>' : ''}${soldOut ? '<span class="st off">품절</span>' : ''}${expired ? '<span class="st warn">보관 만료</span>' : ''}</div>
         ${memo ? `<div class="ci-memo">${memo}</div>` : ''}
         <div class="ci-acts">${isReady(c)
-          ? `<button type="button" class="btn btn-xs" data-todo="상품 상세">상품 보기</button><button type="button" class="btn btn-xs" data-opt>옵션 변경</button>`
-          : `<button type="button" class="btn btn-xs" data-opt>옵션 변경</button>
-          <button type="button" class="btn btn-xs" data-todo="편집기">편집 수정</button>
+          ? `<button type="button" class="btn btn-xs" data-opt>상품 상세</button>`
+          : `<button type="button" class="btn btn-xs" data-opt>상품 상세</button>
+          <button type="button" class="btn btn-xs" data-todo="편집기">편집</button>
           <button type="button" class="btn btn-xs" data-copy>복사</button>
           <button type="button" class="btn btn-xs" data-share>공유</button>`}
-          <button type="button" class="btn btn-xs del" data-del aria-label="${esc(c.title)} 삭제">삭제</button>
         </div>
       </div>
+      <button type="button" class="ci-del" data-del title="삭제" aria-label="${esc(c.title)} 삭제"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       <!-- 오른쪽 칸 (넓은 화면: 보관 만료일 · 수량 · 금액이 각자 칸, 세로 가운데 정렬) -->
       <div class="ci-keep${expired ? ' over' : left <= 30 ? ' soon' : ''}" title="보관 만료일 — 담은 날로부터 90일"><span class="dd">${dday}</span><span class="date">${ymd(expireOf(c))}</span></div>
       <div class="qty ci-qty" role="group" aria-label="${esc(c.title)} 수량">
@@ -855,10 +894,10 @@
     </li>`;
   }
   function renderList(list) {
-    // IA: 편집상품 / 기성상품 section — 프로젝트(편집본)가 있는 항목과 없는 항목을 나눔 (샘플은 모두 편집 상품)
+    // IA: 편집상품 / 디자인샵 상품 section — 프로젝트(편집본)가 있는 항목과 없는 항목을 나눔 (샘플은 모두 편집 상품)
     const edit = list.filter(c => c.project || c.previewUrl), ready = list.filter(c => !(c.project || c.previewUrl));
     const group = (title, arr) => arr.length ? `${ready.length && edit.length ? `<h3 class="cart-group-title">${title}<small>${arr.length}종</small></h3>` : ''}<ul class="cart-group">${arr.map(itemRow).join('')}</ul>` : '';
-    $('cartGroups').innerHTML = group('편집 상품', edit) + group('기성 상품', ready);
+    $('cartGroups').innerHTML = group('편집 상품', edit) + group('디자인샵 상품', ready);
     const able = list.filter(orderable), sel = selectedItems();
     const all = $('chkAll');
     all.checked = able.length > 0 && sel.length === able.length;
@@ -901,16 +940,16 @@
     $('orderBtn').textContent = label; $('orderBtn2').textContent = label;
     $('orderBtn').disabled = !s.sel.length; $('orderBtn2').disabled = !s.sel.length; $('giftBtn').disabled = !s.sel.length;   // 선택한 상품이 있어야 주문·선물 가능
   }
-  // 함께 구매하면 좋은 상품: 편집 없이 바로 담는 기성 상품(포장 박스·디자인 엽서·책갈피·다이어리 …). 이미 담긴 상품은 제외, 무료배송까지 남은 금액을 채우는 상품에 표시
+  // 함께 구매하면 좋은 상품: 편집 없이 바로 담는 디자인샵 상품(포장 박스·디자인 엽서·책갈피·다이어리 …). 이미 담긴 상품은 제외, 무료배송까지 남은 금액을 채우는 상품에 표시
   function renderReco() {
     const list = cart(), s = summary();
     const have = new Set(list.map(c => c.title));
     const left = s.sel.length && !s.freeByCategory && s.ship ? FREE_SHIP_MIN - s.afterDisc : 0;
     const picks = READY.filter(p => !have.has(p[0])).slice(0, 4);
-    $('recoSub').textContent = '포토북·액자와 함께 쓰기 좋은 기성 상품입니다. [담기]를 누르면 편집 없이 바로 장바구니에 들어갑니다.';
+    $('recoSub').textContent = '포토북·액자와 함께 쓰기 좋은 디자인샵 상품입니다. [담기]를 누르면 편집 없이 바로 장바구니에 들어갑니다.';
     $('recoList').innerHTML = picks.map(p => `<div class="reco-card">
       ${readyThumb(p[0], esc(p[0].slice(0, 2)))}
-      <div><b>${esc(p[0])}</b><small>기성 상품 · ${esc(p[2])}</small></div>
+      <div><b>${esc(p[0])}</b><small>디자인샵 · ${esc(p[2])}</small></div>
       <span class="price">${wonT(p[1])}</span>
       ${left && p[1] >= left ? '<span class="st">담으면 무료배송</span>' : ''}
       <button type="button" class="btn btn-xs" data-add="${esc(p[0])}">담기</button>
@@ -930,6 +969,21 @@
     const inp = e.target.closest('[data-qty-input]');
     if (inp) setQty(inp.closest('.ci').dataset.id, Number(inp.value));
   });
+  // 프로젝트명(메모) 목록에서 수정: 메모 줄 자리에 입력칸(30자) + [저장][취소]. Enter 저장, Esc 취소, 비우고 저장하면 메모 삭제
+  function openMemo(row, c) {
+    const box = row.querySelector('.ci-memo'); if (!box) return;
+    box.innerHTML = `<form class="memo-form" data-memo-form><input type="text" maxlength="30" value="${esc(String(c.project || '').replace(/ \(복사\)$/, ''))}" placeholder="예) 우리 가족 여행" aria-label="프로젝트명(메모), 30자 이내"><button type="submit" class="btn btn-xs">저장</button><button type="button" class="btn btn-xs" data-memo-cancel>취소</button></form>`;
+    const inp = box.querySelector('input'); inp.focus(); inp.select();
+    inp.addEventListener('keydown', ev => { if (ev.key === 'Escape') { ev.preventDefault(); renderList(cart()); } });
+  }
+  $('cartGroups').addEventListener('submit', e => {
+    const f = e.target.closest('[data-memo-form]'); if (!f) return;
+    e.preventDefault();
+    const c = itemOf(f.closest('.ci').dataset.id); if (!c) return;
+    keepPhoto(c); c.project = f.querySelector('input').value.trim().slice(0, 30);
+    persist(cart()); renderList(cart());
+    toast(c.project ? '프로젝트명을 저장했습니다.' : '프로젝트명을 지웠습니다.');
+  });
   $('cartGroups').addEventListener('click', e => {
     const row = e.target.closest('.ci'); if (!row) return;
     const id = row.dataset.id, c = itemOf(id); if (!c) return;
@@ -939,6 +993,8 @@
     if (e.target.closest('[data-copy]')) { copyItem(c); return; }
     if (e.target.closest('[data-opt]')) { openOpt(c); return; }
     if (e.target.closest('[data-share]')) { openShare(c); return; }
+    if (e.target.closest('[data-memo]')) { openMemo(row, c); return; }
+    if (e.target.closest('[data-memo-cancel]')) { renderList(cart()); return; }
   });
   function setQty(id, n) {
     const c = itemOf(id); if (!c) return;
@@ -968,8 +1024,8 @@
   $('recoList').addEventListener('click', e => {
     const b = e.target.closest('[data-add]'); if (!b) return;
     const p = READY.find(x => x[0] === b.dataset.add); if (!p) return;
-    // 기성 상품: 편집본(프로젝트·미리보기) 없이 담김 → 목록의 '기성 상품' 묶음, 옵션 변경은 추가 구입(선물 포장)만
-    const ok = MD.addToCart(me.no, [{ title: p[0], productCategory: '기성 상품', price: p[1], basePrice: p[1], option: p[2], extras: [], project: '', previewUrl: '', qty: 1 }]);
+    // 디자인샵 상품: 편집본(프로젝트·미리보기) 없이 담김 → 목록의 '디자인샵 상품' 묶음, 옵션 변경은 추가 구입(선물 포장)만
+    const ok = MD.addToCart(me.no, [{ title: p[0], productCategory: '디자인샵', price: p[1], basePrice: p[1], option: p[2], extras: [], project: '', previewUrl: '', qty: 1 }]);
     if (!ok) { toast('장바구니에 담지 못했습니다. 잠시 후 다시 시도해 주세요.'); return; }
     if (!Array.isArray(JSON.parse(localStorage.getItem(MD.CART_STATE_KEY) || '{}')[me.no])) persist(cart());   // 저장본이 없던 회원은 지금 목록으로 저장본 시작
     render();
@@ -1007,6 +1063,7 @@
       ${specGrid(c)}
       ${groupHtml}${extraHtml}`;
     $('optErr').hidden = true;
+    updateOptSum();
     const d = $('optDlg'); if (!d.open) d.showModal();
     $('optTitle').focus({ preventScroll: true });
   }
@@ -1018,6 +1075,14 @@
     const price = baseOf(optTarget) + deltaOf(p.def, sel, extras);
     return { def: p.def, sel, extras, rest: p.rest, qty, price };
   }
+  // 하단 변경 적용 시 금액: 이벤트 할인 반영 단가 × 수량, 현재 금액과의 차이 (옵션을 고를 때마다 갱신)
+  function updateOptSum() {
+    if (!optTarget) return;
+    const o = readOpt(), qty = optTarget.qty;
+    const now = unitOf(optTarget) * qty, next = unitOf({ ...optTarget, price: o.price }) * qty, diff = next - now;
+    $('optSum').innerHTML = `<span>변경 적용 시 금액</span><b>${wonT(next)}</b><small>${diff ? `현재 ${wonT(now)} · <em class="${diff > 0 ? 'up' : 'down'}">${diff > 0 ? '+' : '−'}${wonT(Math.abs(diff))}</em>` : '현재와 같은 금액'}${qty > 1 ? ` · ${wonT(unitOf({ ...optTarget, price: o.price }))} × ${qty}개` : ''}</small>`;
+  }
+  $('optBody').addEventListener('change', updateOptSum);
   $('optBody').addEventListener('change', e => { if (e.target.name !== 'extra') return; const n = $('optBody').querySelectorAll('input[name="extra"]:checked').length; $('accN').textContent = n ? `${n}개 선택` : ''; });
   $('optForm').addEventListener('submit', e => {
     e.preventDefault();
@@ -1026,7 +1091,7 @@
     const project = $('optProject') ? $('optProject').value.trim() : '';
     if (project.length > 30) { $('optErr').textContent = '프로젝트명은 30자 이내로 입력해 주세요.'; $('optErr').hidden = false; return; }
     const labels = o.def.groups.map(g => o.sel[g[0]]).concat(o.rest).concat(o.extras.map(x => `+${x}`));
-    Object.assign(optTarget, { option: labels.join(' · '), extras: o.extras, price: o.price, qty: o.qty, project: project || optTarget.project });
+    keepPhoto(optTarget); Object.assign(optTarget, { option: labels.join(' · '), extras: o.extras, price: o.price, qty: o.qty, project: project || optTarget.project });
     persist(cart()); dlgClose($('optDlg')); render();
     toast('옵션을 변경했습니다.');
   });
